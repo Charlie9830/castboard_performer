@@ -7,85 +7,85 @@ typedef void OnSlideChangeCallback(String slideId, bool playing);
 class SlideCycler {
   final List<SlideModel> slides;
   final OnSlideChangeCallback onSlideChange;
-  bool playing = true;
-  SlideModel currentSlide;
-  Timer timer;
 
-  SlideCycler({this.slides, this.onSlideChange}) {
-    if (slides.isNotEmpty) {
-      currentSlide = slides.first;
-    }
+  bool _playing = true;
+  SlideModel _currentSlide;
+  Timer _timer;
+
+  SlideCycler({this.slides, SlideModel initialSlide, this.onSlideChange}) {
+    _currentSlide = initialSlide;
+    _playing = initialSlide != null;
 
     play();
   }
 
   void play() {
-    if (currentSlide != null) {
-      playing = true;
+    if (_currentSlide != null) {
+      _playing = true;
       final holdDuration =
-          Duration(seconds: currentSlide.holdTime.floor().toInt());
-      timer = Timer(holdDuration, () => _cycle());
+          Duration(seconds: _currentSlide.holdTime.floor().toInt());
+      _timer = Timer(holdDuration, () => _cycle());
     }
   }
 
   void pause() {
-    playing = false;
-    timer?.cancel();
+    _playing = false;
+    _timer?.cancel();
   }
 
   void stepForward() {
-    playing = false;
-    currentSlide = _getNextSlide();
-    _notifyListeners(currentSlide, playing);
+    _playing = false;
+    _currentSlide = _getNextSlide();
+    _notifyListeners(_currentSlide, _playing);
   }
 
   void stepBack() {
-    playing = false;
-    currentSlide = _getPrevSlide();
-    _notifyListeners(currentSlide, playing);
+    _playing = false;
+    _currentSlide = _getPrevSlide();
+    _notifyListeners(_currentSlide, _playing);
   }
 
   void _cycle() {
-    if (playing) {
+    if (_playing) {
       final newSlide = _getNextSlide();
       final holdDuration =
-          Duration(seconds: currentSlide.holdTime.floor().toInt());
+          Duration(seconds: _currentSlide.holdTime.floor().toInt());
 
-      currentSlide = newSlide;
-      timer = Timer(holdDuration, () => _cycle());
-      _notifyListeners(currentSlide, playing);
+      _currentSlide = newSlide;
+      _timer = Timer(holdDuration, () => _cycle());
+      _notifyListeners(_currentSlide, _playing);
     }
   }
 
   SlideModel _getNextSlide() {
-    if (currentSlide == null && slides.isEmpty) {
+    if (_currentSlide == null && slides.isEmpty) {
       return null;
     }
 
     if (slides.length == 1) {
-      return currentSlide;
+      return _currentSlide;
     }
 
-    if (currentSlide.index == slides.length - 1) {
+    if (_currentSlide.index == slides.length - 1) {
       return slides.first;
     } else {
-      return slides[currentSlide.index + 1];
+      return slides[_currentSlide.index + 1];
     }
   }
 
   SlideModel _getPrevSlide() {
-    if (currentSlide == null && slides.isEmpty) {
+    if (_currentSlide == null && slides.isEmpty) {
       return null;
     }
 
     if (slides.length == 1) {
-      return currentSlide;
+      return _currentSlide;
     }
 
-    if (currentSlide.index == 0) {
+    if (_currentSlide.index == 0) {
       return slides.last;
     } else {
-      return slides[currentSlide.index - 1];
+      return slides[_currentSlide.index - 1];
     }
   }
 
@@ -94,6 +94,6 @@ class SlideCycler {
   }
 
   void dispose() {
-    timer?.cancel();
+    _timer?.cancel();
   }
 }

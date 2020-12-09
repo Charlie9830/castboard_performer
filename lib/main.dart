@@ -125,19 +125,26 @@ class _AppRootState extends State<AppRoot> {
       _cycler.dispose();
     }
 
+    final sortedSlides = List<SlideModel>.from(data.slides.values)
+      ..sort((a, b) => a.index - b.index);
+
+    final initialSlide = sortedSlides.isNotEmpty ? sortedSlides.first : null;
+
+    final currentPreset =
+        data.presets.isNotEmpty ? data.presets.values.first : _currentPreset;
+
     setState(() {
       _actors = data.actors;
       _roles = data.roles;
       _presets = data.presets;
       _slides = data.slides;
+      _currentSlideId = initialSlide?.uid ?? _currentSlideId;
       _cycler = SlideCycler(
-          slides: List<SlideModel>.from(_slides.values)
-            ..sort((a, b) => a.index - b.index),
+          slides: sortedSlides,
+          initialSlide: initialSlide,
           onSlideChange: _handleSlideCycle);
 
-      if (data.presets.isNotEmpty) {
-        _currentPreset = data.presets.values.first;
-      }
+      _currentPreset = currentPreset;
     });
 
     navigatorKey.currentState?.pushNamed(RouteNames.player);
