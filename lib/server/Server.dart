@@ -36,10 +36,11 @@ class Server {
     // });
 
     httpServer = await HttpServer.bind(address, port);
-    httpServer.listen((request) {
+
+    await for (var request in httpServer) {
       final route = request.uri.toString();
       _router(route, request);
-    });
+    }
 
     return;
   }
@@ -49,24 +50,26 @@ class Server {
   }
 
   void _router(String route, HttpRequest request) {
+    final method = request.method;
     switch (route) {
       case '/':
-        _handleRootReq(request);
+        if (method == 'GET') _handleRootReq(request);
         break;
       case '/upload':
-        _handleUploadReq(request);
+        if (method == 'PUT') _handleUploadReq(request);
         break;
       case '/playback':
-        _handlePlaybackReq(request);
+        if (method == 'PUT') _handlePlaybackReq(request);
         break;
     }
   }
 
   void _handlePlaybackReq(HttpRequest request) async {
     await for (var data in request) {
-      // TODO: Check the length of that Data isnt something massive, incase we try to send a Binary Blop to this route.
+      // TODO: Check the length of that Data isnt something massive, incase we try to send a Binary Blob to this route.
 
       final String command = utf8.decode(data);
+      print(command);
 
       switch (command) {
         case 'play':
@@ -101,6 +104,8 @@ class Server {
     }
 
     // TODO: Verify the File is sane before writing it into storage.
+
+    print("Received");
 
     await Storage.instance.copyShowFileIntoPlayerStorage(buffer);
 
