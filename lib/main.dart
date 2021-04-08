@@ -1,6 +1,6 @@
 import 'package:castboard_core/models/ActorModel.dart';
 import 'package:castboard_core/models/PresetModel.dart';
-import 'package:castboard_core/models/RoleModel.dart';
+import 'package:castboard_core/models/TrackModel.dart';
 import 'package:castboard_core/models/SlideModel.dart';
 import 'package:castboard_core/storage/ImportedShowData.dart';
 import 'package:castboard_core/storage/Storage.dart';
@@ -29,7 +29,7 @@ class AppRoot extends StatefulWidget {
 
 class _AppRootState extends State<AppRoot> {
   Map<String, ActorModel> _actors;
-  Map<String, RoleModel> _roles;
+  Map<String, TrackModel> _tracks;
   Map<String, PresetModel> _presets;
   Map<String, SlideModel> _slides;
   SlideCycler _cycler;
@@ -69,7 +69,7 @@ class _AppRootState extends State<AppRoot> {
               currentSlideId: _currentSlideId,
               slides: _slides,
               actors: _actors,
-              roles: _roles,
+              tracks: _tracks,
               currentPreset: _currentPreset,
             ),
         RouteNames.configViewer: (_) => ConfigViewer(),
@@ -135,7 +135,7 @@ class _AppRootState extends State<AppRoot> {
 
     setState(() {
       _actors = data.actors;
-      _roles = data.roles;
+      _tracks = data.tracks;
       _presets = data.presets;
       _slides = data.slides;
       _currentSlideId = initialSlide?.uid ?? _currentSlideId;

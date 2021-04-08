@@ -3,14 +3,14 @@ import 'package:castboard_core/elements/elementBuilders.dart';
 import 'package:castboard_core/layout-canvas/LayoutCanvas.dart';
 import 'package:castboard_core/models/ActorModel.dart';
 import 'package:castboard_core/models/PresetModel.dart';
-import 'package:castboard_core/models/RoleModel.dart';
+import 'package:castboard_core/models/TrackModel.dart';
 import 'package:castboard_core/models/SlideModel.dart';
 import 'package:castboard_core/slide-viewport/SlideViewport.dart';
 import 'package:flutter/material.dart';
 
 class Player extends StatelessWidget {
   final Map<String, SlideModel> slides;
-  final Map<String, RoleModel> roles;
+  final Map<String, TrackModel> tracks;
   final Map<String, ActorModel> actors;
   final PresetModel currentPreset;
   final String currentSlideId;
@@ -18,7 +18,7 @@ class Player extends StatelessWidget {
   const Player(
       {Key key,
       this.slides,
-      this.roles,
+      this.tracks,
       this.actors,
       this.currentPreset,
       this.currentSlideId})
@@ -32,6 +32,7 @@ class Player extends StatelessWidget {
 
     return Container(
         child: SlideViewport(
+      enableScrolling: false,
       renderScale: 1,
       background: getBackground(
         slides,
@@ -45,7 +46,7 @@ class Player extends StatelessWidget {
           slide: slides[currentSlideId],
           actors: actors,
           preset: currentPreset,
-          roles: roles,
+          tracks: tracks,
         ),
         renderScale: 1,
       ),
