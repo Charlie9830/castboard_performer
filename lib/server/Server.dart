@@ -36,13 +36,15 @@ class Server {
     // });
 
     httpServer = await HttpServer.bind(address, port);
+    _runServerLoop(httpServer);
+    return;
+  }
 
-    await for (var request in httpServer) {
+  void _runServerLoop(HttpServer server) async {
+    await for (var request in server) {
       final route = request.uri.toString();
       _router(route, request);
     }
-
-    return;
   }
 
   Future<void> shutdown() async {

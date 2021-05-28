@@ -38,6 +38,7 @@ class AppRoot extends StatefulWidget {
 }
 
 class _AppRootState extends State<AppRoot> {
+  String _startupStatus = 'Starting Up';
   Map<ActorRef, ActorModel> _actors;
   Map<TrackRef, TrackModel> _tracks;
   Map<String, PresetModel> _presets;
@@ -62,14 +63,11 @@ class _AppRootState extends State<AppRoot> {
       onPlaybackCommand: _handlePlaybackCommand,
       onShowFileReceived: _handleShowFileReceived,
     );
-
     _initalizePlayer();
   }
 
   @override
   Widget build(BuildContext context) {
-    final windowSize = _getWindowSize(context);
-
     return MaterialApp(
       navigatorKey: navigatorKey,
       title: 'Castboard Player',
@@ -79,45 +77,21 @@ class _AppRootState extends State<AppRoot> {
       ),
       initialRoute: RouteNames.loadingSplash,
       routes: {
-        RouteNames.loadingSplash: (_) => LoadingSplash(),
+        RouteNames.loadingSplash: (_) => LoadingSplash(
+              status: _startupStatus,
+            ),
         RouteNames.player: (_) => Player(
               currentSlideId: _currentSlideId,
               slides: _slides,
               actors: _actors,
               tracks: _tracks,
               currentPreset: _currentPreset,
-              width: windowSize.width.toInt(),
-              height: windowSize.height.toInt(),
-              renderScale: _getRenderScale(windowSize,
-                  _getDesiredSlideSize(_slideSize, _slideOrientation)),
+              slideSize: _slideSize,
+              slideOrientation: _slideOrientation,
             ),
         RouteNames.configViewer: (_) => ConfigViewer(),
       },
     );
-  }
-
-  Size _getDesiredSlideSize(
-      SlideSizeModel slideSize, SlideOrientation orientation) {
-    return slideSize?.orientated(orientation)?.toSize() ??
-        StandardSlideSizes.defaultSize.toSize();
-  }
-
-  Size _getWindowSize(BuildContext context) {
-    return MediaQuery.of(context).size;
-  }
-
-  double _getRenderScale(Size windowSize, Size desiredSlideSize) {
-    final xRatio = windowSize.width / desiredSlideSize.width;
-    final yRatio = windowSize.height / desiredSlideSize.height;
-
-    final xRatioDiff = xRatio - 1;
-    final yRatioDiff = yRatio - 1;
-
-    if (xRatioDiff > yRatioDiff) {
-      return xRatio;
-    } else {
-      return yRatio;
-    }
   }
 
   void _handlePlaybackCommand(PlaybackCommand command) {
@@ -145,17 +119,27 @@ class _AppRootState extends State<AppRoot> {
     _loadShow(data);
   }
 
+  void _updateStartupStatus(String status) {
+    setState(() {
+      _startupStatus = status;
+    });
+  }
+
   void _initalizePlayer() async {
+    _updateStartupStatus('Initializing internal storage');
     // Init Storage
     await Storage.initalize(StorageMode.player);
 
+    _updateStartupStatus('Initializing administration server');
     // Init Server.
     await _initializeServer();
 
+    _updateStartupStatus('Looking for previously loaded show file');
     if (await Storage.instance.isPlayerStoragePopulated()) {
       final ImportedShowData data =
           await Storage.instance.readFromPlayerStorage();
 
+      _updateStartupStatus('Loading show file');
       _loadShow(data);
     } else {
       navigatorKey.currentState?.pushNamed(RouteNames.configViewer);
@@ -208,9 +192,10 @@ class _AppRootState extends State<AppRoot> {
 
   Future<void> _initializeServer() async {
     if (_server != null) {
-      await _server.initalize();
-      print('Server Ready');
+      return await _server.initalize();
     }
+
+    return;
   }
 
   @override

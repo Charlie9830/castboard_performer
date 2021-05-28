@@ -1,14 +1,20 @@
+import 'package:castboard_core/classes/StandardSlideSizes.dart';
+import 'package:castboard_core/classes/StandardSlideSizes.dart';
 import 'package:castboard_core/elements/backgroundBuilder.dart';
 import 'package:castboard_core/elements/elementBuilders.dart';
+import 'package:castboard_core/enums.dart';
+import 'package:castboard_core/inherited/RenderScaleProvider.dart';
 import 'package:castboard_core/layout-canvas/LayoutCanvas.dart';
 import 'package:castboard_core/models/ActorModel.dart';
 import 'package:castboard_core/models/ActorRef.dart';
 import 'package:castboard_core/models/PresetModel.dart';
+import 'package:castboard_core/models/SlideSizeModel.dart';
 import 'package:castboard_core/models/TrackModel.dart';
 import 'package:castboard_core/models/SlideModel.dart';
 import 'package:castboard_core/models/TrackRef.dart';
 import 'package:castboard_core/slide-viewport/SlideViewport.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class Player extends StatelessWidget {
   final Map<String, SlideModel> slides;
@@ -16,9 +22,8 @@ class Player extends StatelessWidget {
   final Map<ActorRef, ActorModel> actors;
   final PresetModel currentPreset;
   final String currentSlideId;
-  final int width;
-  final int height;
-  final double renderScale;
+  final SlideSizeModel slideSize;
+  final SlideOrientation slideOrientation;
 
   const Player({
     Key key,
@@ -27,9 +32,8 @@ class Player extends StatelessWidget {
     this.actors,
     this.currentPreset,
     this.currentSlideId,
-    this.width = 1920,
-    this.height = 1080,
-    this.renderScale = 1,
+    this.slideSize,
+    this.slideOrientation,
   }) : super(key: key);
 
   @override
@@ -38,16 +42,21 @@ class Player extends StatelessWidget {
       return Container(child: Text('Current Slide is Null'));
     }
 
-    return Container(
-        child: SlideViewport(
+    final actualSlideSize = _getDesiredSlideSize(
+        slideSize ?? StandardSlideSizes.defaultSize,
+        slideOrientation ?? SlideOrientation.landscape);
+    final windowSize = _getWindowSize(context);
+    final renderScale = _getRenderScale(windowSize, actualSlideSize);
+    
+    return SlideViewport(
+      slideWidth: actualSlideSize.width.toInt(),
+      slideHeight: actualSlideSize.height.toInt(),
       enableScrolling: false,
-      renderScale: renderScale,
+      slideRenderScale: renderScale,
       background: getBackground(
         slides,
         currentSlideId,
       ),
-      width: width,
-      height: height,
       child: LayoutCanvas(
         interactive: false,
         elements: buildElements(
@@ -58,6 +67,23 @@ class Player extends StatelessWidget {
         ),
         renderScale: renderScale,
       ),
-    ));
+    );
+  }
+
+  Size _getDesiredSlideSize(
+      SlideSizeModel slideSize, SlideOrientation orientation) {
+    return slideSize?.orientated(orientation)?.toSize() ??
+        StandardSlideSizes.defaultSize.toSize();
+  }
+
+  Size _getWindowSize(BuildContext context) {
+    return MediaQuery.of(context).size;
+  }
+
+  double _getRenderScale(Size windowSize, Size desiredSlideSize) {
+    final xRatio = windowSize.width / desiredSlideSize.width;
+    final yRatio = windowSize.height / desiredSlideSize.height;
+
+    return xRatio < yRatio ? xRatio : yRatio;
   }
 }
