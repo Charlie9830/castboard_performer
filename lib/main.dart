@@ -1,11 +1,16 @@
+import 'package:castboard_core/classes/StandardSlideSizes.dart';
+import 'package:castboard_core/enums.dart';
 import 'package:castboard_core/font-loading/FontLoadCandidate.dart';
 import 'package:castboard_core/font-loading/FontLoading.dart';
 import 'package:castboard_core/font-loading/FontLoadingResult.dart';
 import 'package:castboard_core/models/ActorModel.dart';
+import 'package:castboard_core/models/ActorRef.dart';
 import 'package:castboard_core/models/FontModel.dart';
 import 'package:castboard_core/models/PresetModel.dart';
+import 'package:castboard_core/models/SlideSizeModel.dart';
 import 'package:castboard_core/models/TrackModel.dart';
 import 'package:castboard_core/models/SlideModel.dart';
+import 'package:castboard_core/models/TrackRef.dart';
 import 'package:castboard_core/storage/ImportedShowData.dart';
 import 'package:castboard_core/storage/Storage.dart';
 import 'package:castboard_player/ConfigViewer.dart';
@@ -13,6 +18,7 @@ import 'package:castboard_player/LoadingSplash.dart';
 import 'package:castboard_player/Player.dart';
 import 'package:castboard_player/RouteNames.dart';
 import 'package:castboard_player/SlideCycler.dart';
+import 'package:castboard_player/fontLoadingHelpers.dart';
 import 'package:castboard_player/server/Server.dart';
 import 'package:flutter/material.dart';
 
@@ -32,10 +38,13 @@ class AppRoot extends StatefulWidget {
 }
 
 class _AppRootState extends State<AppRoot> {
-  Map<String, ActorModel> _actors;
-  Map<String, TrackModel> _tracks;
+  Map<ActorRef, ActorModel> _actors;
+  Map<TrackRef, TrackModel> _tracks;
   Map<String, PresetModel> _presets;
   Map<String, SlideModel> _slides;
+  SlideSizeModel _slideSize = StandardSlideSizes.defaultSize;
+  SlideOrientation _slideOrientation = SlideOrientation.landscape;
+
   List<FontModel> _unloadedFonts = const <FontModel>[];
   SlideCycler _cycler;
   PresetModel _currentPreset;
@@ -59,6 +68,8 @@ class _AppRootState extends State<AppRoot> {
 
   @override
   Widget build(BuildContext context) {
+    final windowSize = _getWindowSize(context);
+
     return MaterialApp(
       navigatorKey: navigatorKey,
       title: 'Castboard Player',
@@ -75,10 +86,38 @@ class _AppRootState extends State<AppRoot> {
               actors: _actors,
               tracks: _tracks,
               currentPreset: _currentPreset,
+              width: windowSize.width.toInt(),
+              height: windowSize.height.toInt(),
+              renderScale: _getRenderScale(windowSize,
+                  _getDesiredSlideSize(_slideSize, _slideOrientation)),
             ),
         RouteNames.configViewer: (_) => ConfigViewer(),
       },
     );
+  }
+
+  Size _getDesiredSlideSize(
+      SlideSizeModel slideSize, SlideOrientation orientation) {
+    return slideSize?.orientated(orientation)?.toSize() ??
+        StandardSlideSizes.defaultSize.toSize();
+  }
+
+  Size _getWindowSize(BuildContext context) {
+    return MediaQuery.of(context).size;
+  }
+
+  double _getRenderScale(Size windowSize, Size desiredSlideSize) {
+    final xRatio = windowSize.width / desiredSlideSize.width;
+    final yRatio = windowSize.height / desiredSlideSize.height;
+
+    final xRatioDiff = xRatio - 1;
+    final yRatioDiff = yRatio - 1;
+
+    if (xRatioDiff > yRatioDiff) {
+      return xRatio;
+    } else {
+      return yRatio;
+    }
   }
 
   void _handlePlaybackCommand(PlaybackCommand command) {
@@ -133,11 +172,11 @@ class _AppRootState extends State<AppRoot> {
 
     final initialSlide = sortedSlides.isNotEmpty ? sortedSlides.first : null;
 
-    final currentPreset =
-        data.presets.isNotEmpty ? data.presets.values.first : _currentPreset;
+    final currentPreset = data.presets.isNotEmpty
+        ? data.presets[PresetModel.builtIn().uid]
+        : PresetModel.builtIn();
 
-    print(data.manifest.requiredFonts);
-    final unloadedFontIds = await _loadCustomFonts(data.manifest.requiredFonts);
+    final unloadedFontIds = await loadCustomFonts(data.manifest.requiredFonts);
     final fontsLookup = Map<String, FontModel>.fromEntries(
         data.manifest.requiredFonts.map((font) => MapEntry(font.uid, font)));
 
@@ -152,65 +191,13 @@ class _AppRootState extends State<AppRoot> {
           slides: sortedSlides,
           initialSlide: initialSlide,
           onSlideChange: _handleSlideCycle);
-
       _currentPreset = currentPreset;
+      _slideSize = StandardSlideSizes.all[data.slideSizeId] ??
+          StandardSlideSizes.defaultSize;
+      _slideOrientation = data.slideOrientation ?? SlideOrientation.landscape;
     });
 
     navigatorKey.currentState?.pushNamed(RouteNames.player);
-  }
-
-  ///
-  /// Pulls Custom fonts from storage and loads into the Engine.
-  /// Returns a Set of ids representing any Fonts that could not be loaded.
-  /// This could be because the Engine rejected them, files were missing, FontModel.ref was invalid or bad.
-  Future<Set<String>> _loadCustomFonts(List<FontModel> requiredFonts) async {
-    if (requiredFonts == null || requiredFonts.isEmpty) {
-      return <String>{};
-    }
-
-    final List<FontModel> goodFonts = [];
-    final List<FontModel> missingFonts = [];
-    final existenceRequests = requiredFonts.map((font) =>
-        _fontExistenceDelegate(font).then(
-            (exists) => exists ? goodFonts.add(font) : missingFonts.add(font)));
-
-    await Future.wait(existenceRequests);
-
-    final List<FontLoadCandidate> candidates = [];
-    final dataLoadRequests = goodFonts.map((font) => Storage.instance
-        .getFontFile(font.ref)
-        .readAsBytes()
-        .then((data) => candidates
-            .add(FontLoadCandidate(font.uid, font.familyName, data))));
-
-    await Future.wait(dataLoadRequests);
-
-    final loadingResults = await FontLoading.loadFonts(candidates);
-    print('Good Fonts ${goodFonts.length}');
-    print('Missing Fonts ${missingFonts.length}');
-    print('Unloaded Fonts ${loadingResults.length}');
-
-
-    return [
-      ...loadingResults
-          .where((result) => result.loadResult.success == false)
-          .map((result) => result.uid),
-      ...missingFonts.map((font) => font.uid)
-    ].toSet();
-  }
-
-  ///
-  /// Delegate for checking if a Font File exists. Will return false even if the file object itself is null, thus protecting
-  /// any .then() calls from a null exception.
-  ///
-  Future<bool> _fontExistenceDelegate(FontModel font) async {
-    final file = Storage.instance.getFontFile(font.ref);
-
-    if (file == null) {
-      return false;
-    } else {
-      return file.exists();
-    }
   }
 
   void _handleSlideCycle(String slideId, bool playing) {
