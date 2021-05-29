@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class LoadingSplash extends StatelessWidget {
   final String status;
-  const LoadingSplash({Key key, this.status = 'Starting Up'}) : super(key: key);
+  const LoadingSplash({Key? key, this.status = 'Starting Up'}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +19,7 @@ class LoadingSplash extends StatelessWidget {
                   color: Colors.orangeAccent,
                 )),
                 SizedBox(height: 16),
-              Text(status, style: Theme.of(context).textTheme.bodyText2.copyWith(color: Colors.grey)),
+              Text(status, style: Theme.of(context).textTheme.bodyText2!.copyWith(color: Colors.grey)),
             ],
           ),
         ),

@@ -28,10 +28,10 @@ void main() {
   runApp(AppRoot());
 }
 
-Server server;
+Server? server;
 
 class AppRoot extends StatefulWidget {
-  AppRoot({Key key}) : super(key: key);
+  AppRoot({Key? key}) : super(key: key);
 
   @override
   _AppRootState createState() => _AppRootState();
@@ -39,19 +39,19 @@ class AppRoot extends StatefulWidget {
 
 class _AppRootState extends State<AppRoot> {
   String _startupStatus = 'Starting Up';
-  Map<ActorRef, ActorModel> _actors;
-  Map<TrackRef, TrackModel> _tracks;
-  Map<String, PresetModel> _presets;
-  Map<String, SlideModel> _slides;
+  Map<ActorRef, ActorModel> _actors = {};
+  Map<TrackRef, TrackModel> _tracks = {};
+  Map<String, PresetModel> _presets = {};
+  Map<String, SlideModel> _slides = {};
   SlideSizeModel _slideSize = StandardSlideSizes.defaultSize;
   SlideOrientation _slideOrientation = SlideOrientation.landscape;
 
   List<FontModel> _unloadedFonts = const <FontModel>[];
-  SlideCycler _cycler;
-  PresetModel _currentPreset;
+  SlideCycler? _cycler;
+  PresetModel? _currentPreset;
   String _currentSlideId = '';
 
-  Server _server;
+  Server? _server;
 
   @override
   void initState() {
@@ -98,23 +98,23 @@ class _AppRootState extends State<AppRoot> {
     if (_cycler != null) {
       switch (command) {
         case PlaybackCommand.play:
-          _cycler.play();
+          _cycler!.play();
           break;
         case PlaybackCommand.pause:
-          _cycler.pause();
+          _cycler!.pause();
           break;
         case PlaybackCommand.next:
-          _cycler.stepForward();
+          _cycler!.stepForward();
           break;
         case PlaybackCommand.prev:
-          _cycler.stepBack();
+          _cycler!.stepBack();
           break;
       }
     }
   }
 
   void _handleShowFileReceived() async {
-    final data = await Storage.instance.readFromPlayerStorage();
+    final data = await Storage.instance!.readFromPlayerStorage();
 
     _loadShow(data);
   }
@@ -135,9 +135,9 @@ class _AppRootState extends State<AppRoot> {
     await _initializeServer();
 
     _updateStartupStatus('Looking for previously loaded show file');
-    if (await Storage.instance.isPlayerStoragePopulated()) {
+    if (await Storage.instance!.isPlayerStoragePopulated()) {
       final ImportedShowData data =
-          await Storage.instance.readFromPlayerStorage();
+          await Storage.instance!.readFromPlayerStorage();
 
       _updateStartupStatus('Loading show file');
       _loadShow(data);
@@ -148,7 +148,7 @@ class _AppRootState extends State<AppRoot> {
 
   void _loadShow(ImportedShowData data) async {
     if (_cycler != null) {
-      _cycler.dispose();
+      _cycler!.dispose();
     }
 
     final sortedSlides = List<SlideModel>.from(data.slides.values)
@@ -170,15 +170,15 @@ class _AppRootState extends State<AppRoot> {
       _presets = data.presets;
       _slides = data.slides;
       _currentSlideId = initialSlide?.uid ?? _currentSlideId;
-      _unloadedFonts = unloadedFontIds.map((id) => fontsLookup[id]).toList();
+      _unloadedFonts = unloadedFontIds.map((id) => fontsLookup[id]!).toList();
       _cycler = SlideCycler(
           slides: sortedSlides,
-          initialSlide: initialSlide,
+          initialSlide: initialSlide!,
           onSlideChange: _handleSlideCycle);
       _currentPreset = currentPreset;
       _slideSize = StandardSlideSizes.all[data.slideSizeId] ??
           StandardSlideSizes.defaultSize;
-      _slideOrientation = data.slideOrientation ?? SlideOrientation.landscape;
+      _slideOrientation = data.slideOrientation;
     });
 
     navigatorKey.currentState?.pushNamed(RouteNames.player);
@@ -192,7 +192,7 @@ class _AppRootState extends State<AppRoot> {
 
   Future<void> _initializeServer() async {
     if (_server != null) {
-      return await _server.initalize();
+      return await _server!.initalize();
     }
 
     return;
@@ -201,7 +201,7 @@ class _AppRootState extends State<AppRoot> {
   @override
   void dispose() {
     if (_server != null) {
-      _server.shutdown();
+      _server!.shutdown();
     }
     super.dispose();
   }

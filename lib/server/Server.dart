@@ -14,11 +14,11 @@ enum PlaybackCommand {
 
 class Server {
   final dynamic address;
-  final int port;
-  final OnPlaybackCommandReceivedCallback onPlaybackCommand;
-  final OnShowFileReceivedAndStoredCallback onShowFileReceived;
+  final int? port;
+  final OnPlaybackCommandReceivedCallback? onPlaybackCommand;
+  final OnShowFileReceivedAndStoredCallback? onShowFileReceived;
 
-  HttpServer httpServer;
+  late HttpServer httpServer;
 
   Server({
     this.address,
@@ -35,7 +35,7 @@ class Server {
     //   print(utf8.decode(result));
     // });
 
-    httpServer = await HttpServer.bind(address, port);
+    httpServer = await HttpServer.bind(address, port!);
     _runServerLoop(httpServer);
     return;
   }
@@ -43,12 +43,19 @@ class Server {
   void _runServerLoop(HttpServer server) async {
     await for (var request in server) {
       final route = request.uri.toString();
+      _addCorsHeaders(request);
       _router(route, request);
     }
   }
 
   Future<void> shutdown() async {
     return httpServer.close();
+  }
+
+  void _addCorsHeaders(HttpRequest request) {
+    request.response.headers.add("Access-Control-Allow-Origin", "*");
+    request.response.headers
+        .add("Access-Control-Allow-Methods", "POST,GET,DELETE,PUT,OPTIONS");
   }
 
   void _router(String route, HttpRequest request) {
@@ -71,8 +78,6 @@ class Server {
       // TODO: Check the length of that Data isnt something massive, incase we try to send a Binary Blob to this route.
 
       final String command = utf8.decode(data);
-      print(command);
-
       switch (command) {
         case 'play':
           onPlaybackCommand?.call(PlaybackCommand.play);
@@ -109,7 +114,7 @@ class Server {
 
     print("Received");
 
-    await Storage.instance.copyShowFileIntoPlayerStorage(buffer);
+    await Storage.instance!.copyShowFileIntoPlayerStorage(buffer);
 
     request.response.close();
 

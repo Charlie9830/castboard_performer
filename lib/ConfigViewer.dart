@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class ConfigViewer extends StatelessWidget {
-  const ConfigViewer({Key key}) : super(key: key);
+  const ConfigViewer({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -52,8 +52,8 @@ class _DashboardAddressCard extends StatelessWidget {
   final double cardMaxWidth;
 
   const _DashboardAddressCard({
-    Key key,
-    @required this.cardMaxWidth,
+    Key? key,
+    required this.cardMaxWidth,
   }) : super(key: key);
 
   @override
@@ -65,17 +65,17 @@ class _DashboardAddressCard extends StatelessWidget {
                 padding: EdgeInsets.all(16),
                 child: Center(
                     child: Text('dashboard.castboard.net',
-                        style: Theme.of(context).textTheme.subtitle1.copyWith(
+                        style: Theme.of(context).textTheme.subtitle1!.copyWith(
                             color: Theme.of(context).accentColor))))));
   }
 }
 
 class _WirelessConfigCard extends StatelessWidget {
   const _WirelessConfigCard({
-    Key key,
-    @required this.cardMaxWidth,
-    @required this.hSpacer,
-    @required this.vSpacer,
+    Key? key,
+    required this.cardMaxWidth,
+    required this.hSpacer,
+    required this.vSpacer,
   }) : super(key: key);
 
   final double cardMaxWidth;
@@ -100,7 +100,7 @@ class _WirelessConfigCard extends StatelessWidget {
                 Text('CastboardPlayer298',
                     style: Theme.of(context)
                         .textTheme
-                        .subtitle1
+                        .subtitle1!
                         .copyWith(color: Theme.of(context).accentColor)),
               ],
             ),
@@ -113,7 +113,7 @@ class _WirelessConfigCard extends StatelessWidget {
                 Text('curlybreeze298',
                     style: Theme.of(context)
                         .textTheme
-                        .subtitle1
+                        .subtitle1!
                         .copyWith(color: Theme.of(context).accentColor)),
               ],
             )

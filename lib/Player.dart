@@ -20,20 +20,20 @@ class Player extends StatelessWidget {
   final Map<String, SlideModel> slides;
   final Map<TrackRef, TrackModel> tracks;
   final Map<ActorRef, ActorModel> actors;
-  final PresetModel currentPreset;
+  final PresetModel? currentPreset;
   final String currentSlideId;
   final SlideSizeModel slideSize;
   final SlideOrientation slideOrientation;
 
   const Player({
-    Key key,
-    this.slides,
-    this.tracks,
-    this.actors,
+    Key? key,
+    required this.slides,
+    required this.tracks,
+    required this.actors,
     this.currentPreset,
-    this.currentSlideId,
-    this.slideSize,
-    this.slideOrientation,
+    required this.currentSlideId,
+    required this.slideSize,
+    required this.slideOrientation,
   }) : super(key: key);
 
   @override
@@ -42,12 +42,10 @@ class Player extends StatelessWidget {
       return Container(child: Text('Current Slide is Null'));
     }
 
-    final actualSlideSize = _getDesiredSlideSize(
-        slideSize ?? StandardSlideSizes.defaultSize,
-        slideOrientation ?? SlideOrientation.landscape);
+    final actualSlideSize = _getDesiredSlideSize(slideSize, slideOrientation);
     final windowSize = _getWindowSize(context);
     final renderScale = _getRenderScale(windowSize, actualSlideSize);
-    
+
     return SlideViewport(
       slideWidth: actualSlideSize.width.toInt(),
       slideHeight: actualSlideSize.height.toInt(),
@@ -72,8 +70,7 @@ class Player extends StatelessWidget {
 
   Size _getDesiredSlideSize(
       SlideSizeModel slideSize, SlideOrientation orientation) {
-    return slideSize?.orientated(orientation)?.toSize() ??
-        StandardSlideSizes.defaultSize.toSize();
+    return slideSize.orientated(orientation).toSize();
   }
 
   Size _getWindowSize(BuildContext context) {

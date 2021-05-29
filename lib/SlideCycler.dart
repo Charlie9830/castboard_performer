@@ -8,11 +8,14 @@ class SlideCycler {
   final List<SlideModel> slides;
   final OnSlideChangeCallback onSlideChange;
 
-  bool _playing = true;
-  SlideModel _currentSlide;
-  Timer _timer;
+  late bool _playing = true;
+  late SlideModel? _currentSlide;
+  late Timer _timer;
 
-  SlideCycler({this.slides, SlideModel initialSlide, this.onSlideChange}) {
+  SlideCycler(
+      {required this.slides,
+      SlideModel? initialSlide,
+      required this.onSlideChange}) {
     _currentSlide = initialSlide;
     _playing = initialSlide != null;
 
@@ -20,36 +23,38 @@ class SlideCycler {
   }
 
   void play() {
-    if (_currentSlide != null) {
-      _playing = true;
-      final holdDuration =
-          Duration(seconds: _currentSlide.holdTime.floor().toInt());
-      _timer = Timer(holdDuration, () => _cycle());
+    if (_currentSlide == null) {
+      return;
     }
+
+    _playing = true;
+    final holdDuration =
+        Duration(seconds: _currentSlide!.holdTime.floor().toInt());
+    _timer = Timer(holdDuration, () => _cycle());
   }
 
   void pause() {
     _playing = false;
-    _timer?.cancel();
+    _timer.cancel();
   }
 
   void stepForward() {
     _playing = false;
-    _currentSlide = _getNextSlide();
+    _currentSlide = _getNextSlide()!;
     _notifyListeners(_currentSlide, _playing);
   }
 
   void stepBack() {
     _playing = false;
-    _currentSlide = _getPrevSlide();
+    _currentSlide = _getPrevSlide()!;
     _notifyListeners(_currentSlide, _playing);
   }
 
   void _cycle() {
     if (_playing) {
-      final newSlide = _getNextSlide();
+      final newSlide = _getNextSlide()!;
       final holdDuration =
-          Duration(seconds: _currentSlide.holdTime.floor().toInt());
+          Duration(seconds: _currentSlide!.holdTime.floor().toInt());
 
       _currentSlide = newSlide;
       _timer = Timer(holdDuration, () => _cycle());
@@ -57,7 +62,7 @@ class SlideCycler {
     }
   }
 
-  SlideModel _getNextSlide() {
+  SlideModel? _getNextSlide() {
     if (_currentSlide == null && slides.isEmpty) {
       return null;
     }
@@ -66,14 +71,14 @@ class SlideCycler {
       return _currentSlide;
     }
 
-    if (_currentSlide.index == slides.length - 1) {
+    if (_currentSlide!.index == slides.length - 1) {
       return slides.first;
     } else {
-      return slides[_currentSlide.index + 1];
+      return slides[_currentSlide!.index + 1];
     }
   }
 
-  SlideModel _getPrevSlide() {
+  SlideModel? _getPrevSlide() {
     if (_currentSlide == null && slides.isEmpty) {
       return null;
     }
@@ -82,18 +87,20 @@ class SlideCycler {
       return _currentSlide;
     }
 
-    if (_currentSlide.index == 0) {
+    if (_currentSlide!.index == 0) {
       return slides.last;
     } else {
-      return slides[_currentSlide.index - 1];
+      return slides[_currentSlide!.index - 1];
     }
   }
 
-  void _notifyListeners(SlideModel currentSlide, bool playing) {
-    onSlideChange?.call(currentSlide?.uid ?? '', playing);
+  void _notifyListeners(SlideModel? currentSlide, bool playing) {
+    if (currentSlide != null) {
+      onSlideChange.call(currentSlide.uid, playing);
+    }
   }
 
   void dispose() {
-    _timer?.cancel();
+    _timer.cancel();
   }
 }
