@@ -43,7 +43,6 @@ class Server {
   void _runServerLoop(HttpServer server) async {
     await for (var request in server) {
       final route = request.uri.toString();
-      _addCorsHeaders(request);
       _router(route, request);
     }
   }
@@ -60,6 +59,18 @@ class Server {
 
   void _router(String route, HttpRequest request) {
     final method = request.method;
+
+    // CORS Headers
+    _addCorsHeaders(request);
+
+    // CORS Preflight.
+    if (method == 'OPTIONS') {
+      request.response.statusCode = HttpStatus.noContent;
+      request.response.headers.add('Access-Control-Max-Age', '86400');
+      request.response.close();
+      return;
+    }
+
     switch (route) {
       case '/':
         if (method == 'GET') _handleRootReq(request);
@@ -75,8 +86,7 @@ class Server {
 
   void _handlePlaybackReq(HttpRequest request) async {
     await for (var data in request) {
-      // TODO: Check the length of that Data isnt something massive, incase we try to send a Binary Blob to this route.
-
+      // TODO: Check the length of that Data isnt something massive, in case we try to send a Binary Blob to this route.
       final String command = utf8.decode(data);
       switch (command) {
         case 'play':
@@ -94,6 +104,7 @@ class Server {
       }
     }
 
+    request.response.statusCode = HttpStatus.ok;
     request.response.close();
   }
 

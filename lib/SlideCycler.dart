@@ -30,6 +30,11 @@ class SlideCycler {
     _playing = true;
     final holdDuration =
         Duration(seconds: _currentSlide!.holdTime.floor().toInt());
+
+    if (_timer.isActive) {
+      _timer.cancel();
+    }
+
     _timer = Timer(holdDuration, () => _cycle());
   }
 
