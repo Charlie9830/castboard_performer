@@ -10,7 +10,7 @@ class SlideCycler {
 
   late bool _playing = true;
   late SlideModel? _currentSlide;
-  late Timer _timer;
+  Timer? _timer;
 
   SlideCycler(
       {required this.slides,
@@ -31,8 +31,8 @@ class SlideCycler {
     final holdDuration =
         Duration(seconds: _currentSlide!.holdTime.floor().toInt());
 
-    if (_timer.isActive) {
-      _timer.cancel();
+    if (_timer != null && _timer!.isActive) {
+      _timer!.cancel();
     }
 
     _timer = Timer(holdDuration, () => _cycle());
@@ -40,7 +40,7 @@ class SlideCycler {
 
   void pause() {
     _playing = false;
-    _timer.cancel();
+    _timer?.cancel();
   }
 
   void stepForward() {
@@ -106,6 +106,6 @@ class SlideCycler {
   }
 
   void dispose() {
-    _timer.cancel();
+    _timer?.cancel();
   }
 }

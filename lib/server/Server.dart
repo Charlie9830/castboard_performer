@@ -1,9 +1,20 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:castboard_core/storage/Storage.dart';
+import 'package:castboard_player/server/CorsMiddleware.dart';
+
+// Shelf
+import 'package:shelf/shelf.dart';
+import 'package:shelf/shelf_io.dart' as shelf_io;
+import 'package:shelf_router/shelf_router.dart';
+import 'package:shelf_static/shelf_static.dart';
 
 typedef void OnPlaybackCommandReceivedCallback(PlaybackCommand command);
 typedef void OnShowFileReceivedAndStoredCallback();
+
+// Config
+const _staticFilesPath = 'static/';
+const _defaultDocument = 'index.html';
 
 enum PlaybackCommand {
   play,
@@ -14,15 +25,15 @@ enum PlaybackCommand {
 
 class Server {
   final dynamic address;
-  final int? port;
+  final int port;
   final OnPlaybackCommandReceivedCallback? onPlaybackCommand;
   final OnShowFileReceivedAndStoredCallback? onShowFileReceived;
 
-  late HttpServer httpServer;
+  late HttpServer server;
 
   Server({
     this.address,
-    this.port,
+    this.port = 8080,
     this.onPlaybackCommand,
     this.onShowFileReceived,
   });
@@ -35,57 +46,41 @@ class Server {
     //   print(utf8.decode(result));
     // });
 
-    httpServer = await HttpServer.bind(address, port!);
-    _runServerLoop(httpServer);
+    final router = _initializeRouter();
+
+    server = await shelf_io.serve(
+        Pipeline().addMiddleware(corsMiddleware).addHandler(router),
+        address,
+        port);
+    print("Server Running");
+    // _runServerLoop(server);
     return;
   }
 
-  void _runServerLoop(HttpServer server) async {
-    await for (var request in server) {
-      final route = request.uri.toString();
-      _router(route, request);
-    }
+  Router _initializeRouter() {
+    Router router = Router();
+    router.get(
+        '/',
+        createStaticHandler(_staticFilesPath,
+            defaultDocument: _defaultDocument,
+            listDirectories: true
+            ));
+
+    // Playback.
+    router.put('/playback', _handlePlaybackReq);
+
+    // Show File Upload
+    router.put('/upload', _handleUploadReq);
+
+    return router;
   }
 
   Future<void> shutdown() async {
-    return httpServer.close();
+    return server.close();
   }
 
-  void _addCorsHeaders(HttpRequest request) {
-    request.response.headers.add("Access-Control-Allow-Origin", "*");
-    request.response.headers
-        .add("Access-Control-Allow-Methods", "POST,GET,DELETE,PUT,OPTIONS");
-  }
-
-  void _router(String route, HttpRequest request) {
-    final method = request.method;
-
-    // CORS Headers
-    _addCorsHeaders(request);
-
-    // CORS Preflight.
-    if (method == 'OPTIONS') {
-      request.response.statusCode = HttpStatus.noContent;
-      request.response.headers.add('Access-Control-Max-Age', '86400');
-      request.response.close();
-      return;
-    }
-
-    switch (route) {
-      case '/':
-        if (method == 'GET') _handleRootReq(request);
-        break;
-      case '/upload':
-        if (method == 'PUT') _handleUploadReq(request);
-        break;
-      case '/playback':
-        if (method == 'PUT') _handlePlaybackReq(request);
-        break;
-    }
-  }
-
-  void _handlePlaybackReq(HttpRequest request) async {
-    await for (var data in request) {
+  Future<Response> _handlePlaybackReq(Request request) async {
+    await for (var data in request.read()) {
       // TODO: Check the length of that Data isnt something massive, in case we try to send a Binary Blob to this route.
       final String command = utf8.decode(data);
       switch (command) {
@@ -101,14 +96,15 @@ class Server {
         case 'prev':
           onPlaybackCommand?.call(PlaybackCommand.prev);
           break;
+        default:
+          return Response.notFound(null);
       }
     }
 
-    request.response.statusCode = HttpStatus.ok;
-    request.response.close();
+    return Response.ok(null);
   }
 
-  void _handleUploadReq(HttpRequest request) async {
+  Future<Response> _handleUploadReq(Request request) async {
     // TODO : Handle this better. Calling request.headers.contentType accesses the Stream which then throws an error when you try to 'await for' it below.
 
     // if (request.headers.contentType != ContentType.binary) {
@@ -117,23 +113,15 @@ class Server {
 
     final buffer = <int>[];
 
-    await for (var bytes in request) {
+    await for (var bytes in request.read()) {
       buffer.addAll(bytes.toList());
     }
 
     // TODO: Verify the File is sane before writing it into storage.
 
-    print("Received");
-
     await Storage.instance!.copyShowFileIntoPlayerStorage(buffer);
-
-    request.response.close();
-
     onShowFileReceived?.call();
-  }
 
-  void _handleRootReq(HttpRequest request) {
-    request.response.write('Here comes some HTML');
-    request.response.close();
+    return Response.ok(null);
   }
 }
