@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:castboard_core/models/RemoteShowData.dart';
 import 'package:castboard_core/storage/Storage.dart';
 import 'package:castboard_player/server/CorsMiddleware.dart';
+import 'package:castboard_player/server/routeHandlers.dart';
 
 // Shelf
 import 'package:shelf/shelf.dart';
@@ -11,6 +13,8 @@ import 'package:shelf_static/shelf_static.dart';
 
 typedef void OnPlaybackCommandReceivedCallback(PlaybackCommand command);
 typedef void OnShowFileReceivedAndStoredCallback();
+typedef RemoteShowData OnShowDataPullCallback();
+typedef Future<bool> OnShowDataReceivedCallback(RemoteShowData data);
 
 // Config
 const _staticFilesPath = 'static/';
@@ -28,6 +32,8 @@ class Server {
   final int port;
   final OnPlaybackCommandReceivedCallback? onPlaybackCommand;
   final OnShowFileReceivedAndStoredCallback? onShowFileReceived;
+  final OnShowDataPullCallback? onShowDataPull;
+  final OnShowDataReceivedCallback? onShowDataReceived;
 
   late HttpServer server;
 
@@ -36,6 +42,8 @@ class Server {
     this.port = 8080,
     this.onPlaybackCommand,
     this.onShowFileReceived,
+    this.onShowDataPull,
+    this.onShowDataReceived,
   });
 
   Future<void> initalize() async {
@@ -53,75 +61,41 @@ class Server {
         address,
         port);
     print("Server Running");
-    // _runServerLoop(server);
     return;
   }
 
   Router _initializeRouter() {
     Router router = Router();
+    
+    // Static Files Handler
     router.get(
         '/',
-        createStaticHandler(_staticFilesPath,
-            defaultDocument: _defaultDocument,
-            listDirectories: true
-            ));
+        createStaticHandler(
+          _staticFilesPath,
+          defaultDocument: _defaultDocument,
+          listDirectories: true,
+        ));
 
     // Playback.
-    router.put('/playback', _handlePlaybackReq);
+    router.put('/playback',
+        (Request req) => handlePlaybackReq(req, onPlaybackCommand));
 
     // Show File Upload
-    router.put('/upload', _handleUploadReq);
+    router.put(
+        '/upload', (Request req) => handleUploadReq(req, onShowFileReceived));
+
+    // Show Data Pull
+    router.get(
+        '/show', (Request req) => handleShowDataPull(req, onShowDataPull));
+
+    // Show Data Push
+    router.post(
+        '/show', (Request req) => handleShowDataPost(req, onShowDataReceived));
 
     return router;
   }
 
   Future<void> shutdown() async {
     return server.close();
-  }
-
-  Future<Response> _handlePlaybackReq(Request request) async {
-    await for (var data in request.read()) {
-      // TODO: Check the length of that Data isnt something massive, in case we try to send a Binary Blob to this route.
-      final String command = utf8.decode(data);
-      switch (command) {
-        case 'play':
-          onPlaybackCommand?.call(PlaybackCommand.play);
-          break;
-        case 'pause':
-          onPlaybackCommand?.call(PlaybackCommand.pause);
-          break;
-        case 'next':
-          onPlaybackCommand?.call(PlaybackCommand.next);
-          break;
-        case 'prev':
-          onPlaybackCommand?.call(PlaybackCommand.prev);
-          break;
-        default:
-          return Response.notFound(null);
-      }
-    }
-
-    return Response.ok(null);
-  }
-
-  Future<Response> _handleUploadReq(Request request) async {
-    // TODO : Handle this better. Calling request.headers.contentType accesses the Stream which then throws an error when you try to 'await for' it below.
-
-    // if (request.headers.contentType != ContentType.binary) {
-    //   request.response.close();
-    // }
-
-    final buffer = <int>[];
-
-    await for (var bytes in request.read()) {
-      buffer.addAll(bytes.toList());
-    }
-
-    // TODO: Verify the File is sane before writing it into storage.
-
-    await Storage.instance!.copyShowFileIntoPlayerStorage(buffer);
-    onShowFileReceived?.call();
-
-    return Response.ok(null);
   }
 }

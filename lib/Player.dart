@@ -7,6 +7,7 @@ import 'package:castboard_core/inherited/RenderScaleProvider.dart';
 import 'package:castboard_core/layout-canvas/LayoutCanvas.dart';
 import 'package:castboard_core/models/ActorModel.dart';
 import 'package:castboard_core/models/ActorRef.dart';
+import 'package:castboard_core/models/CastChangeModel.dart';
 import 'package:castboard_core/models/PresetModel.dart';
 import 'package:castboard_core/models/SlideSizeModel.dart';
 import 'package:castboard_core/models/TrackModel.dart';
@@ -20,7 +21,7 @@ class Player extends StatelessWidget {
   final Map<String, SlideModel> slides;
   final Map<TrackRef, TrackModel> tracks;
   final Map<ActorRef, ActorModel> actors;
-  final PresetModel? currentPreset;
+  final CastChangeModel displayedCastChange;
   final String currentSlideId;
   final SlideSizeModel slideSize;
   final SlideOrientation slideOrientation;
@@ -30,7 +31,7 @@ class Player extends StatelessWidget {
     required this.slides,
     required this.tracks,
     required this.actors,
-    this.currentPreset,
+    required this.displayedCastChange,
     required this.currentSlideId,
     required this.slideSize,
     required this.slideOrientation,
@@ -61,7 +62,7 @@ class Player extends StatelessWidget {
           slide: slides[currentSlideId],
           actors: actors,
           tracks: tracks,
-          castChange: currentPreset?.castChange,
+          castChange: displayedCastChange,
         ),
         renderScale: renderScale,
       ),

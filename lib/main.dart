@@ -1,12 +1,13 @@
 import 'package:castboard_core/classes/StandardSlideSizes.dart';
 import 'package:castboard_core/enums.dart';
-import 'package:castboard_core/font-loading/FontLoadCandidate.dart';
-import 'package:castboard_core/font-loading/FontLoading.dart';
-import 'package:castboard_core/font-loading/FontLoadingResult.dart';
 import 'package:castboard_core/models/ActorModel.dart';
 import 'package:castboard_core/models/ActorRef.dart';
+import 'package:castboard_core/models/CastChangeModel.dart';
 import 'package:castboard_core/models/FontModel.dart';
 import 'package:castboard_core/models/PresetModel.dart';
+import 'package:castboard_core/models/RemoteCastChangeData.dart';
+import 'package:castboard_core/models/RemoteShowData.dart';
+import 'package:castboard_core/models/ShowDataModel.dart';
 import 'package:castboard_core/models/SlideSizeModel.dart';
 import 'package:castboard_core/models/TrackModel.dart';
 import 'package:castboard_core/models/SlideModel.dart';
@@ -41,14 +42,24 @@ class _AppRootState extends State<AppRoot> {
   String _startupStatus = 'Starting Up';
   Map<ActorRef, ActorModel> _actors = {};
   Map<TrackRef, TrackModel> _tracks = {};
+
+  // Presets and Cast Changes
   Map<String, PresetModel> _presets = {};
+  CastChangeModel _liveCastChangeEdits = CastChangeModel.initial();
+  String _currentPresetId = '';
+  List<String> _combinedPresetIds = const <String>[];
+
+  /// Represents the final fully composed Cast Change, composed from
+  /// [_currentPresetId], [_combinedPresetIds] and [_liveCastChangeEdits].
+  CastChangeModel _displayedCastChange = CastChangeModel.initial();
+
+  // Slides
   Map<String, SlideModel> _slides = {};
   SlideSizeModel _slideSize = StandardSlideSizes.defaultSize;
   SlideOrientation _slideOrientation = SlideOrientation.landscape;
 
   List<FontModel> _unloadedFonts = const <FontModel>[];
   SlideCycler? _cycler;
-  PresetModel? _currentPreset;
   String _currentSlideId = '';
 
   Server? _server;
@@ -58,11 +69,12 @@ class _AppRootState extends State<AppRoot> {
     super.initState();
 
     _server = Server(
-      address: '0.0.0.0',
-      port: 8080,
-      onPlaybackCommand: _handlePlaybackCommand,
-      onShowFileReceived: _handleShowFileReceived,
-    );
+        address: '0.0.0.0',
+        port: 8080,
+        onPlaybackCommand: _handlePlaybackCommand,
+        onShowFileReceived: _handleShowFileReceived,
+        onShowDataPull: _handleShowDataPull,
+        onShowDataReceived: _handleShowDataReceived);
     _initalizePlayer();
   }
 
@@ -85,7 +97,7 @@ class _AppRootState extends State<AppRoot> {
               slides: _slides,
               actors: _actors,
               tracks: _tracks,
-              currentPreset: _currentPreset,
+              displayedCastChange: _displayedCastChange,
               slideSize: _slideSize,
               slideOrientation: _slideOrientation,
             ),
@@ -147,22 +159,36 @@ class _AppRootState extends State<AppRoot> {
   }
 
   void _loadShow(ImportedShowData data) async {
+    // Dump current Slide Cycler.
     if (_cycler != null) {
       _cycler!.dispose();
     }
 
+    // Slides
     final sortedSlides = List<SlideModel>.from(data.slides.values)
       ..sort((a, b) => a.index - b.index);
-
     final initialSlide = sortedSlides.isNotEmpty ? sortedSlides.first : null;
 
-    final currentPreset = data.presets.isNotEmpty
-        ? data.presets[PresetModel.builtIn().uid]
-        : PresetModel.builtIn();
-
+    // Custom Fonts
     final unloadedFontIds = await loadCustomFonts(data.manifest.requiredFonts);
     final fontsLookup = Map<String, FontModel>.fromEntries(
         data.manifest.requiredFonts.map((font) => MapEntry(font.uid, font)));
+
+    // Playback State.
+    final currentPresetId = data.playbackState?.currentPresetId ?? '';
+    final combinedPresetIds = data.playbackState?.combinedPresetIds ?? const [];
+    final liveCastChangeEdits =
+        data.playbackState?.liveCastChangeEdits ?? CastChangeModel.initial();
+
+    // Compose the displayed Cast Change.
+    final displayedCastChange = CastChangeModel.compose(
+      base: data.presets[currentPresetId]?.castChange,
+      combined: combinedPresetIds
+          .map(
+              (id) => data.presets[id]?.castChange ?? CastChangeModel.initial())
+          .toList(),
+      liveEdits: liveCastChangeEdits,
+    );
 
     setState(() {
       _actors = data.actors;
@@ -175,10 +201,13 @@ class _AppRootState extends State<AppRoot> {
           slides: sortedSlides,
           initialSlide: initialSlide!,
           onSlideChange: _handleSlideCycle);
-      _currentPreset = currentPreset;
       _slideSize = StandardSlideSizes.all[data.slideSizeId] ??
           StandardSlideSizes.defaultSize;
       _slideOrientation = data.slideOrientation;
+      _currentPresetId = currentPresetId;
+      _combinedPresetIds = combinedPresetIds;
+      _liveCastChangeEdits = liveCastChangeEdits;
+      _displayedCastChange = displayedCastChange;
     });
 
     navigatorKey.currentState?.pushNamed(RouteNames.player);
@@ -196,6 +225,94 @@ class _AppRootState extends State<AppRoot> {
     }
 
     return;
+  }
+
+  RemoteShowData _handleShowDataPull() {
+    return RemoteShowData(
+        showData: ShowDataModel(
+          tracks: _tracks,
+          actors: _actors,
+          presets: _presets,
+        ),
+        playbackState: PlaybackStateData(
+          combinedPresetIds: _combinedPresetIds,
+          currentPresetId: _currentPresetId,
+          liveCastChangeEdits: _liveCastChangeEdits,
+        ));
+  }
+
+  Future<bool> _handleShowDataReceived(RemoteShowData data) async {
+    // Process and push to State.
+    // Presets.
+    final presets = _updatePresets(data, _presets);
+    setState(() {
+      _presets = presets;
+      _currentPresetId = data.playbackState.currentPresetId;
+      _combinedPresetIds = data.playbackState.combinedPresetIds;
+      _liveCastChangeEdits = data.playbackState.liveCastChangeEdits;
+      _displayedCastChange = CastChangeModel.compose(
+          base: presets[data.playbackState.currentPresetId]?.castChange,
+          combined: data.playbackState.combinedPresetIds
+              .map((id) => presets[id]?.castChange ?? CastChangeModel.initial())
+              .toList(),
+          liveEdits: data.playbackState.liveCastChangeEdits);
+    });
+
+    // Update Permanent Storage.
+    try {
+      await Storage.instance!.updatePlayerShowData(
+          presets: presets, playbackState: data.playbackState);
+    } catch (error) {
+      return false;
+    }
+
+    return true;
+  }
+
+  Map<String, PresetModel> _updatePresets(
+      RemoteShowData data, Map<String, PresetModel> existing) {
+    if (data.showModificationData == null) {
+      return existing;
+    }
+
+    final editedPresetIds = data.showModificationData!.editedPresetIds;
+    final freshPresetIds = data.showModificationData!.freshPresetIds;
+    final deletedPresetIds = data.showModificationData!.deletedPresetIds;
+
+    if (editedPresetIds.isEmpty &&
+        freshPresetIds.isEmpty &&
+        deletedPresetIds.isEmpty) {
+      return existing;
+    }
+
+    // Will be a map of all presets including new presets but not including deleted presets.
+    final incomingPresets = data.showData.presets;
+
+    // Delete any Presets marked to be deleted.
+    final trimmedPresets = Map<String, PresetModel>.from(existing)
+      ..removeWhere((key, value) => deletedPresetIds.contains(key));
+
+    // Append any new Presets. (Check they actually exist within incomingPresets first)
+    final withNewPresets = Map<String, PresetModel>.from(trimmedPresets)
+      ..addAll(
+        Map<String, PresetModel>.fromEntries(
+          freshPresetIds.where((id) => incomingPresets.containsKey(id)).map(
+                (id) => MapEntry(id, incomingPresets[id]!),
+              ),
+        ),
+      );
+
+    // Update Presets. (Check they actually exist within incomingPresets first).
+    final withUpdatedPresets = Map<String, PresetModel>.from(withNewPresets)
+      ..addAll(
+        Map<String, PresetModel>.fromEntries(
+          editedPresetIds.where((id) => incomingPresets.containsKey(id)).map(
+                (id) => MapEntry(id, incomingPresets[id]!),
+              ),
+        ),
+      );
+
+    return withUpdatedPresets;
   }
 
   @override
