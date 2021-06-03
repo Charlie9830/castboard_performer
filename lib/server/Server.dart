@@ -54,10 +54,17 @@ class Server {
     //   print(utf8.decode(result));
     // });
 
+    final staticFileHandler = createStaticHandler(
+          _staticFilesPath,
+          defaultDocument: _defaultDocument,
+        );
     final router = _initializeRouter();
+    
+
+    final cascade = Cascade().add(staticFileHandler).add(router);
 
     server = await shelf_io.serve(
-        Pipeline().addMiddleware(corsMiddleware).addHandler(router),
+        Pipeline().addMiddleware(corsMiddleware).addHandler(cascade.handler),
         address,
         port);
     print("Server Running");
@@ -66,16 +73,7 @@ class Server {
 
   Router _initializeRouter() {
     Router router = Router();
-    
-    // Static Files Handler
-    router.get(
-        '/',
-        createStaticHandler(
-          _staticFilesPath,
-          defaultDocument: _defaultDocument,
-          listDirectories: true,
-        ));
-
+  
     // Playback.
     router.put('/playback',
         (Request req) => handlePlaybackReq(req, onPlaybackCommand));
