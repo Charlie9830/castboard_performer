@@ -172,17 +172,29 @@ class _AppRootState extends State<AppRoot> {
     // Custom Fonts
     final unloadedFontIds = await loadCustomFonts(data.manifest.requiredFonts);
     final fontsLookup = Map<String, FontModel>.fromEntries(
-        data.manifest.requiredFonts.map((font) => MapEntry(font.uid, font)));
+      data.manifest.requiredFonts.map(
+        (font) => MapEntry(font.uid, font),
+      ),
+    );
 
     // Playback State.
-    final currentPresetId = data.playbackState?.currentPresetId ?? '';
+    
+    // Really try not to show a blank Preset. Fallback to the Default Preset if anything is missing.
+    String currentPresetId =
+        data.playbackState?.currentPresetId ?? PresetModel.builtIn().uid;
+    currentPresetId =
+        currentPresetId == '' ? PresetModel.builtIn().uid : currentPresetId;
+    final currentPreset =
+        data.presets[currentPresetId] ?? PresetModel.builtIn();
+
+    // Get ancilliary Preset data.
     final combinedPresetIds = data.playbackState?.combinedPresetIds ?? const [];
     final liveCastChangeEdits =
         data.playbackState?.liveCastChangeEdits ?? CastChangeModel.initial();
 
     // Compose the displayed Cast Change.
     final displayedCastChange = CastChangeModel.compose(
-      base: data.presets[currentPresetId]?.castChange,
+      base: currentPreset.castChange,
       combined: combinedPresetIds
           .map(
               (id) => data.presets[id]?.castChange ?? CastChangeModel.initial())

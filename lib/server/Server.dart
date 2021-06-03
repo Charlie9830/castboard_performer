@@ -84,6 +84,11 @@ class Server {
     router.put(
         '/upload', (Request req) => handleUploadReq(req, onShowFileReceived));
 
+    // Show File Download
+    router.get(
+      '/download', (Request req) => handleDownloadReq(req)
+    );
+
     // Show Data Pull
     router.get(
         '/show', (Request req) => handleShowDataPull(req, onShowDataPull));

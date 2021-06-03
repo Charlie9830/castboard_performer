@@ -1,8 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:castboard_core/models/RemoteShowData.dart';
 import 'package:castboard_core/storage/Storage.dart';
 import 'package:castboard_player/server/Server.dart';
+import 'package:crypto/crypto.dart';
 import 'package:shelf/shelf.dart';
 
 Future<Response> handleShowDataPull(
@@ -51,48 +53,65 @@ Future<Response> handleShowDataPost(
   }
 }
 
-Future<Response> handleUploadReq(Request request, dynamic onShowFileReceived) async {
-    // TODO : Handle this better. Calling request.headers.contentType accesses the Stream which then throws an error when you try to 'await for' it below.
+Future<Response> handleDownloadReq(Request request) async {
+  final file = Storage.instance!.getPlayerStorageFile();
 
-    // if (request.headers.contentType != ContentType.binary) {
-    //   request.response.close();
-    // }
-
-    final buffer = <int>[];
-
-    await for (var bytes in request.read()) {
-      buffer.addAll(bytes.toList());
-    }
-
-    // TODO: Verify the File is sane before writing it into storage.
-
-    await Storage.instance!.copyShowFileIntoPlayerStorage(buffer);
-    onShowFileReceived?.call();
-
-    return Response.ok(null);
+  if (await file.exists() == false) {
+    return Response.notFound('File not Found');
   }
 
-  Future<Response> handlePlaybackReq(Request request, dynamic onPlaybackCommand) async {
-    await for (var data in request.read()) {
-      // TODO: Check the length of that Data isnt something massive, in case we try to send a Binary Blob to this route.
-      final String command = utf8.decode(data);
-      switch (command) {
-        case 'play':
-          onPlaybackCommand?.call(PlaybackCommand.play);
-          break;
-        case 'pause':
-          onPlaybackCommand?.call(PlaybackCommand.pause);
-          break;
-        case 'next':
-          onPlaybackCommand?.call(PlaybackCommand.next);
-          break;
-        case 'prev':
-          onPlaybackCommand?.call(PlaybackCommand.prev);
-          break;
-        default:
-          return Response.notFound(null);
-      }
-    }
+  final stat = await file.stat();
 
-    return Response.ok(null);
+  final headers = {
+    HttpHeaders.contentLengthHeader: stat.size.toString(),
+  };
+
+  return Response.ok(file.openRead(), headers: headers);
+}
+
+Future<Response> handleUploadReq(
+    Request request, dynamic onShowFileReceived) async {
+  if (request.contentLength == null || request.contentLength == 0) {
+    return Response(400); // Bad Request.
   }
+
+  final buffer = <int>[];
+  await for (var bytes in request.read()) {
+    buffer.addAll(bytes.toList());
+  }
+
+  if (await Storage.instance!.validateShowFile(buffer) == false) {
+    return Response(415); // Unsuported Media Format.
+  }
+
+  await Storage.instance!.copyShowFileIntoPlayerStorage(buffer);
+  onShowFileReceived?.call();
+
+  return Response.ok(null);
+}
+
+Future<Response> handlePlaybackReq(
+    Request request, dynamic onPlaybackCommand) async {
+  await for (var data in request.read()) {
+    // TODO: Check the length of that Data isnt something massive, in case we try to send a Binary Blob to this route.
+    final String command = utf8.decode(data);
+    switch (command) {
+      case 'play':
+        onPlaybackCommand?.call(PlaybackCommand.play);
+        break;
+      case 'pause':
+        onPlaybackCommand?.call(PlaybackCommand.pause);
+        break;
+      case 'next':
+        onPlaybackCommand?.call(PlaybackCommand.next);
+        break;
+      case 'prev':
+        onPlaybackCommand?.call(PlaybackCommand.prev);
+        break;
+      default:
+        return Response.notFound(null);
+    }
+  }
+
+  return Response.ok(null);
+}
