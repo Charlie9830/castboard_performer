@@ -1,11 +1,11 @@
 import 'dart:io';
 import 'package:castboard_core/models/RemoteShowData.dart';
-import 'package:castboard_player/server/CorsMiddleware.dart';
 import 'package:castboard_player/server/routeHandlers.dart';
 
 // Shelf
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
+import 'package:shelf_cors_headers/shelf_cors_headers.dart';
 import 'package:shelf_router/shelf_router.dart';
 import 'package:shelf_static/shelf_static.dart';
 
@@ -53,16 +53,15 @@ class Server {
     // });
 
     final staticFileHandler = createStaticHandler(
-          _staticFilesPath,
-          defaultDocument: _defaultDocument,
-        );
+      _staticFilesPath,
+      defaultDocument: _defaultDocument,
+    );
     final router = _initializeRouter();
-    
 
     final cascade = Cascade().add(staticFileHandler).add(router);
 
     server = await shelf_io.serve(
-        Pipeline().addMiddleware(corsMiddleware).addHandler(cascade.handler),
+        Pipeline().addMiddleware(corsHeaders()).addHandler(cascade.handler),
         address,
         port);
     print("Server Running");
@@ -71,7 +70,7 @@ class Server {
 
   Router _initializeRouter() {
     Router router = Router();
-  
+
     // Playback.
     router.put('/playback',
         (Request req) => handlePlaybackReq(req, onPlaybackCommand));
@@ -81,9 +80,7 @@ class Server {
         '/upload', (Request req) => handleUploadReq(req, onShowFileReceived));
 
     // Show File Download
-    router.get(
-      '/download', (Request req) => handleDownloadReq(req)
-    );
+    router.get('/download', (Request req) => handleDownloadReq(req));
 
     // Show Data Pull
     router.get(
