@@ -49,8 +49,6 @@ class Player extends StatelessWidget {
     final windowSize = _getWindowSize(context);
     final renderScale = _getRenderScale(windowSize, actualSlideSize);
 
-    print(nextSlideId);
-
     return Stack(
       fit: StackFit.passthrough,
       children: [
@@ -59,7 +57,7 @@ class Player extends StatelessWidget {
             slide: slides[currentSlideId]!,
             actualSlideSize: actualSlideSize,
             renderScale: renderScale),
-        // Offstaged Viewport.
+        // Offstaged Viewport, preRenders the next Slide.
         if (slides[nextSlideId] != null)
           Offstage(
             offstage: true,

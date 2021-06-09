@@ -80,13 +80,13 @@ class SlideCycler {
     }
 
     if (slides.length == 1) {
-      return _currentSlide;
+      return current;
     }
 
     if (current!.index == slides.length - 1) {
       return slides.first;
     } else {
-      return slides[_currentSlide!.index + 1];
+      return slides[current.index + 1];
     }
   }
 
@@ -96,13 +96,13 @@ class SlideCycler {
     }
 
     if (slides.length == 1) {
-      return _currentSlide;
+      return current;
     }
 
     if (current!.index == 0) {
       return slides.last;
     } else {
-      return slides[_currentSlide!.index - 1];
+      return slides[current.index - 1];
     }
   }
 

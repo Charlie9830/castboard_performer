@@ -173,6 +173,24 @@ class _AppRootState extends State<AppRoot> {
     final initialSlide = sortedSlides.isNotEmpty ? sortedSlides.first : null;
     final initialNextSlide = sortedSlides.length >= 2 ? sortedSlides[1] : null;
 
+    // Image Cache.
+    _resetImageCache(context);
+
+    // Pre Cache Backgrounds (Avoids Slides snapping to White or background color during transition).
+    // We don't do this for headshots as we render each slide Offstage before showing it, this progressively adds all the
+    // headshots into the cache.
+    // If we wanted to preCache the headshots, we would have to either preCache every headshot, which isn't efficent as we
+    // are rarely displaying every headshot, otherwise we would have to analyze each slide and compare it against the cast change 
+    // to preCache the images we are going to need, as well as managing a system for evicting unused images from the cache.
+    final backgroundFiles = sortedSlides.map(
+        (slide) => Storage.instance!.getBackgroundFile(slide.backgroundRef));
+    final preCacheImageRequests = backgroundFiles
+        .where((file) => file != null)
+        .map((file) => precacheImage(FileImage(file!), context));
+
+    Future.wait(preCacheImageRequests)
+        .then((result) => print('Backgrounds Cached'));
+
     // Custom Fonts
     final unloadedFontIds = await loadCustomFonts(data.manifest.requiredFonts);
     final fontsLookup = Map<String, FontModel>.fromEntries(
@@ -228,6 +246,15 @@ class _AppRootState extends State<AppRoot> {
     });
 
     navigatorKey.currentState?.pushNamed(RouteNames.player);
+  }
+
+  void _resetImageCache(BuildContext context) {
+    if (imageCache == null) {
+      // TODO Log that you we failed to increase the imageCache Maximum size.
+    }
+
+    imageCache!.clear();
+    imageCache!.maximumSizeBytes = 400 * 1000000;
   }
 
   void _handleSlideCycle(
