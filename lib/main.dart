@@ -61,6 +61,7 @@ class _AppRootState extends State<AppRoot> {
   List<FontModel> _unloadedFonts = const <FontModel>[];
   SlideCycler? _cycler;
   String _currentSlideId = '';
+  String _nextSlideId = '';
 
   Server? _server;
 
@@ -94,6 +95,8 @@ class _AppRootState extends State<AppRoot> {
             ),
         RouteNames.player: (_) => Player(
               currentSlideId: _currentSlideId,
+              nextSlideId:
+                  _nextSlideId, // The next slide is 'Offstaged' to force Image Caching
               slides: _slides,
               actors: _actors,
               tracks: _tracks,
@@ -168,6 +171,7 @@ class _AppRootState extends State<AppRoot> {
     final sortedSlides = List<SlideModel>.from(data.slides.values)
       ..sort((a, b) => a.index - b.index);
     final initialSlide = sortedSlides.isNotEmpty ? sortedSlides.first : null;
+    final initialNextSlide = sortedSlides.length >= 2 ? sortedSlides[1] : null;
 
     // Custom Fonts
     final unloadedFontIds = await loadCustomFonts(data.manifest.requiredFonts);
@@ -178,7 +182,7 @@ class _AppRootState extends State<AppRoot> {
     );
 
     // Playback State.
-    
+
     // Really try not to show a blank Preset. Fallback to the Default Preset if anything is missing.
     String currentPresetId =
         data.playbackState?.currentPresetId ?? PresetModel.builtIn().uid;
@@ -208,6 +212,7 @@ class _AppRootState extends State<AppRoot> {
       _presets = data.presets;
       _slides = data.slides;
       _currentSlideId = initialSlide?.uid ?? _currentSlideId;
+      _nextSlideId = initialNextSlide?.uid ?? '';
       _unloadedFonts = unloadedFontIds.map((id) => fontsLookup[id]!).toList();
       _cycler = SlideCycler(
           slides: sortedSlides,
@@ -225,9 +230,11 @@ class _AppRootState extends State<AppRoot> {
     navigatorKey.currentState?.pushNamed(RouteNames.player);
   }
 
-  void _handleSlideCycle(String slideId, bool playing) {
+  void _handleSlideCycle(
+      String currentSlideId, String nextSlideId, bool playing) {
     setState(() {
-      _currentSlideId = slideId;
+      _currentSlideId = currentSlideId;
+      _nextSlideId = nextSlideId;
     });
   }
 

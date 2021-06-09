@@ -23,6 +23,7 @@ class Player extends StatelessWidget {
   final Map<ActorRef, ActorModel> actors;
   final CastChangeModel displayedCastChange;
   final String currentSlideId;
+  final String nextSlideId;
   final SlideSizeModel slideSize;
   final SlideOrientation slideOrientation;
 
@@ -35,6 +36,7 @@ class Player extends StatelessWidget {
     required this.currentSlideId,
     required this.slideSize,
     required this.slideOrientation,
+    required this.nextSlideId,
   }) : super(key: key);
 
   @override
@@ -47,6 +49,35 @@ class Player extends StatelessWidget {
     final windowSize = _getWindowSize(context);
     final renderScale = _getRenderScale(windowSize, actualSlideSize);
 
+    print(nextSlideId);
+
+    return Stack(
+      fit: StackFit.passthrough,
+      children: [
+        // Primary Viewport.
+        buildSlideViewport(
+            slide: slides[currentSlideId]!,
+            actualSlideSize: actualSlideSize,
+            renderScale: renderScale),
+        // Offstaged Viewport.
+        if (slides[nextSlideId] != null)
+          Offstage(
+            offstage: true,
+            child: buildSlideViewport(
+              slide: slides[nextSlideId]!,
+              actualSlideSize: actualSlideSize,
+              renderScale: renderScale,
+            ),
+          )
+      ],
+    );
+  }
+
+  SlideViewport buildSlideViewport({
+    required SlideModel slide,
+    required Size actualSlideSize,
+    required double renderScale,
+  }) {
     return SlideViewport(
       slideWidth: actualSlideSize.width.toInt(),
       slideHeight: actualSlideSize.height.toInt(),
@@ -59,7 +90,7 @@ class Player extends StatelessWidget {
       child: LayoutCanvas(
         interactive: false,
         elements: buildElements(
-          slide: slides[currentSlideId],
+          slide: slide,
           actors: actors,
           tracks: tracks,
           castChange: displayedCastChange,

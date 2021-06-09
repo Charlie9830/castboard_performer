@@ -2,7 +2,8 @@ import 'dart:async';
 
 import 'package:castboard_core/models/SlideModel.dart';
 
-typedef void OnSlideChangeCallback(String slideId, bool playing);
+typedef void OnSlideChangeCallback(
+    String slideId, String nextSlideId, bool playing);
 
 class SlideCycler {
   final List<SlideModel> slides;
@@ -44,31 +45,37 @@ class SlideCycler {
   }
 
   void stepForward() {
+    final newCurrentSlide = _getNextSlide(_currentSlide);
+    final newNextSlide = _getNextSlide(newCurrentSlide);
+
     _playing = false;
-    _currentSlide = _getNextSlide()!;
-    _notifyListeners(_currentSlide, _playing);
+    _currentSlide = newCurrentSlide;
+    _notifyListeners(newCurrentSlide, newNextSlide, _playing);
   }
 
   void stepBack() {
+    final newCurrentSlide = _getPrevSlide(_currentSlide);
+    final newPrevSlide = _getPrevSlide(newCurrentSlide);
+
     _playing = false;
-    _currentSlide = _getPrevSlide()!;
-    _notifyListeners(_currentSlide, _playing);
+    _currentSlide = newCurrentSlide;
+    _notifyListeners(newCurrentSlide, newPrevSlide, _playing);
   }
 
   void _cycle() {
     if (_playing) {
-      final newSlide = _getNextSlide()!;
+      final newSlide = _getNextSlide(_currentSlide)!;
       final holdDuration =
           Duration(seconds: _currentSlide!.holdTime.floor().toInt());
 
       _currentSlide = newSlide;
       _timer = Timer(holdDuration, () => _cycle());
-      _notifyListeners(_currentSlide, _playing);
+      _notifyListeners(_currentSlide, _getNextSlide(_currentSlide), _playing);
     }
   }
 
-  SlideModel? _getNextSlide() {
-    if (_currentSlide == null && slides.isEmpty) {
+  SlideModel? _getNextSlide(SlideModel? current) {
+    if (current == null && slides.isEmpty) {
       return null;
     }
 
@@ -76,15 +83,15 @@ class SlideCycler {
       return _currentSlide;
     }
 
-    if (_currentSlide!.index == slides.length - 1) {
+    if (current!.index == slides.length - 1) {
       return slides.first;
     } else {
       return slides[_currentSlide!.index + 1];
     }
   }
 
-  SlideModel? _getPrevSlide() {
-    if (_currentSlide == null && slides.isEmpty) {
+  SlideModel? _getPrevSlide(SlideModel? current) {
+    if (current == null && slides.isEmpty) {
       return null;
     }
 
@@ -92,16 +99,17 @@ class SlideCycler {
       return _currentSlide;
     }
 
-    if (_currentSlide!.index == 0) {
+    if (current!.index == 0) {
       return slides.last;
     } else {
       return slides[_currentSlide!.index - 1];
     }
   }
 
-  void _notifyListeners(SlideModel? currentSlide, bool playing) {
+  void _notifyListeners(
+      SlideModel? currentSlide, SlideModel? nextSlide, bool playing) {
     if (currentSlide != null) {
-      onSlideChange.call(currentSlide.uid, playing);
+      onSlideChange.call(currentSlide.uid, nextSlide?.uid ?? '', playing);
     }
   }
 
