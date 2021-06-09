@@ -58,11 +58,16 @@ class _AppRootState extends State<AppRoot> {
   SlideSizeModel _slideSize = StandardSlideSizes.defaultSize;
   SlideOrientation _slideOrientation = SlideOrientation.landscape;
 
+  // Fonts
   List<FontModel> _unloadedFonts = const <FontModel>[];
+
+  // Playback
+  bool _playing = false;
   SlideCycler? _cycler;
   String _currentSlideId = '';
   String _nextSlideId = '';
 
+  // Non Tracked State
   Server? _server;
 
   @override
@@ -103,6 +108,7 @@ class _AppRootState extends State<AppRoot> {
               displayedCastChange: _displayedCastChange,
               slideSize: _slideSize,
               slideOrientation: _slideOrientation,
+              playing: _playing,
             ),
         RouteNames.configViewer: (_) => ConfigViewer(),
       },
@@ -180,7 +186,7 @@ class _AppRootState extends State<AppRoot> {
     // We don't do this for headshots as we render each slide Offstage before showing it, this progressively adds all the
     // headshots into the cache.
     // If we wanted to preCache the headshots, we would have to either preCache every headshot, which isn't efficent as we
-    // are rarely displaying every headshot, otherwise we would have to analyze each slide and compare it against the cast change 
+    // are rarely displaying every headshot, otherwise we would have to analyze each slide and compare it against the cast change
     // to preCache the images we are going to need, as well as managing a system for evicting unused images from the cache.
     final backgroundFiles = sortedSlides.map(
         (slide) => Storage.instance!.getBackgroundFile(slide.backgroundRef));
@@ -235,7 +241,8 @@ class _AppRootState extends State<AppRoot> {
       _cycler = SlideCycler(
           slides: sortedSlides,
           initialSlide: initialSlide!,
-          onSlideChange: _handleSlideCycle);
+          onPlaybackOrSlideChange: _handleSlideCycle);
+      _playing = true;
       _slideSize = StandardSlideSizes.all[data.slideSizeId] ??
           StandardSlideSizes.defaultSize;
       _slideOrientation = data.slideOrientation;
@@ -262,6 +269,7 @@ class _AppRootState extends State<AppRoot> {
     setState(() {
       _currentSlideId = currentSlideId;
       _nextSlideId = nextSlideId;
+      _playing = playing;
     });
   }
 

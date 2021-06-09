@@ -17,6 +17,8 @@ import 'package:castboard_core/slide-viewport/SlideViewport.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+const double _basePauseIndicatorSize = 124;
+
 class Player extends StatelessWidget {
   final Map<String, SlideModel> slides;
   final Map<TrackRef, TrackModel> tracks;
@@ -26,6 +28,7 @@ class Player extends StatelessWidget {
   final String nextSlideId;
   final SlideSizeModel slideSize;
   final SlideOrientation slideOrientation;
+  final bool playing;
 
   const Player({
     Key? key,
@@ -37,6 +40,7 @@ class Player extends StatelessWidget {
     required this.slideSize,
     required this.slideOrientation,
     required this.nextSlideId,
+    this.playing = true,
   }) : super(key: key);
 
   @override
@@ -66,9 +70,30 @@ class Player extends StatelessWidget {
               actualSlideSize: actualSlideSize,
               renderScale: renderScale,
             ),
-          )
+          ),
+        _buildPauseIndicator(renderScale)
       ],
     );
+  }
+
+  AnimatedPositioned _buildPauseIndicator(double renderScale) {
+    return AnimatedPositioned(
+        top: 24 * renderScale,
+        right: playing ? -((24 + _basePauseIndicatorSize) * renderScale) : 24 * renderScale,
+        duration: Duration(milliseconds: 125),
+        child: Container(
+          width: _basePauseIndicatorSize * renderScale,
+          height: _basePauseIndicatorSize * renderScale,
+          decoration: BoxDecoration(
+            color: Colors.black,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            Icons.pause_circle_filled,
+            size: _basePauseIndicatorSize * renderScale,
+          ),
+        ),
+      );
   }
 
   SlideViewport buildSlideViewport({

@@ -7,16 +7,17 @@ typedef void OnSlideChangeCallback(
 
 class SlideCycler {
   final List<SlideModel> slides;
-  final OnSlideChangeCallback onSlideChange;
+  final OnSlideChangeCallback onPlaybackOrSlideChange;
 
   late bool _playing = true;
   late SlideModel? _currentSlide;
   Timer? _timer;
 
-  SlideCycler(
-      {required this.slides,
-      SlideModel? initialSlide,
-      required this.onSlideChange}) {
+  SlideCycler({
+    required this.slides,
+    SlideModel? initialSlide,
+    required this.onPlaybackOrSlideChange,
+  }) {
     _currentSlide = initialSlide;
     _playing = initialSlide != null;
 
@@ -37,11 +38,14 @@ class SlideCycler {
     }
 
     _timer = Timer(holdDuration, () => _cycle());
+
+    _notifyListeners(_currentSlide, _getNextSlide(_currentSlide), true);
   }
 
   void pause() {
     _playing = false;
     _timer?.cancel();
+    _notifyListeners(_currentSlide, _getNextSlide(_currentSlide), false);
   }
 
   void stepForward() {
@@ -109,7 +113,7 @@ class SlideCycler {
   void _notifyListeners(
       SlideModel? currentSlide, SlideModel? nextSlide, bool playing) {
     if (currentSlide != null) {
-      onSlideChange.call(currentSlide.uid, nextSlide?.uid ?? '', playing);
+      onPlaybackOrSlideChange.call(currentSlide.uid, nextSlide?.uid ?? '', playing);
     }
   }
 
