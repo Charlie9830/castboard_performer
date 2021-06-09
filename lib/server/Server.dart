@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:castboard_core/models/RemoteShowData.dart';
+import 'package:castboard_player/server/getAssetBundleRootPath.dart';
 import 'package:castboard_player/server/routeHandlers.dart';
+import 'package:path/path.dart' as p;
 
 // Shelf
 import 'package:shelf/shelf.dart';
@@ -15,7 +17,7 @@ typedef RemoteShowData OnShowDataPullCallback();
 typedef Future<bool> OnShowDataReceivedCallback(RemoteShowData data);
 
 // Config
-const _staticFilesPath = 'static/';
+const _webAppFilePath = 'web_app/';
 const _defaultDocument = 'index.html';
 
 enum PlaybackCommand {
@@ -52,10 +54,13 @@ class Server {
     //   print(utf8.decode(result));
     // });
 
+    // Serve directly from the _webAppFilePath. In future we may change this to the Asset Bundle Root so that we could
+    // serve routes to Debug logs etc.
     final staticFileHandler = createStaticHandler(
-      _staticFilesPath,
+      p.join(getAssetBundleRootPath(), _webAppFilePath),
       defaultDocument: _defaultDocument,
     );
+
     final router = _initializeRouter();
 
     final cascade = Cascade().add(staticFileHandler).add(router);
@@ -64,7 +69,6 @@ class Server {
         Pipeline().addMiddleware(corsHeaders()).addHandler(cascade.handler),
         address,
         port);
-    print("Server Running");
     return;
   }
 

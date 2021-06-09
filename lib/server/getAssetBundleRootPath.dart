@@ -8,15 +8,7 @@ String getAssetBundleRootPath() {
     return _getDebugAssetBundleRootPath();
   }
 
-  if (Platform.isWindows) {
-    return p.join(p.current, 'data', 'flutter_assets', 'assets');
-  }
-
-  if (Platform.isLinux) {
-    return 'tbc';
-  } else {
-    return 'doop';
-  }
+  return p.join(p.current, 'data', 'flutter_assets', 'assets');
 }
 
 String _getDebugAssetBundleRootPath() {
