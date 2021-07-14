@@ -1,5 +1,6 @@
 import 'package:castboard_core/classes/StandardSlideSizes.dart';
 import 'package:castboard_core/enums.dart';
+import 'package:castboard_core/logging/LoggingManager.dart';
 import 'package:castboard_core/models/ActorModel.dart';
 import 'package:castboard_core/models/ActorRef.dart';
 import 'package:castboard_core/models/CastChangeModel.dart';
@@ -25,8 +26,16 @@ import 'package:flutter/material.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-void main() {
+void main() async {
+  await _initLogging();
   runApp(AppRoot());
+}
+
+Future<void> _initLogging() async {
+  await LoggingManager.initialize(runAsRelease: true);
+  LoggingManager.instance.general.info('LoggingManager initialized.');
+  LoggingManager.instance.general.info('Application started');
+  return;
 }
 
 Server? server;
@@ -58,9 +67,6 @@ class _AppRootState extends State<AppRoot> {
   SlideSizeModel _slideSize = StandardSlideSizes.defaultSize;
   SlideOrientation _slideOrientation = SlideOrientation.landscape;
 
-  // Fonts
-  List<FontModel> _unloadedFonts = const <FontModel>[];
-
   // Playback
   bool _playing = false;
   SlideCycler? _cycler;
@@ -72,15 +78,20 @@ class _AppRootState extends State<AppRoot> {
 
   @override
   void initState() {
+    LoggingManager.instance.player.info('Initializing Player state');
     super.initState();
 
+    final String address = '0.0.0.0';
+    final int port = 8080;
+
     _server = Server(
-        address: '0.0.0.0',
-        port: 8080,
+        address: address,
+        port: port,
         onPlaybackCommand: _handlePlaybackCommand,
         onShowFileReceived: _handleShowFileReceived,
         onShowDataPull: _handleShowDataPull,
         onShowDataReceived: _handleShowDataReceived);
+
     _initalizePlayer();
   }
 
@@ -135,9 +146,15 @@ class _AppRootState extends State<AppRoot> {
   }
 
   void _handleShowFileReceived() async {
-    final data = await Storage.instance!.readFromPlayerStorage();
-
-    _loadShow(data);
+    LoggingManager.instance.player
+        .info("New show file received. Reading from storage");
+    try {
+      final data = await Storage.instance!.readFromPlayerStorage();
+      _loadShow(data);
+    } catch (e, stacktrace) {
+      LoggingManager.instance.player.severe(
+          "An error occured reading or loading show data", e, stacktrace);
+    }
   }
 
   void _updateStartupStatus(String status) {
@@ -149,37 +166,69 @@ class _AppRootState extends State<AppRoot> {
   void _initalizePlayer() async {
     _updateStartupStatus('Initializing internal storage');
     // Init Storage
-    await Storage.initalize(StorageMode.player);
+    try {
+      LoggingManager.instance.player.info('Initializing storage');
+      await Storage.initalize(StorageMode.player);
+      LoggingManager.instance.player.info("Storage initialization success");
+    } catch (e, stacktrace) {
+      LoggingManager.instance.player
+          .severe("Storage initialization failed", e, stacktrace);
+    }
 
     _updateStartupStatus('Initializing administration server');
     // Init Server.
-    await _initializeServer();
+    try {
+      LoggingManager.instance.player.info('Initializing Server');
+      await _initializeServer();
+      LoggingManager.instance.player.info('Server initialization success');
+    } catch (e, stacktrace) {
+      LoggingManager.instance.player
+          .severe("Server initialization failed", e, stacktrace);
+    }
 
+    LoggingManager.instance.player
+        .info("Searching for previously loaded show file");
     _updateStartupStatus('Looking for previously loaded show file');
     if (await Storage.instance!.isPlayerStoragePopulated()) {
-      final ImportedShowData data =
-          await Storage.instance!.readFromPlayerStorage();
+      try {
+        LoggingManager.instance.player
+            .info("Show file located, starting show file read");
+        final ImportedShowData data =
+            await Storage.instance!.readFromPlayerStorage();
+        LoggingManager.instance.player
+            .info("Show file read complete. Loading into state");
 
-      _updateStartupStatus('Loading show file');
-      _loadShow(data);
+        _updateStartupStatus('Loading show file');
+        _loadShow(data);
+
+        LoggingManager.instance.player.info("Show file loaded into state");
+      } catch (e, stacktrace) {
+        LoggingManager.instance.player
+            .severe("Show file load read failed", e, stacktrace);
+      }
     } else {
+      LoggingManager.instance.player
+          .info('No existing show file found. Proceeding to config route');
       navigatorKey.currentState?.pushNamed(RouteNames.configViewer);
     }
   }
 
   void _loadShow(ImportedShowData data) async {
     // Dump current Slide Cycler.
+    LoggingManager.instance.player.info("Reseting slide cycler");
     if (_cycler != null) {
       _cycler!.dispose();
     }
 
     // Slides
+    LoggingManager.instance.player.info('Sorting slides');
     final sortedSlides = List<SlideModel>.from(data.slides.values)
       ..sort((a, b) => a.index - b.index);
     final initialSlide = sortedSlides.isNotEmpty ? sortedSlides.first : null;
     final initialNextSlide = sortedSlides.length >= 2 ? sortedSlides[1] : null;
 
     // Image Cache.
+    LoggingManager.instance.player.info("Resetting image cache");
     _resetImageCache(context);
 
     // Pre Cache Backgrounds (Avoids Slides snapping to White or background color during transition).
@@ -188,25 +237,40 @@ class _AppRootState extends State<AppRoot> {
     // If we wanted to preCache the headshots, we would have to either preCache every headshot, which isn't efficent as we
     // are rarely displaying every headshot, otherwise we would have to analyze each slide and compare it against the cast change
     // to preCache the images we are going to need, as well as managing a system for evicting unused images from the cache.
+    LoggingManager.instance.player.info("Pre caching backgrounds");
     final backgroundFiles = sortedSlides.map(
         (slide) => Storage.instance!.getBackgroundFile(slide.backgroundRef));
     final preCacheImageRequests = backgroundFiles
         .where((file) => file != null)
         .map((file) => precacheImage(FileImage(file!), context));
 
-    Future.wait(preCacheImageRequests)
-        .then((result) => print('Backgrounds Cached'));
+    try {
+      await Future.wait(preCacheImageRequests);
+      LoggingManager.instance.player.info("Background pre cache complete");
+    } catch (e, stacktrace) {
+      LoggingManager.instance.player.warning(
+          "Some or all backgrounds could not be precached", e, stacktrace);
+    }
 
     // Custom Fonts
-    final unloadedFontIds = await loadCustomFonts(data.manifest.requiredFonts);
-    final fontsLookup = Map<String, FontModel>.fromEntries(
-      data.manifest.requiredFonts.map(
-        (font) => MapEntry(font.uid, font),
-      ),
-    );
+    try {
+      LoggingManager.instance.player.info("Loading custom fonts");
+      final unloadedFontIds =
+          await loadCustomFonts(data.manifest.requiredFonts);
+      if (unloadedFontIds.isNotEmpty) {
+        LoggingManager.instance.player.warning(
+            "${unloadedFontIds.length} fonts failed to load, IDs => $unloadedFontIds");
+      } else {
+        LoggingManager.instance.player.info("Fonts loaded successfully");
+      }
+    } catch (e, stacktrace) {
+      LoggingManager.instance.player
+          .severe("An error occured loading fonts", e, stacktrace);
+    }
 
     // Playback State.
-
+    LoggingManager.instance.player.info("Processing playback state");
+    LoggingManager.instance.player.info("Processing presets");
     // Really try not to show a blank Preset. Fallback to the Default Preset if anything is missing.
     String currentPresetId =
         data.playbackState?.currentPresetId ?? PresetModel.builtIn().uid;
@@ -221,6 +285,7 @@ class _AppRootState extends State<AppRoot> {
         data.playbackState?.liveCastChangeEdits ?? CastChangeModel.initial();
 
     // Compose the displayed Cast Change.
+    LoggingManager.instance.player.info("Composing the displayed cast change");
     final displayedCastChange = CastChangeModel.compose(
       base: currentPreset.castChange,
       combined: combinedPresetIds
@@ -237,7 +302,6 @@ class _AppRootState extends State<AppRoot> {
       _slides = data.slides;
       _currentSlideId = initialSlide?.uid ?? _currentSlideId;
       _nextSlideId = initialNextSlide?.uid ?? '';
-      _unloadedFonts = unloadedFontIds.map((id) => fontsLookup[id]!).toList();
       _cycler = SlideCycler(
           slides: sortedSlides,
           initialSlide: initialSlide!,
@@ -252,6 +316,8 @@ class _AppRootState extends State<AppRoot> {
       _displayedCastChange = displayedCastChange;
     });
 
+    LoggingManager.instance.player
+        .info("Load show completed. Pushing player route");
     navigatorKey.currentState?.pushNamed(RouteNames.player);
   }
 
@@ -282,6 +348,8 @@ class _AppRootState extends State<AppRoot> {
   }
 
   RemoteShowData _handleShowDataPull() {
+    LoggingManager.instance.player
+        .info("Show Data Pull requested from remote. Packaging show data...");
     return RemoteShowData(
         showData: ShowDataModel(
           tracks: _tracks,
@@ -296,9 +364,12 @@ class _AppRootState extends State<AppRoot> {
   }
 
   Future<bool> _handleShowDataReceived(RemoteShowData data) async {
+    LoggingManager.instance.player.info("Show Data received from remote.");
     // Process and push to State.
     // Presets.
+    LoggingManager.instance.player.info("Processing preset data");
     final presets = _updatePresets(data, _presets);
+    LoggingManager.instance.player.info('Pushing to state');
     setState(() {
       _presets = presets;
       _currentPresetId = data.playbackState.currentPresetId;
@@ -314,9 +385,15 @@ class _AppRootState extends State<AppRoot> {
 
     // Update Permanent Storage.
     try {
+      LoggingManager.instance.player.info("Updating permanent storage");
       await Storage.instance!.updatePlayerShowData(
           presets: presets, playbackState: data.playbackState);
-    } catch (error) {
+
+      LoggingManager.instance.player
+          .info('Permanent storage updated successfully');
+    } catch (e, stacktrace) {
+      LoggingManager.instance.player.warning(
+          'An Error occured whilst updating permanent storage', e, stacktrace);
       return false;
     }
 

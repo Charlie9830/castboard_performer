@@ -7,7 +7,7 @@ import 'package:castboard_core/storage/Storage.dart';
 /// Returns a Set of ids representing any Fonts that could not be loaded.
 /// This could be because the Engine rejected them, files were missing, FontModel.ref was invalid or bad.
 Future<Set<String>> loadCustomFonts(List<FontModel> requiredFonts) async {
-  if (requiredFonts == null || requiredFonts.isEmpty) {
+  if (requiredFonts.isEmpty) {
     return <String>{};
   }
 
@@ -29,9 +29,6 @@ Future<Set<String>> loadCustomFonts(List<FontModel> requiredFonts) async {
   await Future.wait(dataLoadRequests);
 
   final loadingResults = await FontLoading.loadFonts(candidates);
-  print('Good Fonts ${goodFonts.length}');
-  print('Missing Fonts ${missingFonts.length}');
-  print('Unloaded Fonts ${loadingResults.length}');
 
   return [
     ...loadingResults
