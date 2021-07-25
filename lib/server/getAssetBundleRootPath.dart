@@ -8,7 +8,18 @@ String getAssetBundleRootPath() {
     return _getDebugAssetBundleRootPath();
   }
 
-  return p.join(p.current, 'data', 'flutter_assets', 'assets');
+  if (Platform.isWindows) {
+    return p.join(p.current, 'data', 'flutter_assets', 'assets');
+  } 
+
+  if (Platform.isLinux) {
+    // Flutter-Pi Layout
+    return p.join(p.current, 'assets');
+  }
+
+  else {
+    throw "Platform not currently supported by getAssetBundleRootPath(). Add conditional handling for this platform";
+  }
 }
 
 String _getDebugAssetBundleRootPath() {
