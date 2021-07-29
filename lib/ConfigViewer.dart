@@ -1,3 +1,5 @@
+import 'package:castboard_player/compileTimeVariables.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class ConfigViewer extends StatelessWidget {
@@ -17,11 +19,8 @@ class ConfigViewer extends StatelessWidget {
           Column(
             children: [
               Text('No Showfile Loaded',
-                  style: Theme.of(context).textTheme.headline6),
-              vSpacer,
-              Text(
-                  'Please follow the instructions below to upload a your Showfile',
-                  style: Theme.of(context).textTheme.subtitle1),
+                  style: Theme.of(context).textTheme.headline6!.copyWith(
+                      color: Theme.of(context).colorScheme.secondary)),
               vSpacer,
               vSpacer,
             ],
@@ -35,13 +34,39 @@ class ConfigViewer extends StatelessWidget {
               cardMaxWidth: cardMaxWidth, hSpacer: hSpacer, vSpacer: vSpacer),
           vSpacer,
           Text(
-              'Enter the following address into your browser to access the Configuration Dashboard, Follow the instructions there to upload your Showfile',
+              'Enter the following address into your web browser to access the Configuration Dashboard',
               style: Theme.of(context).textTheme.subtitle1),
           vSpacer,
           _DashboardAddressCard(
             cardMaxWidth: cardMaxWidth,
           ),
           Spacer(),
+          _DebugInfoPanel(),
+          Spacer(),
+        ],
+      ),
+    );
+  }
+}
+
+class _DebugInfoPanel extends StatelessWidget {
+  const _DebugInfoPanel({
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return DefaultTextStyle(
+      style: Theme.of(context).textTheme.caption!,
+      child: Column(
+        children: [
+          Text(
+            'Yocto Asset Bundle Path = $kYoctoAssetBundlePath',
+          ),
+          Text(
+            'kDebugMode = $kDebugMode',
+          ),
+          Text('kReleaseMode = $kReleaseMode')
         ],
       ),
     );
@@ -61,12 +86,19 @@ class _DashboardAddressCard extends StatelessWidget {
     return Container(
         constraints: BoxConstraints(maxWidth: cardMaxWidth),
         child: Card(
-            child: Padding(
-                padding: EdgeInsets.all(16),
-                child: Center(
-                    child: Text('dashboard.castboard.net',
-                        style: Theme.of(context).textTheme.subtitle1!.copyWith(
-                            color: Theme.of(context).accentColor))))));
+          child: Padding(
+            padding: EdgeInsets.all(16),
+            child: Center(
+              child: Text(
+                'http://192.168.1.1',
+                style: Theme.of(context)
+                    .textTheme
+                    .subtitle1!
+                    .copyWith(color: Theme.of(context).accentColor),
+              ),
+            ),
+          ),
+        ));
   }
 }
 
@@ -97,7 +129,7 @@ class _WirelessConfigCard extends StatelessWidget {
                 Text('Network Name',
                     style: Theme.of(context).textTheme.subtitle1),
                 hSpacer,
-                Text('CastboardPlayer298',
+                Text('Castboard',
                     style: Theme.of(context)
                         .textTheme
                         .subtitle1!
