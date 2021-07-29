@@ -1,4 +1,4 @@
-import 'package:castboard_player/compileTimeVariables.dart';
+import 'package:castboard_player/constants.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 

@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:castboard_player/compileTimeVariables.dart';
+import 'package:castboard_player/constants.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
