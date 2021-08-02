@@ -6,6 +6,7 @@ import 'package:path/path.dart' as p;
 
 String getAssetBundleRootPath() {
   // TODO: Temporary override of kDebugMode behaviour until bug is fixed.
+  // Once this is fixed. Make sure to also update _pauseForEffect() in castboard_player:main.dart
   if (Platform.isLinux) {
     // Flutter-Pi Layout
     return p.join(kYoctoAssetBundlePath, 'assets');

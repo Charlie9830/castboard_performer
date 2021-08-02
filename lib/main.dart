@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:castboard_core/classes/StandardSlideSizes.dart';
 import 'package:castboard_core/enums.dart';
 import 'package:castboard_core/logging/LoggingManager.dart';
@@ -102,6 +104,7 @@ class _AppRootState extends State<AppRoot> {
       navigatorKey: navigatorKey,
       title: 'Castboard Player',
       theme: ThemeData(
+        fontFamily: 'Poppins',
         brightness: Brightness.dark,
         primarySwatch: Colors.grey,
       ),
@@ -200,6 +203,9 @@ class _AppRootState extends State<AppRoot> {
             .info("Show file read complete. Loading into state");
 
         _updateStartupStatus('Loading show file');
+
+        await _pauseForEffect();
+
         _loadShow(data);
 
         LoggingManager.instance.player.info("Show file loaded into state");
@@ -208,6 +214,7 @@ class _AppRootState extends State<AppRoot> {
             .severe("Show file load read failed", e, stacktrace);
       }
     } else {
+      await _pauseForEffect();
       LoggingManager.instance.player
           .info('No existing show file found. Proceeding to config route');
       navigatorKey.currentState?.pushNamed(RouteNames.configViewer);
@@ -445,6 +452,16 @@ class _AppRootState extends State<AppRoot> {
       );
 
     return withUpdatedPresets;
+  }
+
+  Future<void> _pauseForEffect() async {
+    // TODO: Change this to kDebugMode once that Yocto build bug is fixed.
+    if (Platform.isLinux) {
+      await Future.delayed(Duration(seconds: 5));
+      return;
+    } else {
+      return;
+    }
   }
 
   @override

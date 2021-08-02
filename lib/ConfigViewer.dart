@@ -15,7 +15,9 @@ class ConfigViewer extends StatelessWidget {
       color: Theme.of(context).scaffoldBackgroundColor,
       child: Column(
         children: [
-          Text('Castboard', style: Theme.of(context).textTheme.headline1),
+          Hero(
+            tag: 'title',
+            child: Text('Castboard', style: Theme.of(context).textTheme.headline1)),
           Column(
             children: [
               Text('No Showfile Loaded',
