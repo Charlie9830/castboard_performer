@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:castboard_core/logging/LoggingManager.dart';
 import 'package:castboard_core/models/RemoteShowData.dart';
+import 'package:castboard_player/server/Routes.dart';
 import 'package:castboard_player/server/getAssetBundleRootPath.dart';
 import 'package:castboard_player/server/routeHandlers.dart';
 import 'package:path/path.dart' as p;
@@ -74,9 +75,10 @@ class Server {
 
       LoggingManager.instance..server.info("Starting up shelf server");
       server = await shelf_io.serve(
-          Pipeline().addMiddleware(corsHeaders()).addHandler(cascade.handler),
-          address,
-          port);
+        Pipeline().addMiddleware(corsHeaders()).addHandler(cascade.handler),
+        address,
+        port,
+      );
       LoggingManager.instance
         ..server.info("Server running at ${server.address}:${server.port}");
     } catch (e, stacktrace) {
@@ -91,32 +93,32 @@ class Server {
     Router router = Router();
 
     // Playback.
-    router.put('/playback', (Request req) {
+    router.put(Routes.playback, (Request req) {
       LoggingManager.instance.server.info('Playback PUT command received');
       return handlePlaybackReq(req, onPlaybackCommand);
     });
 
     // Show File Upload
-    router.put('/upload', (Request req) {
+    router.put(Routes.upload, (Request req) {
       LoggingManager.instance.server.info('Show File Upload PUT received');
       return handleUploadReq(req, onShowFileReceived);
     });
 
     // Show File Download
-    router.get('/download', (Request req) {
+    router.get(Routes.download, (Request req) {
       LoggingManager.instance.server
           .info('Show File Download GET command received');
       return handleDownloadReq(req);
     });
 
     // Show Data Pull
-    router.get('/show', (Request req) {
+    router.get(Routes.show, (Request req) {
       LoggingManager.instance.server.info('Show Data GET command received');
       return handleShowDataPull(req, onShowDataPull);
     });
 
     // Show Data Push
-    router.post('/show', (Request req) {
+    router.post(Routes.show, (Request req) {
       LoggingManager.instance.server.info('Show Data POST command received');
       return handleShowDataPost(req, onShowDataReceived);
     });

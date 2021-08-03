@@ -1,10 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:castboard_core/logging/LoggingManager.dart';
 import 'package:castboard_core/models/RemoteShowData.dart';
 import 'package:castboard_core/storage/Storage.dart';
 import 'package:castboard_player/server/Server.dart';
-import 'package:crypto/crypto.dart';
 import 'package:shelf/shelf.dart';
 
 Future<Response> handleShowDataPull(
@@ -29,7 +29,7 @@ Future<Response> handleShowDataPull(
 }
 
 Future<Response> handleShowDataPost(
-    Request request, dynamic onShowDataReceived) async {
+    Request request, OnShowDataReceivedCallback? onShowDataReceived) async {
   if (request.mimeType != 'application/json') {
     return Response.notModified();
   }
@@ -38,11 +38,25 @@ Future<Response> handleShowDataPost(
     return Response.internalServerError(body: 'onShowDataReceived is null');
   }
 
+  if (Storage.instance!.isWriting || Storage.instance!.isReading) {
+    if (Storage.instance!.isWriting) {
+      LoggingManager.instance.server.warning(
+          "A show data POST request was denied because the Storage class is busy writing");
+    }
+
+    if (Storage.instance!.isReading) {
+      LoggingManager.instance.server.warning(
+          "A a show data POST request was denied because the Storage class is busy reading");
+    }
+
+    return Response.internalServerError(
+        body: 'Storage is busy. Please try again');
+  }
+
   final rawJson = await request.readAsString();
   try {
     final rawData = json.decoder.convert(rawJson);
-    final result =
-        await onShowDataReceived!.call(RemoteShowData.fromMap(rawData));
+    final result = await onShowDataReceived(RemoteShowData.fromMap(rawData));
     if (result == true) {
       return Response.ok('');
     } else {
@@ -58,6 +72,21 @@ Future<Response> handleDownloadReq(Request request) async {
 
   if (await file.exists() == false) {
     return Response.notFound('File not Found');
+  }
+
+  if (Storage.instance!.isWriting || Storage.instance!.isReading) {
+    if (Storage.instance!.isWriting) {
+      LoggingManager.instance.server.warning(
+          "A download request was denied because the Storage class is busy writing");
+    }
+
+    if (Storage.instance!.isReading) {
+      LoggingManager.instance.server.warning(
+          "A download request was denied because the Storage class is busy reading");
+    }
+
+    return Response.internalServerError(
+        body: 'Storage is busy. Please try again');
   }
 
   final stat = await file.stat();
@@ -82,6 +111,21 @@ Future<Response> handleUploadReq(
 
   if (await Storage.instance!.validateShowFile(buffer) == false) {
     return Response(415); // Unsuported Media Format.
+  }
+
+  if (Storage.instance!.isWriting || Storage.instance!.isReading) {
+    if (Storage.instance!.isWriting) {
+      LoggingManager.instance.server.warning(
+          "An upload request was denied because the Storage class is busy writing");
+    }
+
+    if (Storage.instance!.isReading) {
+      LoggingManager.instance.server.warning(
+          "An upload request was denied because the Storage class is busy reading");
+    }
+
+    return Response.internalServerError(
+        body: 'Storage is busy. Please try again');
   }
 
   await Storage.instance!.copyShowFileIntoPlayerStorage(buffer);
