@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:castboard_core/classes/StandardSlideSizes.dart';
@@ -78,6 +79,8 @@ class _AppRootState extends State<AppRoot> {
 
   // Non Tracked State
   Server? _server;
+  Map<String, DateTime> _sessionHeartbeats = {};
+  late Timer _heartbeatTimer;
 
   @override
   void initState() {
@@ -90,10 +93,13 @@ class _AppRootState extends State<AppRoot> {
     _server = Server(
         address: address,
         port: port,
+        onHeartbeatReceived: _handleHeartbeatReceived,
         onPlaybackCommand: _handlePlaybackCommand,
         onShowFileReceived: _handleShowFileReceived,
         onShowDataPull: _handleShowDataPull,
         onShowDataReceived: _handleShowDataReceived);
+
+    _heartbeatTimer = Timer.periodic(Duration(seconds: 30), (_) => _checkHeartbeats(30));
 
     _initalizePlayer();
   }
@@ -128,6 +134,36 @@ class _AppRootState extends State<AppRoot> {
         RouteNames.configViewer: (_) => ConfigViewer(),
       },
     );
+  }
+
+  void _checkHeartbeats(int cutOffSeconds) {
+    final cutOffTime =
+        DateTime.now().subtract(Duration(seconds: cutOffSeconds));
+
+    _sessionHeartbeats
+        .removeWhere((id, lastThump) => lastThump.isBefore(cutOffTime));
+
+    // If there are no more active sessions and if we are paused and if we have slides to player and the cycler is active, then
+    // Restart the slide show.
+    if (_sessionHeartbeats.isEmpty &&
+        _playing == false &&
+        _slides.isNotEmpty &&
+        _cycler != null) {
+      LoggingManager.instance.player
+          .info('No more heartbeats, resuming slideshow');
+      _cycler!.play();
+    }
+  }
+
+  void _handleHeartbeatReceived(String sessionId) {
+    // Store the session Id in the heartbeats register.
+    _sessionHeartbeats.update(sessionId, (_) => DateTime.now(), ifAbsent: () {
+      LoggingManager.instance.player
+          .info('Received first heartbeat from $sessionId');
+      return DateTime.now();
+    });
+
+    print(sessionId);
   }
 
   void _handlePlaybackCommand(PlaybackCommand command) {

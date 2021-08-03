@@ -7,6 +7,15 @@ import 'package:castboard_core/storage/Storage.dart';
 import 'package:castboard_player/server/Server.dart';
 import 'package:shelf/shelf.dart';
 
+Future<Response> handleHeartbeat(
+    Request request, void Function(String sessionId) onHeartbeat) async {
+  final sessionId = await request.readAsString();
+
+  onHeartbeat(sessionId);
+
+  return Response.ok(null);
+}
+
 Future<Response> handleShowDataPull(
     Request request, dynamic onShowDataPull) async {
   if (onShowDataPull == null) {

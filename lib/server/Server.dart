@@ -17,6 +17,7 @@ typedef void OnPlaybackCommandReceivedCallback(PlaybackCommand command);
 typedef void OnShowFileReceivedAndStoredCallback();
 typedef RemoteShowData OnShowDataPullCallback();
 typedef Future<bool> OnShowDataReceivedCallback(RemoteShowData data);
+typedef void OnHeartbeatCallback(String sessionId);
 
 // Config
 const _webAppFilePath = 'web_app/';
@@ -30,22 +31,24 @@ enum PlaybackCommand {
 }
 
 class Server {
-  final dynamic address;
+  final String address;
   final int port;
   final OnPlaybackCommandReceivedCallback? onPlaybackCommand;
   final OnShowFileReceivedAndStoredCallback? onShowFileReceived;
   final OnShowDataPullCallback? onShowDataPull;
   final OnShowDataReceivedCallback? onShowDataReceived;
+  final OnHeartbeatCallback onHeartbeatReceived;
 
   late HttpServer server;
 
   Server({
-    this.address,
+    this.address = '0.0.0.0',
     this.port = 8080,
     this.onPlaybackCommand,
     this.onShowFileReceived,
     this.onShowDataPull,
     this.onShowDataReceived,
+    required this.onHeartbeatReceived,
   });
 
   Future<void> initalize() async {
@@ -91,6 +94,11 @@ class Server {
 
   Router _initializeRouter() {
     Router router = Router();
+
+    // Heartbeat
+    router.post(Routes.heartbeat, (Request req) {
+      return handleHeartbeat(req, onHeartbeatReceived);
+    });
 
     // Playback.
     router.put(Routes.playback, (Request req) {
