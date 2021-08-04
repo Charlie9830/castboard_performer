@@ -167,8 +167,6 @@ class _AppRootState extends State<AppRoot> {
           .info('Received first heartbeat from $sessionId');
       return DateTime.now();
     });
-
-    print(sessionId);
   }
 
   void _handlePlaybackCommand(PlaybackCommand command) {
