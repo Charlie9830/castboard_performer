@@ -8,6 +8,7 @@ import 'package:castboard_core/models/ActorModel.dart';
 import 'package:castboard_core/models/ActorRef.dart';
 import 'package:castboard_core/models/CastChangeModel.dart';
 import 'package:castboard_core/models/FontModel.dart';
+import 'package:castboard_core/models/ManifestModel.dart';
 import 'package:castboard_core/models/PresetModel.dart';
 import 'package:castboard_core/models/RemoteCastChangeData.dart';
 import 'package:castboard_core/models/RemoteShowData.dart';
@@ -77,6 +78,9 @@ class _AppRootState extends State<AppRoot> {
   String _currentSlideId = '';
   String _nextSlideId = '';
 
+  // File Manifest
+  ManifestModel _fileManifest = ManifestModel();
+
   // Non Tracked State
   Server? _server;
   Map<String, DateTime> _sessionHeartbeats = {};
@@ -99,7 +103,8 @@ class _AppRootState extends State<AppRoot> {
         onShowDataPull: _handleShowDataPull,
         onShowDataReceived: _handleShowDataReceived);
 
-    _heartbeatTimer = Timer.periodic(Duration(seconds: 30), (_) => _checkHeartbeats(30));
+    _heartbeatTimer =
+        Timer.periodic(Duration(seconds: 30), (_) => _checkHeartbeats(30));
 
     _initalizePlayer();
   }
@@ -358,6 +363,7 @@ class _AppRootState extends State<AppRoot> {
       _combinedPresetIds = combinedPresetIds;
       _liveCastChangeEdits = liveCastChangeEdits;
       _displayedCastChange = displayedCastChange;
+      _fileManifest = data.manifest;
     });
 
     LoggingManager.instance.player
@@ -395,16 +401,18 @@ class _AppRootState extends State<AppRoot> {
     LoggingManager.instance.player
         .info("Show Data Pull requested from remote. Packaging show data...");
     return RemoteShowData(
-        showData: ShowDataModel(
-          tracks: _tracks,
-          actors: _actors,
-          presets: _presets,
-        ),
-        playbackState: PlaybackStateData(
-          combinedPresetIds: _combinedPresetIds,
-          currentPresetId: _currentPresetId,
-          liveCastChangeEdits: _liveCastChangeEdits,
-        ));
+      showData: ShowDataModel(
+        tracks: _tracks,
+        actors: _actors,
+        presets: _presets,
+      ),
+      playbackState: PlaybackStateData(
+        combinedPresetIds: _combinedPresetIds,
+        currentPresetId: _currentPresetId,
+        liveCastChangeEdits: _liveCastChangeEdits,
+      ),
+      manifest: _fileManifest,
+    );
   }
 
   Future<bool> _handleShowDataReceived(RemoteShowData data) async {
