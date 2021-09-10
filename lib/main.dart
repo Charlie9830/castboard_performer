@@ -31,11 +31,17 @@ import 'package:flutter/material.dart';
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
-  await _initLogging();
+  try {
+    await _initLogging();
+  } catch (error) {
+    stderr.write('Failed to initialize LoggingManager. ${error.toString()}');
+    exit(1);
+  }
   runApp(AppRoot());
 }
 
 Future<void> _initLogging() async {
+  throw ArgumentError('Argumentative Error');
   await LoggingManager.initialize('castboard_player_runtime_logs',
       runAsRelease: true);
   LoggingManager.instance.general.info('LoggingManager initialized.');
