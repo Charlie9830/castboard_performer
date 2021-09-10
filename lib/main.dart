@@ -27,6 +27,7 @@ import 'package:castboard_player/SlideCycler.dart';
 import 'package:castboard_player/fontLoadingHelpers.dart';
 import 'package:castboard_player/server/Server.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -91,6 +92,9 @@ class _AppRootState extends State<AppRoot> {
   Map<String, DateTime> _sessionHeartbeats = {};
   late Timer _heartbeatTimer;
 
+  // Focus
+  FocusNode _keyboardFocusNode = FocusNode();
+
   @override
   void initState() {
     LoggingManager.instance.player.info('Initializing Player state');
@@ -116,34 +120,48 @@ class _AppRootState extends State<AppRoot> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: navigatorKey,
-      title: 'Castboard Player',
-      theme: ThemeData(
-        fontFamily: 'Poppins',
-        brightness: Brightness.dark,
-        primarySwatch: Colors.grey,
+    return RawKeyboardListener(
+      focusNode: _keyboardFocusNode,
+      autofocus: true,
+      onKey: _handleKeyboardEvent,
+      child: MaterialApp(
+        navigatorKey: navigatorKey,
+        title: 'Castboard Player',
+        theme: ThemeData(
+          fontFamily: 'Poppins',
+          brightness: Brightness.dark,
+          primarySwatch: Colors.grey,
+        ),
+        initialRoute: RouteNames.loadingSplash,
+        routes: {
+          RouteNames.loadingSplash: (_) => LoadingSplash(
+                status: _startupStatus,
+              ),
+          RouteNames.player: (_) => Player(
+                currentSlideId: _currentSlideId,
+                nextSlideId:
+                    _nextSlideId, // The next slide is 'Offstaged' to force Image Caching
+                slides: _slides,
+                actors: _actors,
+                tracks: _tracks,
+                displayedCastChange: _displayedCastChange,
+                slideSize: _slideSize,
+                slideOrientation: _slideOrientation,
+                playing: _playing,
+              ),
+          RouteNames.configViewer: (_) => ConfigViewer(),
+        },
       ),
-      initialRoute: RouteNames.loadingSplash,
-      routes: {
-        RouteNames.loadingSplash: (_) => LoadingSplash(
-              status: _startupStatus,
-            ),
-        RouteNames.player: (_) => Player(
-              currentSlideId: _currentSlideId,
-              nextSlideId:
-                  _nextSlideId, // The next slide is 'Offstaged' to force Image Caching
-              slides: _slides,
-              actors: _actors,
-              tracks: _tracks,
-              displayedCastChange: _displayedCastChange,
-              slideSize: _slideSize,
-              slideOrientation: _slideOrientation,
-              playing: _playing,
-            ),
-        RouteNames.configViewer: (_) => ConfigViewer(),
-      },
     );
+  }
+
+  void _handleKeyboardEvent(RawKeyEvent event) {
+    if (event is RawKeyDownEvent) {
+      if (event.logicalKey == LogicalKeyboardKey.keyC &&
+          event.isControlPressed) {
+        exit(0);
+      }
+    }
   }
 
   void _checkHeartbeats(int cutOffSeconds) {
