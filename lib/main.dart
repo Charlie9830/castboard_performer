@@ -140,7 +140,7 @@ class _AppRootState extends State<AppRoot> {
           RouteNames.player: (_) => Player(
                 currentSlideId: _currentSlideId,
                 nextSlideId:
-                    _nextSlideId, // The next slide is 'Offstaged' to force Image Caching
+                    _nextSlideId, // The next slide is 'Offstaged' to force Image Caching TODO: Is this required anymore?
                 slides: _slides,
                 actors: _actors,
                 tracks: _tracks,
