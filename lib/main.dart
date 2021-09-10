@@ -41,7 +41,6 @@ void main() async {
 }
 
 Future<void> _initLogging() async {
-  throw ArgumentError('Argumentative Error');
   await LoggingManager.initialize('castboard_player_runtime_logs',
       runAsRelease: true);
   LoggingManager.instance.general.info('LoggingManager initialized.');
