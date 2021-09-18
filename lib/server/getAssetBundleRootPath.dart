@@ -14,7 +14,7 @@ String getAssetBundleRootPath() {
   }
 
   if (Platform.isLinux) {
-    // Flutter-Pi Layout
+    // Sony Layout
     return p.join(kYoctoAssetBundlePath, 'assets');
   }
 
