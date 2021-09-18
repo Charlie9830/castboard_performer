@@ -26,6 +26,7 @@ import 'package:castboard_player/RouteNames.dart';
 import 'package:castboard_player/SlideCycler.dart';
 import 'package:castboard_player/fontLoadingHelpers.dart';
 import 'package:castboard_player/server/Server.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -520,8 +521,7 @@ class _AppRootState extends State<AppRoot> {
   }
 
   Future<void> _pauseForEffect() async {
-    // TODO: Change this to kDebugMode once that Yocto build bug is fixed.
-    if (Platform.isLinux) {
+    if (Platform.isLinux && kDebugMode == false) {
       await Future.delayed(Duration(seconds: 5));
       return;
     } else {
