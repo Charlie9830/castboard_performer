@@ -1,1 +1,1 @@
-const String kYoctoAssetBundlePath = "/usr/share/castboard-player/flutter_assets";
+const String kYoctoAssetBundlePath = "/usr/share/castboard-player/data/flutter_assets";
