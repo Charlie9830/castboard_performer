@@ -20,6 +20,7 @@ import 'package:castboard_core/models/TrackRef.dart';
 import 'package:castboard_core/storage/ImportedShowData.dart';
 import 'package:castboard_core/storage/Storage.dart';
 import 'package:castboard_player/ConfigViewer.dart';
+import 'package:castboard_player/DbusTesting.dart';
 import 'package:castboard_player/LoadingSplash.dart';
 import 'package:castboard_player/Player.dart';
 import 'package:castboard_player/RouteNames.dart';
@@ -116,7 +117,7 @@ class _AppRootState extends State<AppRoot> {
     _heartbeatTimer =
         Timer.periodic(Duration(seconds: 30), (_) => _checkHeartbeats(30));
 
-    _initalizePlayer();
+    //_initalizePlayer();
   }
 
   @override
@@ -133,8 +134,9 @@ class _AppRootState extends State<AppRoot> {
           brightness: Brightness.dark,
           primarySwatch: Colors.grey,
         ),
-        initialRoute: RouteNames.loadingSplash,
+        initialRoute: 'DbusTesting', //RouteNames.loadingSplash,
         routes: {
+          'DbusTesting': (_) => DbusTesting(),
           RouteNames.loadingSplash: (_) => LoadingSplash(
                 status: _startupStatus,
               ),

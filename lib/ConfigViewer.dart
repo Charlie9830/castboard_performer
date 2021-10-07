@@ -16,8 +16,9 @@ class ConfigViewer extends StatelessWidget {
       child: Column(
         children: [
           Hero(
-            tag: 'title',
-            child: Text('Castboard', style: Theme.of(context).textTheme.headline1)),
+              tag: 'title',
+              child: Text('Castboard',
+                  style: Theme.of(context).textTheme.headline1)),
           Column(
             children: [
               Text('No Showfile Loaded',
