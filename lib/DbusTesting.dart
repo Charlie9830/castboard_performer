@@ -1,3 +1,4 @@
+import 'package:castboard_player/system_controller/SystemController.dart';
 import 'package:flutter/material.dart';
 import 'package:dbus/dbus.dart';
 
@@ -13,7 +14,6 @@ class _DbusTestingState extends State<DbusTesting> {
   String _canPowerOffResult = '';
   String _status = '';
   DateTime? _lastUpdate;
-  DBusClient _dbusClient = DBusClient.system();
 
   @override
   Widget build(BuildContext context) {
@@ -52,50 +52,11 @@ class _DbusTestingState extends State<DbusTesting> {
     );
   }
 
-  void _update() async {
-    setState(() {
-      _status = 'Updating...';
-    });
+  void _update() {
+    final controller = SystemController();
 
-    final results = await Future.wait([_tryRestartUnit(), _tryCanPoweroff()]);
-
-    setState(() {
-      _status = 'Done';
-      _canRestartUnitResult = results[0];
-      _canPowerOffResult = results[1];
-      _lastUpdate = DateTime.now();
-    });
-  }
-
-  Future<String> _tryRestartUnit() async {
-    final object = DBusRemoteObject(_dbusClient,
-        name: 'org.freedesktop.systemd1',
-        path: DBusObjectPath('/org/freedesktop/systemd1'));
-
-    try {
-      final result = await object.callMethod(
-          'org.freedesktop.systemd1.Manager',
-          'RestartUnit',
-          [DBusString('cage@tty7.service'), DBusString('replace')]);
-
-      return result.toString();
-    } catch (e) {
-      return e.toString();
-    }
-  }
-
-  Future<String> _tryCanPoweroff() async {
-    final object = DBusRemoteObject(_dbusClient,
-        name: 'org.freedesktop.login1',
-        path: DBusObjectPath('/org/freedesktop/login1'));
-
-    try {
-      final result = await object
-          .callMethod('org.freedesktop.login1.Manager', 'CanPowerOff', []);
-
-      return result.toString();
-    } catch (e) {
-      return e.toString();
-    }
+    controller.powerOff();
+    controller.reboot();
+    controller.restart();
   }
 }
