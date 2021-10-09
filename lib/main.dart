@@ -19,6 +19,7 @@ import 'package:castboard_core/models/SlideModel.dart';
 import 'package:castboard_core/models/TrackRef.dart';
 import 'package:castboard_core/storage/ImportedShowData.dart';
 import 'package:castboard_core/storage/Storage.dart';
+import 'package:castboard_core/system-commands/SystemCommands.dart';
 import 'package:castboard_player/ConfigViewer.dart';
 import 'package:castboard_player/DbusTesting.dart';
 import 'package:castboard_player/LoadingSplash.dart';
@@ -27,6 +28,7 @@ import 'package:castboard_player/RouteNames.dart';
 import 'package:castboard_player/SlideCycler.dart';
 import 'package:castboard_player/fontLoadingHelpers.dart';
 import 'package:castboard_player/server/Server.dart';
+import 'package:castboard_player/system_controller/SystemController.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -93,6 +95,7 @@ class _AppRootState extends State<AppRoot> {
   Server? _server;
   Map<String, DateTime> _sessionHeartbeats = {};
   late Timer _heartbeatTimer;
+  SystemController _systemController = SystemController();
 
   // Focus
   FocusNode _keyboardFocusNode = FocusNode();
@@ -112,12 +115,13 @@ class _AppRootState extends State<AppRoot> {
         onPlaybackCommand: _handlePlaybackCommand,
         onShowFileReceived: _handleShowFileReceived,
         onShowDataPull: _handleShowDataPull,
-        onShowDataReceived: _handleShowDataReceived);
+        onShowDataReceived: _handleShowDataReceived,
+        onSystemCommandReceived: _handleSystemCommandReceived);
 
     _heartbeatTimer =
         Timer.periodic(Duration(seconds: 30), (_) => _checkHeartbeats(30));
 
-    //_initalizePlayer();
+    _initalizePlayer();
   }
 
   @override
@@ -134,7 +138,7 @@ class _AppRootState extends State<AppRoot> {
           brightness: Brightness.dark,
           primarySwatch: Colors.grey,
         ),
-        initialRoute: 'DbusTesting', //RouteNames.loadingSplash,
+        initialRoute: RouteNames.loadingSplash,
         routes: {
           'DbusTesting': (_) => DbusTesting(),
           RouteNames.loadingSplash: (_) => LoadingSplash(
@@ -419,6 +423,22 @@ class _AppRootState extends State<AppRoot> {
     }
 
     return;
+  }
+
+  void _handleSystemCommandReceived(SystemCommand command) {
+    switch (command.type) {
+      case SystemCommandType.reboot:
+        _systemController.reboot();
+        break;
+      case SystemCommandType.powerOff:
+        _systemController.powerOff();
+        break;
+      case SystemCommandType.restartApplication:
+        _systemController.restart();
+        break;
+      default:
+        break;
+    }
   }
 
   RemoteShowData _handleShowDataPull() {

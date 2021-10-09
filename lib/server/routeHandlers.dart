@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:castboard_core/enum-converters/EnumConversionError.dart';
 import 'package:castboard_core/logging/LoggingManager.dart';
 import 'package:castboard_core/models/RemoteShowData.dart';
 import 'package:castboard_core/storage/Storage.dart';
+import 'package:castboard_core/system-commands/SystemCommands.dart';
 import 'package:castboard_player/server/Server.dart';
 import 'package:shelf/shelf.dart';
 
@@ -167,4 +169,28 @@ Future<Response> handlePlaybackReq(
   }
 
   return Response.ok(null);
+}
+
+Future<Response> handleSystemCommandReq(
+    Request request, OnSystemCommandReceivedCallback? onSystemCommand) async {
+  final rawJson = await request.readAsString();
+  try {
+    final rawData = json.decoder.convert(rawJson);
+    final SystemCommand command = SystemCommand.fromMap(rawData);
+
+    if (command.type == SystemCommandType.none) {
+      LoggingManager.instance.server.warning('Received a NoneSystemCommand');
+      return Response.ok(null);
+    }
+
+    onSystemCommand?.call(command);
+
+    return Response.ok(null);
+  } on EnumConversionError {
+    LoggingManager.instance.server.warning(
+        'Failed to parse SystemCommand.type into SystemCommandType enum');
+        return Response.ok(null);
+  } catch (error) {
+    return Response.internalServerError(body: error.toString());
+  }
 }

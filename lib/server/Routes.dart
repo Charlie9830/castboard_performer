@@ -4,4 +4,5 @@ class Routes {
   static const String upload = "/upload";
   static const String download = "/download";
   static const String show = "/show";
+  static const String system = "/system";
 }

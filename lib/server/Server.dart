@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:castboard_core/logging/LoggingManager.dart';
 import 'package:castboard_core/models/RemoteShowData.dart';
 import 'package:castboard_player/server/Routes.dart';
+import 'package:castboard_core/system-commands/SystemCommands.dart';
 import 'package:castboard_player/server/getAssetBundleRootPath.dart';
 import 'package:castboard_player/server/routeHandlers.dart';
 import 'package:path/path.dart' as p;
@@ -13,6 +14,7 @@ import 'package:shelf_cors_headers/shelf_cors_headers.dart';
 import 'package:shelf_router/shelf_router.dart';
 import 'package:shelf_static/shelf_static.dart';
 
+typedef void OnSystemCommandReceivedCallback(SystemCommand command);
 typedef void OnPlaybackCommandReceivedCallback(PlaybackCommand command);
 typedef void OnShowFileReceivedAndStoredCallback();
 typedef RemoteShowData OnShowDataPullCallback();
@@ -38,6 +40,7 @@ class Server {
   final OnShowDataPullCallback? onShowDataPull;
   final OnShowDataReceivedCallback? onShowDataReceived;
   final OnHeartbeatCallback onHeartbeatReceived;
+  final OnSystemCommandReceivedCallback? onSystemCommandReceived;
 
   late HttpServer server;
 
@@ -48,6 +51,7 @@ class Server {
     this.onShowFileReceived,
     this.onShowDataPull,
     this.onShowDataReceived,
+    this.onSystemCommandReceived,
     required this.onHeartbeatReceived,
   });
 
@@ -104,6 +108,12 @@ class Server {
     router.put(Routes.playback, (Request req) {
       LoggingManager.instance.server.info('Playback PUT command received');
       return handlePlaybackReq(req, onPlaybackCommand);
+    });
+
+    // System Commands.
+    router.put(Routes.system, (Request req) {
+      LoggingManager.instance.server.info('System PUT command received');
+      return handleSystemCommandReq(req, onSystemCommandReceived);
     });
 
     // Show File Upload
