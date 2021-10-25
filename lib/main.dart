@@ -29,6 +29,7 @@ import 'package:castboard_player/SlideCycler.dart';
 import 'package:castboard_player/fontLoadingHelpers.dart';
 import 'package:castboard_player/server/Server.dart';
 import 'package:castboard_player/system_controller/SystemController.dart';
+import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/models/StartupConfigModel.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -162,7 +163,7 @@ class _AppRootState extends State<AppRoot> {
     );
   }
 
-  void _handleKeyboardEvent(RawKeyEvent event) {
+  void _handleKeyboardEvent(RawKeyEvent event) async {
     if (event is RawKeyDownEvent) {
       if (event.logicalKey == LogicalKeyboardKey.keyC &&
           event.isControlPressed) {

@@ -34,6 +34,7 @@ dependencies:
   shelf_static: ^1.0.0
   shelf_cors_headers: ^0.1.1
   dbus: ^0.6.3
+  path_provider: ^2.0.1
 
 dev_dependencies:
   flutter_test:
