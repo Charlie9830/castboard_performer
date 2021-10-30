@@ -17,6 +17,8 @@ import 'package:castboard_core/models/SlideSizeModel.dart';
 import 'package:castboard_core/models/TrackModel.dart';
 import 'package:castboard_core/models/SlideModel.dart';
 import 'package:castboard_core/models/TrackRef.dart';
+import 'package:castboard_core/models/system_controller/DeviceResolution.dart';
+import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_core/storage/ImportedShowData.dart';
 import 'package:castboard_core/storage/Storage.dart';
 import 'package:castboard_core/system-commands/SystemCommands.dart';
@@ -117,7 +119,9 @@ class _AppRootState extends State<AppRoot> {
         onShowFileReceived: _handleShowFileReceived,
         onShowDataPull: _handleShowDataPull,
         onShowDataReceived: _handleShowDataReceived,
-        onSystemCommandReceived: _handleSystemCommandReceived);
+        onSystemCommandReceived: _handleSystemCommandReceived,
+        onAvailableResolutionsRequested: _handleAvailableResolutionsRequested,
+        onSystemConfigPull: _handleSystemConfigPull);
 
     _heartbeatTimer =
         Timer.periodic(Duration(seconds: 30), (_) => _checkHeartbeats(30));
@@ -558,5 +562,13 @@ class _AppRootState extends State<AppRoot> {
       _server!.shutdown();
     }
     super.dispose();
+  }
+
+  Future<List<DeviceResolution>> _handleAvailableResolutionsRequested() async {
+    return await _systemController.getAvailableResolutions();
+  }
+
+  Future<SystemConfig> _handleSystemConfigPull() async {
+    return await _systemController.getSystemConfig();
   }
 }

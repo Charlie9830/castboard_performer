@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:castboard_core/models/system_controller/DeviceConfig.dart';
+import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_core/models/system_controller/DeviceOrientation.dart';
 import 'package:castboard_core/models/system_controller/DeviceResolution.dart';
 import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/SystemControllerRpiLinux.dart';
@@ -47,9 +47,11 @@ abstract class SystemController {
   /// Gets the current orientation.
   Future<DeviceOrientation> getCurrentOrientation();
 
-  /// Writes the provided [DeviceConfig] to all relevant locations. Returns a Future that resolves to a bool representing if the device needs to be rebooted
+  /// Writes the provided [SystemConfig] to all relevant locations. Returns a Future that resolves to a bool representing if the device needs to be rebooted
   /// for changes to take affect.
-  Future<bool> commitDeviceConfig(DeviceConfig config);
+  Future<bool> commitSystemConfig(SystemConfig config);
+
+  Future<SystemConfig> getSystemConfig();
 
   Future<List<DeviceResolution>> getAvailableResolutions();
 

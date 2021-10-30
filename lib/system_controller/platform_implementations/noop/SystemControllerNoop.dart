@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'package:castboard_core/models/system_controller/DeviceConfig.dart';
+import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_core/models/system_controller/DeviceOrientation.dart';
 import 'package:castboard_core/models/system_controller/DeviceResolution.dart';
 import 'package:castboard_player/system_controller/SystemController.dart';
@@ -51,7 +51,7 @@ class SystemControllerNoop implements SystemController {
   }
 
   @override
-  Future<bool> commitDeviceConfig(DeviceConfig config) async {
+  Future<bool> commitSystemConfig(SystemConfig config) async {
     print(' === Device Config Parameters === \n');
     config.toMap().forEach((key, value) => print('$key=$value \n'));
     print(' === END OF FILE ===');
@@ -70,5 +70,10 @@ class SystemControllerNoop implements SystemController {
   Future<void> dispose() async {
     print(_format('Instance disposed'));
     return;
+  }
+
+  @override
+  Future<SystemConfig> getSystemConfig() async {
+    return SystemConfig.defaults();
   }
 }

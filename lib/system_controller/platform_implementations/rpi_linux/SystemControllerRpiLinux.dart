@@ -1,7 +1,7 @@
 import 'dart:io';
 
 import 'package:castboard_core/logging/LoggingManager.dart';
-import 'package:castboard_core/models/system_controller/DeviceConfig.dart';
+import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_core/models/system_controller/DeviceOrientation.dart';
 import 'package:castboard_core/models/system_controller/DeviceResolution.dart';
 import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/models/StartupConfigModel.dart';
@@ -223,7 +223,7 @@ class SystemControllerRpiLinux implements SystemController {
   }
 
   @override
-  Future<bool> commitDeviceConfig(DeviceConfig config) async {
+  Future<bool> commitSystemConfig(SystemConfig config) async {
     _assertInit();
 
     bool restartRequired = false;
@@ -243,6 +243,26 @@ class SystemControllerRpiLinux implements SystemController {
     }
 
     return restartRequired;
+  }
+
+  @override
+  Future<SystemConfig> getSystemConfig() async {
+    DeviceOrientation? ori;
+    DeviceResolution? res;
+
+    final requests = [
+      getDesiredResolution().then((result) => res = result),
+      getCurrentOrientation().then((result) => ori = result),
+    ];
+
+    await Future.wait(requests);
+
+    final defaults = SystemConfig.defaults();
+
+    return SystemConfig(
+      deviceResolution: res ?? defaults.deviceResolution,
+      deviceOrientation: ori ?? defaults.deviceOrientation,
+    );
   }
 
   @override
@@ -302,7 +322,7 @@ class SystemControllerRpiLinux implements SystemController {
   }
 
   /// Determines if the provided DeviceConfig contains updates to the Startup Configuration.
-  bool _containsStartupConfigUpdates(DeviceConfig config) {
+  bool _containsStartupConfigUpdates(SystemConfig config) {
     return config.deviceOrientation != null;
   }
 }

@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:castboard_core/logging/LoggingManager.dart';
 import 'package:castboard_core/models/RemoteShowData.dart';
+import 'package:castboard_core/models/system_controller/SystemConfig.dart';
+import 'package:castboard_core/models/system_controller/DeviceResolution.dart';
 import 'package:castboard_player/server/Routes.dart';
 import 'package:castboard_core/system-commands/SystemCommands.dart';
 import 'package:castboard_player/server/getAssetBundleRootPath.dart';
@@ -15,11 +17,14 @@ import 'package:shelf_router/shelf_router.dart';
 import 'package:shelf_static/shelf_static.dart';
 
 typedef void OnSystemCommandReceivedCallback(SystemCommand command);
+typedef Future<
+    List<DeviceResolution>> OnAvailableResolutionsRequestedCallback();
 typedef void OnPlaybackCommandReceivedCallback(PlaybackCommand command);
 typedef void OnShowFileReceivedAndStoredCallback();
 typedef RemoteShowData OnShowDataPullCallback();
 typedef Future<bool> OnShowDataReceivedCallback(RemoteShowData data);
 typedef void OnHeartbeatCallback(String sessionId);
+typedef Future<SystemConfig> OnSystemConfigPullCallback();
 
 // Config
 const _webAppFilePath = 'web_app/';
@@ -41,6 +46,9 @@ class Server {
   final OnShowDataReceivedCallback? onShowDataReceived;
   final OnHeartbeatCallback onHeartbeatReceived;
   final OnSystemCommandReceivedCallback? onSystemCommandReceived;
+  final OnSystemConfigPullCallback? onSystemConfigPull;
+  final OnAvailableResolutionsRequestedCallback?
+      onAvailableResolutionsRequested;
 
   late HttpServer server;
 
@@ -52,6 +60,8 @@ class Server {
     this.onShowDataPull,
     this.onShowDataReceived,
     this.onSystemCommandReceived,
+    this.onAvailableResolutionsRequested,
+    this.onSystemConfigPull,
     required this.onHeartbeatReceived,
   });
 
@@ -110,8 +120,19 @@ class Server {
       return handlePlaybackReq(req, onPlaybackCommand);
     });
 
-    // System Commands.
-    router.put(Routes.system, (Request req) {
+    // System Configuration.
+    router.get(Routes.system, (Request req) {
+      return handleSystemConfigReq(req, onSystemConfigPull);
+    });
+
+    // Available Resolutions
+    router.get(Routes.availableResolutions, (Request req) {
+      return handleAvailableResolutionsReq(
+          req, onAvailableResolutionsRequested);
+    });
+
+    // System Command Send Port.
+    router.put(Routes.systemCommand, (Request req) {
       LoggingManager.instance.server.info('System PUT command received');
       return handleSystemCommandReq(req, onSystemCommandReceived);
     });
