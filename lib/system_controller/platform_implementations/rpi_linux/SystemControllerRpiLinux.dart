@@ -1,14 +1,15 @@
 import 'dart:io';
 
 import 'package:castboard_core/logging/LoggingManager.dart';
+import 'package:castboard_core/models/system_controller/AvailableResolutions.dart';
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_core/models/system_controller/DeviceOrientation.dart';
 import 'package:castboard_core/models/system_controller/DeviceResolution.dart';
-import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/models/StartupConfigModel.dart';
+import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/models/RpiConfigModel.dart';
 import 'package:castboard_player/system_controller/SystemController.dart';
 import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/RpiHdmiModes.dart';
-import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/readStartupConfig.dart';
-import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/writeStartupConfig.dart';
+import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/readConfigFile.dart';
+import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/writeConfigFile.dart';
 import 'package:dbus/dbus.dart';
 import 'package:castboard_player/system_controller/DBusLocations.dart';
 
@@ -119,7 +120,7 @@ class SystemControllerRpiLinux implements SystemController {
   Future<DeviceOrientation> getCurrentOrientation() async {
     _assertInit();
 
-    final currentConfig = await readStartupConfig();
+    final currentConfig = await readConfigFile();
 
     switch (currentConfig.deviceRotation) {
       case 0:
@@ -229,7 +230,7 @@ class SystemControllerRpiLinux implements SystemController {
     bool restartRequired = false;
     // Apply Changes (if any) to Startup Configuration.
     if (_containsStartupConfigUpdates(config)) {
-      await writeStartupConfig(StartupConfigModel(
+      await writeConfigFile(RpiConfigModel(
           deviceRotation: _deviceOrientationMap[config.deviceOrientation!]!));
 
       restartRequired = true;
@@ -249,6 +250,8 @@ class SystemControllerRpiLinux implements SystemController {
   Future<SystemConfig> getSystemConfig() async {
     DeviceOrientation? ori;
     DeviceResolution? res;
+    AvailableResolutions availableResolutions =
+        AvailableResolutions(rpiHdmiModes.values.toList());
 
     final requests = [
       getDesiredResolution().then((result) => res = result),
@@ -262,12 +265,8 @@ class SystemControllerRpiLinux implements SystemController {
     return SystemConfig(
       deviceResolution: res ?? defaults.deviceResolution,
       deviceOrientation: ori ?? defaults.deviceOrientation,
+      availableResolutions: availableResolutions,
     );
-  }
-
-  @override
-  Future<List<DeviceResolution>> getAvailableResolutions() async {
-    return [...rpiHdmiModes.values, DeviceResolution.auto()];
   }
 
   Future<void> _updateDeviceResolution(
@@ -279,6 +278,18 @@ class SystemControllerRpiLinux implements SystemController {
       return;
     }
 
+    // First check that we arent changing the auto mode of resolution. If we are,
+    // then we need to modify a seperate parameter in the Rpi boot config, hdmi_group.
+    if (currentDesiredRes.auto != incomingResolution.auto) {
+      // We try to only use either 'auto' (0) or 'CEA' (1) hdmi_group on the Rpi.
+      final incomingGroupValue = incomingResolution.auto ? '0' : '1';
+      final replacementString = 'hdmi_group=$incomingGroupValue';
+
+      await Process.run(
+          _sedCommand, ['s/$_hdmiGroupPattern/$replacementString/g']);
+    }
+
+    // Map the incoming mode to an Rpi hdmi_mode integer.
     final int incomingMode = rpiHdmiModes.keys.firstWhere(
         (key) => rpiHdmiModes[key] == incomingResolution,
         orElse: () => -1);
@@ -287,6 +298,7 @@ class SystemControllerRpiLinux implements SystemController {
       throw 'Invalid Rpi device resolution integer';
     }
 
+    // Prepare the string that will be written into the boot config.
     final replacementString = 'hdmi_mode=$incomingMode';
 
     // Run sed to modify the Rpi boot config. We don't check for the exit code as Sed will emit a non-zero exit code if nothing was changed,

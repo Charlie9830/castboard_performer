@@ -5,6 +5,7 @@ import 'package:castboard_core/enum-converters/EnumConversionError.dart';
 import 'package:castboard_core/logging/LoggingManager.dart';
 import 'package:castboard_core/models/RemoteShowData.dart';
 import 'package:castboard_core/models/system_controller/AvailableResolutions.dart';
+import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_core/storage/Storage.dart';
 import 'package:castboard_core/system-commands/SystemCommands.dart';
 import 'package:castboard_player/server/Server.dart';
@@ -196,20 +197,6 @@ Future<Response> handleSystemCommandReq(
   }
 }
 
-Future<Response> handleAvailableResolutionsReq(
-    Request request, OnAvailableResolutionsRequestedCallback? callback) async {
-  if (callback == null) {
-    LoggingManager.instance.server.warning(
-        'Tried to call OnAvailableResolutionsRequestedCallback but it was null');
-    return Response.internalServerError(
-        body: 'handleAvailableResolutionsReq Callback was null');
-  }
-
-  final result = await callback();
-  final jsonData = json.encoder.convert(AvailableResolutions(result).toMap());
-  return Response.ok(jsonData);
-}
-
 Future<Response> handleSystemConfigReq(
     Request request, OnSystemConfigPullCallback? callback) async {
   if (callback == null) {
@@ -222,4 +209,21 @@ Future<Response> handleSystemConfigReq(
   final result = await callback();
   final jsonData = json.encoder.convert(result.toMap());
   return Response.ok(jsonData);
+}
+
+Future<Response> handleSystemConfigPost(
+    Request request, OnSystemConfigPostCallback? callback) async {
+  if (callback == null) {
+    LoggingManager.instance.server
+        .warning('Tried to call OnSystemConfigPostCallback but it was null');
+    return Response.internalServerError(
+        body: 'OnSystemConfigPost Callback was null');
+  }
+  
+  final rawJson = await request.readAsString();
+  final config = SystemConfig.fromMap(json.decode(rawJson));
+
+  final restartRequired = await callback(config);
+
+  return Response.ok(restartRequired);
 }

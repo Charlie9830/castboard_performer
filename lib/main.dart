@@ -29,9 +29,10 @@ import 'package:castboard_player/Player.dart';
 import 'package:castboard_player/RouteNames.dart';
 import 'package:castboard_player/SlideCycler.dart';
 import 'package:castboard_player/fontLoadingHelpers.dart';
+import 'package:castboard_player/scheduleRestart.dart';
 import 'package:castboard_player/server/Server.dart';
 import 'package:castboard_player/system_controller/SystemController.dart';
-import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/models/StartupConfigModel.dart';
+import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/models/RpiConfigModel.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -120,8 +121,8 @@ class _AppRootState extends State<AppRoot> {
         onShowDataPull: _handleShowDataPull,
         onShowDataReceived: _handleShowDataReceived,
         onSystemCommandReceived: _handleSystemCommandReceived,
-        onAvailableResolutionsRequested: _handleAvailableResolutionsRequested,
-        onSystemConfigPull: _handleSystemConfigPull);
+        onSystemConfigPull: _handleSystemConfigPull,
+        onSystemConfigPostCallback: _handleSystemConfigPost);
 
     _heartbeatTimer =
         Timer.periodic(Duration(seconds: 30), (_) => _checkHeartbeats(30));
@@ -564,11 +565,21 @@ class _AppRootState extends State<AppRoot> {
     super.dispose();
   }
 
-  Future<List<DeviceResolution>> _handleAvailableResolutionsRequested() async {
-    return await _systemController.getAvailableResolutions();
-  }
-
   Future<SystemConfig> _handleSystemConfigPull() async {
     return await _systemController.getSystemConfig();
+  }
+
+  Future<bool> _handleSystemConfigPost(SystemConfig config) async {
+    final restartRequired = await _systemController.commitSystemConfig(config);
+
+    if (restartRequired == false) {
+      return false;
+    }
+
+    // Schedule a restart for a few seconds in the future. This will give time for the Server to send a response back to the remote informing it that a
+    // restart is imminent.
+    scheduleRestart(Duration(seconds: 5), _systemController);
+
+    return true;
   }
 }

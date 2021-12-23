@@ -59,14 +59,6 @@ class SystemControllerNoop implements SystemController {
   }
 
   @override
-  Future<List<DeviceResolution>> getAvailableResolutions() async {
-    return [
-      DeviceResolution(1920, 1080),
-      DeviceResolution.auto(),
-    ];
-  }
-
-  @override
   Future<void> dispose() async {
     print(_format('Instance disposed'));
     return;

@@ -25,6 +25,7 @@ typedef RemoteShowData OnShowDataPullCallback();
 typedef Future<bool> OnShowDataReceivedCallback(RemoteShowData data);
 typedef void OnHeartbeatCallback(String sessionId);
 typedef Future<SystemConfig> OnSystemConfigPullCallback();
+typedef Future<bool> OnSystemConfigPostCallback(SystemConfig config);
 
 // Config
 const _webAppFilePath = 'web_app/';
@@ -47,8 +48,7 @@ class Server {
   final OnHeartbeatCallback onHeartbeatReceived;
   final OnSystemCommandReceivedCallback? onSystemCommandReceived;
   final OnSystemConfigPullCallback? onSystemConfigPull;
-  final OnAvailableResolutionsRequestedCallback?
-      onAvailableResolutionsRequested;
+  final OnSystemConfigPostCallback? onSystemConfigPostCallback;
 
   late HttpServer server;
 
@@ -60,8 +60,8 @@ class Server {
     this.onShowDataPull,
     this.onShowDataReceived,
     this.onSystemCommandReceived,
-    this.onAvailableResolutionsRequested,
     this.onSystemConfigPull,
+    this.onSystemConfigPostCallback,
     required this.onHeartbeatReceived,
   });
 
@@ -125,10 +125,8 @@ class Server {
       return handleSystemConfigReq(req, onSystemConfigPull);
     });
 
-    // Available Resolutions
-    router.get(Routes.availableResolutions, (Request req) {
-      return handleAvailableResolutionsReq(
-          req, onAvailableResolutionsRequested);
+    router.post(Routes.system, (Request req) {
+      return handleSystemConfigPost(req, onSystemConfigPostCallback);
     });
 
     // System Command Send Port.

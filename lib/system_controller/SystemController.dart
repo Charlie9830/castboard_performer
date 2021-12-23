@@ -53,7 +53,5 @@ abstract class SystemController {
 
   Future<SystemConfig> getSystemConfig();
 
-  Future<List<DeviceResolution>> getAvailableResolutions();
-
   Future<void> dispose();
 }
