@@ -55,7 +55,7 @@ class SystemControllerNoop implements SystemController {
     print(' === Device Config Parameters === \n');
     config.toMap().forEach((key, value) => print('$key=$value \n'));
     print(' === END OF FILE ===');
-    return false;
+    return true;
   }
 
   @override

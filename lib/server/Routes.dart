@@ -6,4 +6,5 @@ class Routes {
   static const String show = "/show";
   static const String system = "/system";
   static const String systemCommand = "$system/command";
+  static const String alive = "/alive";
 }

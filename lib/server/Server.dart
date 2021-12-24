@@ -109,6 +109,11 @@ class Server {
   Router _initializeRouter() {
     Router router = Router();
 
+    // Alive
+    router.get(Routes.alive, (Request req) {
+      return handleAlive(req);
+    });
+
     // Heartbeat
     router.post(Routes.heartbeat, (Request req) {
       return handleHeartbeat(req, onHeartbeatReceived);

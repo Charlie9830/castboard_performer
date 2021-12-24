@@ -219,11 +219,16 @@ Future<Response> handleSystemConfigPost(
     return Response.internalServerError(
         body: 'OnSystemConfigPost Callback was null');
   }
-  
+
   final rawJson = await request.readAsString();
   final config = SystemConfig.fromMap(json.decode(rawJson));
 
   final restartRequired = await callback(config);
 
-  return Response.ok(restartRequired);
+  return Response.ok(restartRequired.toString());
+}
+
+Future<Response> handleAlive(Request req) async {
+  LoggingManager.instance.server.info('Received an are you alive ping');
+  return Response.ok(null);
 }

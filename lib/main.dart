@@ -51,7 +51,7 @@ void main() async {
 
 Future<void> _initLogging() async {
   await LoggingManager.initialize('castboard_player_runtime_logs',
-      runAsRelease: true);
+      runAsRelease: false);
   LoggingManager.instance.general.info('LoggingManager initialized.');
   LoggingManager.instance.general.info('Application started');
   return;
@@ -569,8 +569,14 @@ class _AppRootState extends State<AppRoot> {
     return await _systemController.getSystemConfig();
   }
 
-  Future<bool> _handleSystemConfigPost(SystemConfig config) async {
-    final restartRequired = await _systemController.commitSystemConfig(config);
+  Future<bool> _handleSystemConfigPost(SystemConfig incomingConfig) async {
+    // Incoming Config in this context will only represent what the user would like to change. Therefore we get our current running config, and merge the incoming
+    // config in with it.
+    final runningConfig = await _systemController.getSystemConfig();
+
+    // Merge in the incomingConfig with the RunningConfig and commit to the system.
+    final restartRequired = await _systemController
+        .commitSystemConfig(runningConfig.mergeWith(incomingConfig));
 
     if (restartRequired == false) {
       return false;
