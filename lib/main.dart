@@ -434,13 +434,16 @@ class _AppRootState extends State<AppRoot> {
   void _handleSystemCommandReceived(SystemCommand command) {
     switch (command.type) {
       case SystemCommandType.reboot:
+        print('reboot');
         _systemController.reboot();
         break;
       case SystemCommandType.powerOff:
         _systemController.powerOff();
+        print('poweroff');
         break;
       case SystemCommandType.restartApplication:
         _systemController.restart();
+        print('restart app');
         break;
       default:
         break;

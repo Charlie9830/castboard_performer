@@ -250,8 +250,11 @@ class SystemControllerRpiLinux implements SystemController {
   Future<SystemConfig> getSystemConfig() async {
     DeviceOrientation? ori;
     DeviceResolution? res;
-    AvailableResolutions availableResolutions =
-        AvailableResolutions(rpiHdmiModes.values.toList());
+
+    // Append an auto resolution option to the beggining of the available resolutions list.
+    AvailableResolutions availableResolutions = AvailableResolutions(
+      [DeviceResolution.auto(), ...rpiHdmiModes.values.toList()],
+    );
 
     final requests = [
       getDesiredResolution().then((result) => res = result),
