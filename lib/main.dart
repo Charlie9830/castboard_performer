@@ -492,7 +492,13 @@ class _AppRootState extends State<AppRoot> {
     try {
       LoggingManager.instance.player.info("Updating permanent storage");
       await Storage.instance!.updatePlayerShowData(
-          presets: presets, playbackState: data.playbackState);
+        showData: ShowDataModel(
+          actors: _actors,
+          tracks: _tracks,
+          presets: presets,
+        ),
+        playbackState: data.playbackState,
+      );
 
       LoggingManager.instance.player
           .info('Permanent storage updated successfully');
