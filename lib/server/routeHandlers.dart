@@ -51,13 +51,13 @@ Future<Response> handleShowDataPost(
     return Response.internalServerError(body: 'onShowDataReceived is null');
   }
 
-  if (Storage.instance!.isWriting || Storage.instance!.isReading) {
-    if (Storage.instance!.isWriting) {
+  if (Storage.instance.isWriting || Storage.instance.isReading) {
+    if (Storage.instance.isWriting) {
       LoggingManager.instance.server.warning(
           "A show data POST request was denied because the Storage class is busy writing");
     }
 
-    if (Storage.instance!.isReading) {
+    if (Storage.instance.isReading) {
       LoggingManager.instance.server.warning(
           "A a show data POST request was denied because the Storage class is busy reading");
     }
@@ -96,13 +96,13 @@ Future<Response> handleDownloadReq(
     return Response.notFound('File not Found');
   }
 
-  if (Storage.instance!.isWriting || Storage.instance!.isReading) {
-    if (Storage.instance!.isWriting) {
+  if (Storage.instance.isWriting || Storage.instance.isReading) {
+    if (Storage.instance.isWriting) {
       LoggingManager.instance.server.warning(
           "A download request was denied because the Storage class is busy writing");
     }
 
-    if (Storage.instance!.isReading) {
+    if (Storage.instance.isReading) {
       LoggingManager.instance.server.warning(
           "A download request was denied because the Storage class is busy reading");
     }

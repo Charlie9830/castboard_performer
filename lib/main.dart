@@ -299,11 +299,11 @@ class _AppRootState extends State<AppRoot> {
     LoggingManager.instance.player
         .info("Searching for previously loaded show file");
     _updateStartupStatus('Looking for previously loaded show file');
-    if (await Storage.instance!.isPlayerStoragePopulated()) {
+    if (await Storage.instance.isPlayerStoragePopulated()) {
       try {
         LoggingManager.instance.player
             .info("Show file located, starting show file read");
-        final ImportedShowData data = await Storage.instance!.readActiveShow();
+        final ImportedShowData data = await Storage.instance.readActiveShow();
         LoggingManager.instance.player
             .info("Show file read complete. Loading into state");
 
@@ -352,7 +352,7 @@ class _AppRootState extends State<AppRoot> {
     // to preCache the images we are going to need, as well as managing a system for evicting unused images from the cache.
     LoggingManager.instance.player.info("Pre caching backgrounds");
     final backgroundFiles = sortedSlides.map(
-        (slide) => Storage.instance!.getBackgroundFile(slide.backgroundRef));
+        (slide) => Storage.instance.getBackgroundFile(slide.backgroundRef));
     final preCacheImageRequests = backgroundFiles
         .where((file) => file != null)
         .map((file) => precacheImage(FileImage(file!), context));
@@ -521,7 +521,7 @@ class _AppRootState extends State<AppRoot> {
     // Update Permanent Storage.
     try {
       LoggingManager.instance.player.info("Updating permanent storage");
-      await Storage.instance!.updatePlayerShowData(
+      await Storage.instance.updatePlayerShowData(
         showData: ShowDataModel(
           actors: _actors,
           tracks: _tracks,
