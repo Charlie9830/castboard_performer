@@ -66,6 +66,9 @@ class SystemControllerRpiLinux implements SystemController {
     // Send a Power Off signal via dbus. Security for this is handled by logind of which has been configured by cage for us.
 
     _assertInit();
+
+    LoggingManager.instance.systemManager.info('System Power Off called');
+
     final object = DBusLocations.logindManager.object(_systemBus);
 
     try {
@@ -83,6 +86,9 @@ class SystemControllerRpiLinux implements SystemController {
   Future<void> reboot() async {
     // Send a Reboot signal via dbus. Security for this is handled by logind of which has been configured by cage for us.
     _assertInit();
+
+    LoggingManager.instance.systemManager.info('System Reboot called');
+
     final object = DBusLocations.logindManager.object(_systemBus);
 
     try {
@@ -99,6 +105,10 @@ class SystemControllerRpiLinux implements SystemController {
   Future<void> restart() async {
     // Send a Soft Restart signal via dbus. Security for this is handled by polkit, of which we have configured to allow us access to the 'manage-units' scope.
     _assertInit();
+
+    LoggingManager.instance.systemManager
+        .info('System Software Restart called');
+
     final object = DBusLocations.systemdManager.object(_systemBus);
 
     try {
@@ -120,6 +130,8 @@ class SystemControllerRpiLinux implements SystemController {
   Future<DeviceOrientation> getCurrentOrientation() async {
     _assertInit();
 
+    LoggingManager.instance.systemManager.info('Reading current orientation.');
+
     final currentConfig = await readConfigFile();
 
     switch (currentConfig.deviceRotation) {
@@ -137,6 +149,9 @@ class SystemControllerRpiLinux implements SystemController {
   @override
   Future<DeviceResolution> getCurrentResolution() async {
     _assertInit();
+
+    LoggingManager.instance.systemManager.info('Reading current resolution');
+
     final String command = 'cat';
     final List<String> args = ['/sys/class/graphics/fb0/virtual_size'];
 
@@ -162,6 +177,8 @@ class SystemControllerRpiLinux implements SystemController {
   @override
   Future<DeviceResolution> getDesiredResolution() async {
     _assertInit();
+
+    LoggingManager.instance.systemManager.info('Reading desired resolution');
 
     // The state for auto resolution is stored in a different property within the config file. So check that property first, if it's set to auto,
     // short circut out and return a DeviceResolution representing auto mode.
@@ -206,6 +223,9 @@ class SystemControllerRpiLinux implements SystemController {
   Future<bool> getIsAutoResolution() async {
     _assertInit();
 
+    LoggingManager.instance.systemManager
+        .info('Reading auto resolution state.');
+
     final grep =
         await Process.run(_grepCommand, [_hdmiGroupPattern, _rpiConfigPath]);
 
@@ -227,9 +247,14 @@ class SystemControllerRpiLinux implements SystemController {
   Future<bool> commitSystemConfig(SystemConfig config) async {
     _assertInit();
 
+    LoggingManager.instance.systemManager
+        .info('Commiting System Configuration:  ${config.toMap().toString()}');
+
     bool restartRequired = false;
     // Apply Changes (if any) to Startup Configuration.
     if (_containsStartupConfigUpdates(config)) {
+      LoggingManager.instance.systemManager
+          .info('Updating startup configuration');
       await writeConfigFile(RpiConfigModel(
           deviceRotation: _deviceOrientationMap[config.deviceOrientation!]!));
 
@@ -238,6 +263,7 @@ class SystemControllerRpiLinux implements SystemController {
 
     // Apply Device Resolution Changes (if any)
     if (config.deviceResolution != null) {
+      LoggingManager.instance.systemManager.info('Updating device resolution');
       await _updateDeviceResolution(config.deviceResolution!);
 
       restartRequired = true;
@@ -248,6 +274,10 @@ class SystemControllerRpiLinux implements SystemController {
 
   @override
   Future<SystemConfig> getSystemConfig() async {
+    _assertInit();
+
+    LoggingManager.instance.systemManager.info('Reading system configuration');
+
     DeviceOrientation? ori;
     DeviceResolution? res;
 
