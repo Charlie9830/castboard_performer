@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:castboard_core/logging/LoggingManager.dart';
 import 'package:castboard_core/models/RemoteShowData.dart';
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
@@ -20,12 +21,13 @@ typedef void OnSystemCommandReceivedCallback(SystemCommand command);
 typedef Future<
     List<DeviceResolution>> OnAvailableResolutionsRequestedCallback();
 typedef void OnPlaybackCommandReceivedCallback(PlaybackCommand command);
-typedef void OnShowFileReceivedAndStoredCallback();
+typedef Future<bool> OnShowFileReceivedCallback(List<int> bytes);
 typedef RemoteShowData OnShowDataPullCallback();
 typedef Future<bool> OnShowDataReceivedCallback(RemoteShowData data);
 typedef void OnHeartbeatCallback(String sessionId);
 typedef Future<SystemConfig> OnSystemConfigPullCallback();
 typedef Future<bool> OnSystemConfigPostCallback(SystemConfig config);
+typedef Future<File> OnShowfileDownloadCallback();
 
 // Config
 const _webAppFilePath = 'web_app/';
@@ -42,13 +44,14 @@ class Server {
   final String address;
   final int port;
   final OnPlaybackCommandReceivedCallback? onPlaybackCommand;
-  final OnShowFileReceivedAndStoredCallback? onShowFileReceived;
+  final OnShowFileReceivedCallback? onShowFileReceived;
   final OnShowDataPullCallback? onShowDataPull;
   final OnShowDataReceivedCallback? onShowDataReceived;
   final OnHeartbeatCallback onHeartbeatReceived;
   final OnSystemCommandReceivedCallback? onSystemCommandReceived;
   final OnSystemConfigPullCallback? onSystemConfigPull;
   final OnSystemConfigPostCallback? onSystemConfigPostCallback;
+  final OnShowfileDownloadCallback? onShowfileDownload;
 
   late HttpServer server;
 
@@ -62,6 +65,7 @@ class Server {
     this.onSystemCommandReceived,
     this.onSystemConfigPull,
     this.onSystemConfigPostCallback,
+    this.onShowfileDownload,
     required this.onHeartbeatReceived,
   });
 
@@ -150,7 +154,7 @@ class Server {
     router.get(Routes.download, (Request req) {
       LoggingManager.instance.server
           .info('Show File Download GET command received');
-      return handleDownloadReq(req);
+      return handleDownloadReq(req, onShowfileDownload);
     });
 
     // Show Data Pull

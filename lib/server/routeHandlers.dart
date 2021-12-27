@@ -80,8 +80,17 @@ Future<Response> handleShowDataPost(
   }
 }
 
-Future<Response> handleDownloadReq(Request request) async {
-  final file = Storage.instance!.getPlayerStorageFile();
+Future<Response> handleDownloadReq(
+    Request request, OnShowfileDownloadCallback? callback) async {
+  if (callback == null) {
+    LoggingManager.instance.server.warning(
+        "A download request was denied because the OnShowfileDownloadCallback is null");
+    return Response.internalServerError(
+        body: "The OnShowfileDownloadCallback is null");
+  }
+
+  // Call out to the main thread to Pack up the showfile into an archive and give us a reference to the completed archive.
+  final file = await callback();
 
   if (await file.exists() == false) {
     return Response.notFound('File not Found');
@@ -112,9 +121,15 @@ Future<Response> handleDownloadReq(Request request) async {
 }
 
 Future<Response> handleUploadReq(
-    Request request, dynamic onShowFileReceived) async {
+    Request request, OnShowFileReceivedCallback? callback) async {
   if (request.contentLength == null || request.contentLength == 0) {
     return Response(400); // Bad Request.
+  }
+
+  if (callback == null) {
+    LoggingManager.instance.server
+        .severe('OnShowFileReceivedCallback was null');
+    return Response.internalServerError(body: 'An error occured');
   }
 
   final buffer = <int>[];
@@ -122,29 +137,14 @@ Future<Response> handleUploadReq(
     buffer.addAll(bytes.toList());
   }
 
-  if (await Storage.instance!.validateShowFile(buffer) == false) {
-    return Response(415); // Unsuported Media Format.
-  }
+  final result = await callback(buffer);
 
-  if (Storage.instance!.isWriting || Storage.instance!.isReading) {
-    if (Storage.instance!.isWriting) {
-      LoggingManager.instance.server.warning(
-          "An upload request was denied because the Storage class is busy writing");
-    }
-
-    if (Storage.instance!.isReading) {
-      LoggingManager.instance.server.warning(
-          "An upload request was denied because the Storage class is busy reading");
-    }
-
+  if (result == true) {
+    return Response.ok(null);
+  } else {
     return Response.internalServerError(
-        body: 'Storage is busy. Please try again');
+        body: "Something went wrong, please try again");
   }
-
-  await Storage.instance!.copyShowFileIntoPlayerStorage(buffer);
-  onShowFileReceived?.call();
-
-  return Response.ok(null);
 }
 
 Future<Response> handlePlaybackReq(

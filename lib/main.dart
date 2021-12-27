@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:castboard_core/classes/StandardSlideSizes.dart';
 import 'package:castboard_core/enums.dart';
@@ -117,7 +118,8 @@ class _AppRootState extends State<AppRoot> {
         port: port,
         onHeartbeatReceived: _handleHeartbeatReceived,
         onPlaybackCommand: _handlePlaybackCommand,
-        onShowFileReceived: _handleShowFileReceived,
+        onShowFileReceived: _handleShowfileReceived,
+        onShowfileDownload: _handleShowfileDownloadRequest,
         onShowDataPull: _handleShowDataPull,
         onShowDataReceived: _handleShowDataReceived,
         onSystemCommandReceived: _handleSystemCommandReceived,
@@ -224,16 +226,45 @@ class _AppRootState extends State<AppRoot> {
     }
   }
 
-  void _handleShowFileReceived() async {
-    LoggingManager.instance.player
-        .info("New show file received. Reading from storage");
-    try {
-      final data = await Storage.instance!.readFromPlayerStorage();
-      _loadShow(data);
-    } catch (e, stacktrace) {
-      LoggingManager.instance.player.severe(
-          "An error occured reading or loading show data", e, stacktrace);
+  Future<File> _handleShowfileDownloadRequest() async {
+    final file = await Storage.instance.archiveActiveShow();
+
+    return file;
+  }
+
+  Future<bool> _handleShowfileReceived(List<int> bytes) async {
+    // Dump the current route and push the loading splash. This ensures that we don't end up deleting an image file
+    // just as an ImageProvider is trying to access it.
+    navigatorKey.currentState!.popAndPushNamed(RouteNames.loadingSplash);
+
+    // Validate the incoming show file.
+    if (await Storage.instance.validateShowFile(bytes) == false) {
+      // Invalid show file received. Log it, then return back to the player route if a suitable show remains
+      // in active storage otherwise return back to the config route.
+
+      // TODO: Instead of just returning a bool we should return an object that will allow us to provide more detailed
+      // information back to the remote as to why the show was rejected.
+
+      LoggingManager.instance.server
+          .info('Invalid showfile received. Rejecting request');
+
+      final canReturnToSlideShow =
+          await Storage.instance.isPlayerStoragePopulated();
+      if (canReturnToSlideShow) {
+        navigatorKey.currentState!.popAndPushNamed(RouteNames.player);
+      } else {
+        navigatorKey.currentState!.popAndPushNamed(RouteNames.configViewer);
+      }
+      return false;
     }
+
+    // Read the incoming show.
+    final showdata = await Storage.instance.loadArchivedShowfile(bytes);
+
+    // Load into state.
+    _loadShow(showdata);
+
+    return true;
   }
 
   void _updateStartupStatus(String status) {
@@ -247,7 +278,7 @@ class _AppRootState extends State<AppRoot> {
     // Init Storage
     try {
       LoggingManager.instance.player.info('Initializing storage');
-      await Storage.initalize(StorageMode.player);
+      await Storage.initialize(StorageMode.player);
       LoggingManager.instance.player.info("Storage initialization success");
     } catch (e, stacktrace) {
       LoggingManager.instance.player
@@ -272,8 +303,7 @@ class _AppRootState extends State<AppRoot> {
       try {
         LoggingManager.instance.player
             .info("Show file located, starting show file read");
-        final ImportedShowData data =
-            await Storage.instance!.readFromPlayerStorage();
+        final ImportedShowData data = await Storage.instance!.readActiveShow();
         LoggingManager.instance.player
             .info("Show file read complete. Loading into state");
 
@@ -286,7 +316,7 @@ class _AppRootState extends State<AppRoot> {
         LoggingManager.instance.player.info("Show file loaded into state");
       } catch (e, stacktrace) {
         LoggingManager.instance.player
-            .severe("Show file load read failed", e, stacktrace);
+            .severe("Show file read failed", e, stacktrace);
       }
     } else {
       await _pauseForEffect();
