@@ -24,6 +24,7 @@ import 'package:castboard_core/storage/ImportedShowData.dart';
 import 'package:castboard_core/storage/Storage.dart';
 import 'package:castboard_core/system-commands/SystemCommands.dart';
 import 'package:castboard_player/ConfigViewer.dart';
+import 'package:castboard_player/CriticalError.dart';
 import 'package:castboard_player/DbusTesting.dart';
 import 'package:castboard_player/LoadingSplash.dart';
 import 'package:castboard_player/Player.dart';
@@ -147,11 +148,7 @@ class _AppRootState extends State<AppRoot> {
   @override
   Widget build(BuildContext context) {
     if (widget.criticalError.isNotEmpty) {
-      return MaterialApp(
-          home: Scaffold(
-              body: Center(
-        child: Text(widget.criticalError),
-      )));
+      return CriticalError(errorMessage: widget.criticalError);
     }
 
     return RawKeyboardListener(
@@ -303,6 +300,16 @@ class _AppRootState extends State<AppRoot> {
     } catch (e, stacktrace) {
       LoggingManager.instance.player
           .severe("Storage initialization failed", e, stacktrace);
+    }
+
+    // Init SystemController
+    _updateStartupStatus('Initializing System Controller');
+    try {
+      LoggingManager.instance.player.info('Initializing SystemController');
+      await _systemController.initialize();
+    } catch (e, stacktrace) {
+      LoggingManager.instance.player
+          .severe("SystemController initialization failed", e, stacktrace);
     }
 
     _updateStartupStatus('Initializing administration server');
