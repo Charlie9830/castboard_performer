@@ -41,13 +41,18 @@ import 'package:flutter/services.dart';
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
+  String criticalError = '';
+
   try {
     await _initLogging();
   } catch (error) {
-    stderr.write('Failed to initialize LoggingManager. ${error.toString()}');
-    exit(1);
+    criticalError = error.toString();
+    //stderr.write('Failed to initialize LoggingManager. ${error.toString()}');
+    //exit(1);
   }
-  runApp(AppRoot());
+  runApp(AppRoot(
+    criticalError: criticalError,
+  ));
 }
 
 Future<void> _initLogging() async {
@@ -61,7 +66,9 @@ Future<void> _initLogging() async {
 Server? server;
 
 class AppRoot extends StatefulWidget {
-  AppRoot({Key? key}) : super(key: key);
+  final String criticalError;
+
+  AppRoot({Key? key, this.criticalError = ''}) : super(key: key);
 
   @override
   _AppRootState createState() => _AppRootState();
@@ -107,6 +114,11 @@ class _AppRootState extends State<AppRoot> {
 
   @override
   void initState() {
+    if (widget.criticalError.isNotEmpty) {
+      super.initState();
+      return;
+    }
+
     LoggingManager.instance.player.info('Initializing Player state');
     super.initState();
 
@@ -134,6 +146,14 @@ class _AppRootState extends State<AppRoot> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.criticalError.isNotEmpty) {
+      return MaterialApp(
+          home: Scaffold(
+              body: Center(
+        child: Text(widget.criticalError),
+      )));
+    }
+
     return RawKeyboardListener(
       focusNode: _keyboardFocusNode,
       autofocus: true,
