@@ -295,11 +295,16 @@ class SystemControllerRpiLinux implements SystemController {
 
     final defaults = SystemConfig.defaults();
 
-    return SystemConfig(
+    final config = SystemConfig(
       deviceResolution: res ?? defaults.deviceResolution,
       deviceOrientation: ori ?? defaults.deviceOrientation,
       availableResolutions: availableResolutions,
     );
+
+    LoggingManager.instance.systemManager.info(
+        'System Configuration fetched. \n ${config.toMap().toString()} \n');
+
+    return config;
   }
 
   Future<void> _updateDeviceResolution(

@@ -51,9 +51,15 @@ void main() async {
     //stderr.write('Failed to initialize LoggingManager. ${error.toString()}');
     //exit(1);
   }
-  runApp(AppRoot(
-    criticalError: criticalError,
-  ));
+
+  try {
+    runApp(AppRoot(
+      criticalError: criticalError,
+    ));
+  } catch (e, stacktrace) {
+    LoggingManager.instance.general
+        .severe('Uncaught Exception: ', e, stacktrace);
+  }
 }
 
 Future<void> _initLogging() async {
