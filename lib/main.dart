@@ -637,8 +637,21 @@ class _AppRootState extends State<AppRoot> {
     super.dispose();
   }
 
-  Future<SystemConfig> _handleSystemConfigPull() async {
-    return await _systemController.getSystemConfig();
+  Future<SystemConfig?> _handleSystemConfigPull() async {
+    final SystemConfig? config;
+
+    try {
+      config = await _systemController.getSystemConfig();
+    } catch (e, stacktrace) {
+      LoggingManager.instance.systemManager.warning(
+          'An exception was thrown whilst retrieving the system config.',
+          e,
+          stacktrace);
+
+      return null;
+    }
+
+    return config;
   }
 
   Future<bool> _handleSystemConfigPost(SystemConfig incomingConfig) async {

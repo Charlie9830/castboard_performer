@@ -207,6 +207,13 @@ Future<Response> handleSystemConfigReq(
   }
 
   final result = await callback();
+
+  if (result == null) {
+    LoggingManager.instance.server.warning(
+        'OnSystemConfigPullCallback returned null. Unable to repond with System Config');
+    return Response.internalServerError(body: 'An error occurred');
+  }
+
   final jsonData = json.encoder.convert(result.toMap());
   return Response.ok(jsonData);
 }

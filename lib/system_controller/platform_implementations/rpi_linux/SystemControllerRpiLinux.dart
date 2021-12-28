@@ -67,7 +67,7 @@ class SystemControllerRpiLinux implements SystemController {
 
     _assertInit();
 
-    LoggingManager.instance.systemManager.info('System Power Off called');
+    LoggingManager.instance.systemManager.info('System Power off called');
 
     final object = DBusLocations.logindManager.object(_systemBus);
 
@@ -162,7 +162,8 @@ class SystemControllerRpiLinux implements SystemController {
       if (string.isEmpty ||
           string.contains(',') == false ||
           string.split(',').length < 2) {
-        throw 'Unable to get current device resolution, result of \n $command $args \n could not be parsed.';
+        throw 'Unable to get current device resolution, result of \n $command $args \n could not be parsed \n' +
+            'Result is: $result';
       }
 
       final int width = int.parse(string.split(',')[0]);
@@ -170,7 +171,8 @@ class SystemControllerRpiLinux implements SystemController {
 
       return DeviceResolution(width, height);
     } else {
-      throw 'Unable to get current device resolution, result of \n $command $args \n was not a String';
+      throw 'Unable to get current device resolution, result of \n $command $args \n was not a String. ' +
+          'Result is a ${result.runtimeType}, toString() as ${result.toString()}';
     }
   }
 
@@ -199,24 +201,27 @@ class SystemControllerRpiLinux implements SystemController {
           .toList();
 
       if (results.isEmpty) {
-        throw 'Unable to get desired resolution, Error parsing results from Grep';
+        throw 'Unable to get desired resolution, Error parsing results from Grep. Raw results were: ${grep.stdout}';
       }
 
       final mode = results.first.replaceFirst('hdmi_mode=', '');
       final int? modeInt = int.tryParse(mode);
 
       if (modeInt == null || modeInt == 0 || modeInt > 107) {
-        throw 'Unable to get desired resolution, Error parsing results from Grep. Failed to extract mode integer.';
+        throw 'Unable to get desired resolution, Error parsing results from Grep. Failed to extract mode integer. ' +
+            'Raw results were: ${grep.stdout}';
       }
 
       if (rpiHdmiModes.containsKey(modeInt) == false) {
-        throw 'Unrecognized HDMI mode int. Mode integer was not found in RpiHdmiModes map';
+        throw 'Unrecognized HDMI mode int. Mode integer was not found in RpiHdmiModes map.' +
+            'Detected mode is $modeInt';
       }
 
       return rpiHdmiModes[modeInt]!;
     }
 
-    throw 'Unable to get desired resolution, stdout result from grep was not a String';
+    throw 'Unable to get desired resolution, stdout result from grep was not a String. stdout result is ${grep.stdout.runtimeType} ' +
+        'As a string it is ${grep.stdout.toString()}';
   }
 
   @override

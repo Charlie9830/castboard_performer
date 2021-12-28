@@ -25,7 +25,7 @@ typedef Future<bool> OnShowFileReceivedCallback(List<int> bytes);
 typedef RemoteShowData OnShowDataPullCallback();
 typedef Future<bool> OnShowDataReceivedCallback(RemoteShowData data);
 typedef void OnHeartbeatCallback(String sessionId);
-typedef Future<SystemConfig> OnSystemConfigPullCallback();
+typedef Future<SystemConfig?> OnSystemConfigPullCallback();
 typedef Future<bool> OnSystemConfigPostCallback(SystemConfig config);
 typedef Future<File> OnShowfileDownloadCallback();
 
