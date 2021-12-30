@@ -2,13 +2,13 @@ import 'package:castboard_player/system_controller/platform_implementations/rpi_
 import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/getAppConfigFIle.dart';
 
 Future<ApplicationConfigModel> readConfigFile() async {
-  final systemConfigFile = await getAppConfigFile();
-  final exists = await systemConfigFile.exists();
+  final appConfigFile = await getAppConfigFile();
+  final exists = await appConfigFile.exists();
 
   if (exists == false) {
     return ApplicationConfigModel.defaults();
   }
 
-  final contents = await systemConfigFile.readAsString();
+  final contents = await appConfigFile.readAsString();
   return ApplicationConfigModel.fromFile(contents);
 }
