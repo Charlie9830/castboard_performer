@@ -1,23 +1,23 @@
 import 'dart:convert';
 
-class RpiConfigModel {
+class ApplicationConfigModel {
   final int deviceRotation;
 
-  RpiConfigModel({
+  ApplicationConfigModel({
     required this.deviceRotation,
   });
 
-  const RpiConfigModel.defaults() : deviceRotation = 0;
+  const ApplicationConfigModel.defaults() : deviceRotation = 0;
 
-  factory RpiConfigModel.fromFile(String fileContents) {
+  factory ApplicationConfigModel.fromFile(String fileContents) {
     if (fileContents.isEmpty) {
-      return RpiConfigModel.defaults();
+      return ApplicationConfigModel.defaults();
     }
 
     final map = _parseConfigFile(fileContents);
-    final defaults = RpiConfigModel.defaults();
+    final defaults = ApplicationConfigModel.defaults();
 
-    return RpiConfigModel(
+    return ApplicationConfigModel(
       deviceRotation:
           int.tryParse(map['deviceRotation'] ?? '') ?? defaults.deviceRotation,
     );

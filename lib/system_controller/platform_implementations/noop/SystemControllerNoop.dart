@@ -33,26 +33,6 @@ class SystemControllerNoop implements SystemController {
   }
 
   @override
-  Future<DeviceOrientation> getCurrentOrientation() async {
-    return DeviceOrientation.landscape;
-  }
-
-  @override
-  Future<DeviceResolution> getCurrentResolution() async {
-    return DeviceResolution(1920, 1080);
-  }
-
-  @override
-  Future<bool> getIsAutoResolution() async {
-    return true;
-  }
-
-  @override
-  Future<DeviceResolution> getDesiredResolution() async {
-    return DeviceResolution(1920, 1080);
-  }
-
-  @override
   Future<bool> commitSystemConfig(SystemConfig config) async {
     print(' === Device Config Parameters === \n');
     config.toMap().forEach((key, value) => print('$key=$value \n'));

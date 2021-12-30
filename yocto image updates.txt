@@ -1,0 +1,7 @@
+> Modify cage_autorun .service file. Also worth adding the KillSignal Property to match RestartKillSignal. Don't forget to update
+    the path to castboard.
+> Add free space to Production Image.
+> Add some free space to the dev Image (As we will start debugging off the /usr/share/castboard_player/ directory)
+> Modify the useradd in cage_autorun to create a user without a password.
+> Add a default config file for castboard at /home/cage/castboard.conf
+> Make a cleaner config.txt for the rpi. With hdmi_mode, hdmi_group and the hotplug force property

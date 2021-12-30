@@ -1,0 +1,19 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build eLinux Arm64",
+            "type": "shell",
+            "command": "flutter-elinux build elinux --target-arch=arm64 --target-sysroot=/opt/ubuntu18-arm64-sysroot --system-include-directories=/usr/aarch64-linux-gnu/include/c++/9/aarch64-linux-gnu --debug ",
+        },
+        {
+            "label": "Deploy to Rpi4",
+            "type": "shell",
+            "dependsOn": "Build eLinux Arm64",
+            "command": "ssh root@10.101.1.2 rm -rf /usr/share/castboard_player/ && scp -r ./build/elinux/arm64/debug/bundle root@10.101.1.2:/usr/share/castboard_player/"
+        },
+        
+    ]
+}

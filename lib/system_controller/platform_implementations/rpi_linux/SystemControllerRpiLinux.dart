@@ -5,11 +5,15 @@ import 'package:castboard_core/models/system_controller/AvailableResolutions.dar
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_core/models/system_controller/DeviceOrientation.dart';
 import 'package:castboard_core/models/system_controller/DeviceResolution.dart';
-import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/models/RpiConfigModel.dart';
+import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/getRpiBootConfigFile.dart';
+import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/models/ApplicationConfigModel.dart';
 import 'package:castboard_player/system_controller/SystemController.dart';
 import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/RpiHdmiModes.dart';
-import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/readConfigFile.dart';
-import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/writeConfigFile.dart';
+import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/models/RpiBootConfigModel.dart';
+import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/readApplicationConfigFile.dart';
+import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/readRpiBootConfigFile.dart';
+import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/sed.dart';
+import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/writeApplicationConfigFile.dart';
 import 'package:dbus/dbus.dart';
 import 'package:castboard_player/system_controller/DBusLocations.dart';
 
@@ -20,17 +24,15 @@ import 'package:castboard_player/system_controller/DBusLocations.dart';
 /// directory and finally in the startup.conf file.
 
 // Systemd unit name. We currently use the Cage Wayland Compositor.
-const String _unitName = 'cage@tty7';
+const String _unitName = 'cage@tty7.service';
 
 // Paths
 const String _rpiConfigMntDir = '/media/boot/';
-const String _rpiConfigPath = '$_rpiConfigMntDir/config.txt';
+const String rpiConfigPath = '$_rpiConfigMntDir/config.txt';
 
 // Commands
 const String _mountCommand = 'mount';
 const String _unMountCommand = 'umount';
-const String _grepCommand = 'grep';
-const String _sedCommand = 'sed';
 
 // Command Args
 const List<String> _mountArgs = [_rpiConfigMntDir];
@@ -50,13 +52,25 @@ class SystemControllerRpiLinux implements SystemController {
   @override
   Future<void> initialize() async {
     // Mount the Boot Config partition. fstab will ensure it is mounted with our permissions.
-    final result = await Process.run(_mountCommand, _mountArgs);
+    try {
+      final ProcessResult result = await Process.run(_mountCommand, _mountArgs);
+      if (result.exitCode == 0 || result.exitCode == 32) {
+        // Error code 32 is thrown when the drive is already mounted.
 
-    if (result.exitCode != 0) {
-      throw 'SystemControllerRpiLinux initialization failed. Mount command returned exit code ${result.exitCode}';
+        // Success
+        _initialized = true;
+        return;
+      }
+
+      // Something has gone wrong. Log it and return.
+      LoggingManager.instance.systemManager.severe(
+          'SystemControllerRpiLinux initialization failed. Mount command returned exit code ${result.exitCode}');
+
+      return;
+    } catch (e) {
+      LoggingManager.instance.systemManager.severe(
+          'An error occured whilst mounting the boot config directory. \n $e');
     }
-
-    _initialized = true;
 
     return;
   }
@@ -98,7 +112,7 @@ class SystemControllerRpiLinux implements SystemController {
         [DBusBoolean(false)],
       );
     } catch (e) {
-      _handleError(e, 'PowerOff');
+      _handleError(e, 'Reboot');
     }
   }
 
@@ -126,7 +140,6 @@ class SystemControllerRpiLinux implements SystemController {
     }
   }
 
-  @override
   Future<DeviceOrientation> getCurrentOrientation() async {
     _assertInit();
 
@@ -146,11 +159,10 @@ class SystemControllerRpiLinux implements SystemController {
     }
   }
 
-  @override
-  Future<DeviceResolution> getCurrentResolution() async {
+  Future<DeviceResolution> _getActualResolution() async {
     _assertInit();
 
-    LoggingManager.instance.systemManager.info('Reading current resolution');
+    LoggingManager.instance.systemManager.info('Reading actual resolution');
 
     final String command = 'cat';
     final List<String> args = ['/sys/class/graphics/fb0/virtual_size'];
@@ -177,99 +189,41 @@ class SystemControllerRpiLinux implements SystemController {
   }
 
   @override
-  Future<DeviceResolution> getDesiredResolution() async {
+  Future<bool> commitSystemConfig(SystemConfig configDelta) async {
+    // configDelta represents only the properties that have been modifed by the user, untouched properties will be null.
     _assertInit();
 
-    LoggingManager.instance.systemManager.info('Reading desired resolution');
+    LoggingManager.instance.systemManager.info(
+        'Commiting System Configuration Delta:  ${configDelta.toMap().toString()}');
 
-    // The state for auto resolution is stored in a different property within the config file. So check that property first, if it's set to auto,
-    // short circut out and return a DeviceResolution representing auto mode.
-    if (await getIsAutoResolution()) {
-      return DeviceResolution.auto();
-    }
-
-    final grep = await Process.run(_grepCommand, [_hdmiModePattern]);
-
-    if (grep.exitCode != 0) {
-      throw 'Unable to get desired resolution, Grep failed to find entry in config.txt';
-    }
-
-    if (grep.stdout is String) {
-      final List<String> results = (grep.stdout as String)
-          .split('/n')
-          .where((value) => value.contains('#') == false)
-          .toList();
-
-      if (results.isEmpty) {
-        throw 'Unable to get desired resolution, Error parsing results from Grep. Raw results were: ${grep.stdout}';
-      }
-
-      final mode = results.first.replaceFirst('hdmi_mode=', '');
-      final int? modeInt = int.tryParse(mode);
-
-      if (modeInt == null || modeInt == 0 || modeInt > 107) {
-        throw 'Unable to get desired resolution, Error parsing results from Grep. Failed to extract mode integer. ' +
-            'Raw results were: ${grep.stdout}';
-      }
-
-      if (rpiHdmiModes.containsKey(modeInt) == false) {
-        throw 'Unrecognized HDMI mode int. Mode integer was not found in RpiHdmiModes map.' +
-            'Detected mode is $modeInt';
-      }
-
-      return rpiHdmiModes[modeInt]!;
-    }
-
-    throw 'Unable to get desired resolution, stdout result from grep was not a String. stdout result is ${grep.stdout.runtimeType} ' +
-        'As a string it is ${grep.stdout.toString()}';
-  }
-
-  @override
-  Future<bool> getIsAutoResolution() async {
-    _assertInit();
-
-    LoggingManager.instance.systemManager
-        .info('Reading auto resolution state.');
-
-    final grep =
-        await Process.run(_grepCommand, [_hdmiGroupPattern, _rpiConfigPath]);
-
-    if (grep.exitCode != 0) {
-      throw 'Unable to get Auto Resolution mode. Grep failed to find entry in config.txt';
-    }
-
-    if (grep.stdout is String) {
-      final resultString = grep.stdout as String;
-      if (resultString.contains('=0')) {
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  @override
-  Future<bool> commitSystemConfig(SystemConfig config) async {
-    _assertInit();
-
-    LoggingManager.instance.systemManager
-        .info('Commiting System Configuration:  ${config.toMap().toString()}');
-
+    // Keep track of if we are going to need to restart.
     bool restartRequired = false;
-    // Apply Changes (if any) to Startup Configuration.
-    if (_containsStartupConfigUpdates(config)) {
+
+    // Apply Changes (if any) to the Application Configuration.
+    if (_containsApplicationConfigUpdates(configDelta)) {
       LoggingManager.instance.systemManager
-          .info('Updating startup configuration');
-      await writeConfigFile(RpiConfigModel(
-          deviceRotation: _deviceOrientationMap[config.deviceOrientation!]!));
+          .info('Updating application configuration');
+      await writeApplicationConfigFile(ApplicationConfigModel(
+          deviceRotation:
+              _deviceOrientationMap[configDelta.deviceOrientation!]!));
 
       restartRequired = true;
     }
 
-    // Apply Device Resolution Changes (if any)
-    if (config.deviceResolution != null) {
-      LoggingManager.instance.systemManager.info('Updating device resolution');
-      await _updateDeviceResolution(config.deviceResolution!);
+    // Apply Rpi Boot Config Changes if any.
+    if (_containsRpiBootConfigUpdates(configDelta)) {
+      LoggingManager.instance.systemManager
+          .info('Updating RPI Boot Configuration');
+      LoggingManager.instance.systemManager
+          .info('Reading existing RPI Boot Configuration');
+
+      final bootConfigFile = getRpiBootConfigFile();
+
+      // Device Resolution.
+      if (configDelta.deviceResolution != null) {
+        await sed(bootConfigFile, RegExp(r"^hdmi_mode=[0-9]+"),
+            "hdmi_mode=${_getHdmiModeInteger(configDelta.deviceResolution!)}");
+      }
 
       restartRequired = true;
     }
@@ -284,15 +238,15 @@ class SystemControllerRpiLinux implements SystemController {
     LoggingManager.instance.systemManager.info('Reading system configuration');
 
     DeviceOrientation? ori;
-    DeviceResolution? res;
+    RpiBootConfigModel? bootConfig;
 
-    // Append an auto resolution option to the beggining of the available resolutions list.
+    // Append an auto resolution option to the begining of the available resolutions list.
     AvailableResolutions availableResolutions = AvailableResolutions(
-      [DeviceResolution.auto(), ...rpiHdmiModes.values.toList()],
+      [...rpiHdmiModes.values.toList()],
     );
 
     final requests = [
-      getDesiredResolution().then((result) => res = result),
+      readRpiBootConfigFile().then((result) => bootConfig = result),
       getCurrentOrientation().then((result) => ori = result),
     ];
 
@@ -301,7 +255,8 @@ class SystemControllerRpiLinux implements SystemController {
     final defaults = SystemConfig.defaults();
 
     final config = SystemConfig(
-      deviceResolution: res ?? defaults.deviceResolution,
+      deviceResolution:
+          bootConfig?.toSystemConfig().deviceResolution ?? rpiHdmiModes[16],
       deviceOrientation: ori ?? defaults.deviceOrientation,
       availableResolutions: availableResolutions,
     );
@@ -312,44 +267,15 @@ class SystemControllerRpiLinux implements SystemController {
     return config;
   }
 
-  Future<void> _updateDeviceResolution(
-      DeviceResolution incomingResolution) async {
-    final currentDesiredRes = await getDesiredResolution();
+  int _getHdmiGroupInteger(DeviceResolution resolution) {
+    // We try to only use either 'auto' (0) or 'CEA' (1) hdmi_group on the Rpi
+    return resolution.auto ? 0 : 1;
+  }
 
-    if (currentDesiredRes == incomingResolution) {
-      // No update needed.
-      return;
-    }
-
-    // First check that we arent changing the auto mode of resolution. If we are,
-    // then we need to modify a seperate parameter in the Rpi boot config, hdmi_group.
-    if (currentDesiredRes.auto != incomingResolution.auto) {
-      // We try to only use either 'auto' (0) or 'CEA' (1) hdmi_group on the Rpi.
-      final incomingGroupValue = incomingResolution.auto ? '0' : '1';
-      final replacementString = 'hdmi_group=$incomingGroupValue';
-
-      await Process.run(
-          _sedCommand, ['s/$_hdmiGroupPattern/$replacementString/g']);
-    }
-
+  int _getHdmiModeInteger(DeviceResolution resolution) {
     // Map the incoming mode to an Rpi hdmi_mode integer.
-    final int incomingMode = rpiHdmiModes.keys.firstWhere(
-        (key) => rpiHdmiModes[key] == incomingResolution,
-        orElse: () => -1);
-
-    if (incomingMode == -1) {
-      throw 'Invalid Rpi device resolution integer';
-    }
-
-    // Prepare the string that will be written into the boot config.
-    final replacementString = 'hdmi_mode=$incomingMode';
-
-    // Run sed to modify the Rpi boot config. We don't check for the exit code as Sed will emit a non-zero exit code if nothing was changed,
-    // this may not neccisarily indicate an error.
-    await Process.run(
-        _sedCommand, ['s/$_hdmiModePattern/$replacementString/g']);
-
-    return;
+    return rpiHdmiModes.keys
+        .firstWhere((key) => rpiHdmiModes[key] == resolution, orElse: () => 16);
   }
 
   bool _assertInit() {
@@ -377,7 +303,12 @@ class SystemControllerRpiLinux implements SystemController {
   }
 
   /// Determines if the provided DeviceConfig contains updates to the Startup Configuration.
-  bool _containsStartupConfigUpdates(SystemConfig config) {
+  bool _containsApplicationConfigUpdates(SystemConfig config) {
     return config.deviceOrientation != null;
+  }
+
+  /// Determins if the provided DeviceConfig contains updates to the RPI Boot Configuration
+  bool _containsRpiBootConfigUpdates(SystemConfig config) {
+    return config.deviceResolution != null;
   }
 }

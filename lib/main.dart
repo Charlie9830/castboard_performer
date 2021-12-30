@@ -34,7 +34,7 @@ import 'package:castboard_player/fontLoadingHelpers.dart';
 import 'package:castboard_player/scheduleRestart.dart';
 import 'package:castboard_player/server/Server.dart';
 import 'package:castboard_player/system_controller/SystemController.dart';
-import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/models/RpiConfigModel.dart';
+import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/models/ApplicationConfigModel.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -42,6 +42,7 @@ import 'package:flutter/services.dart';
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
+  print('Standard Output Test2');
   String criticalError = '';
 
   try {
@@ -65,6 +66,7 @@ void main() async {
 Future<void> _initLogging() async {
   await LoggingManager.initialize('castboard_player_runtime_logs',
       runAsRelease: true);
+  LoggingManager.instance.general.info('\n \n *********************** \n \n');
   LoggingManager.instance.general.info('LoggingManager initialized.');
   LoggingManager.instance.general.info('Application started');
   return;
@@ -148,7 +150,7 @@ class _AppRootState extends State<AppRoot> {
     _heartbeatTimer =
         Timer.periodic(Duration(seconds: 30), (_) => _checkHeartbeats(30));
 
-    _initalizePlayer();
+    _initializePlayer();
   }
 
   @override
@@ -296,7 +298,8 @@ class _AppRootState extends State<AppRoot> {
     });
   }
 
-  void _initalizePlayer() async {
+  void _initializePlayer() async {
+    print('StdOutput Test from Within the the APP');
     _updateStartupStatus('Initializing internal storage');
     // Init Storage
     try {
@@ -314,8 +317,10 @@ class _AppRootState extends State<AppRoot> {
       LoggingManager.instance.player.info('Initializing SystemController');
       await _systemController.initialize();
     } catch (e, stacktrace) {
-      LoggingManager.instance.player
-          .severe("SystemController initialization failed", e, stacktrace);
+      LoggingManager.instance.player.severe(
+          "SystemController initialization failed, ${e.toString} \n ${stacktrace.toString()}",
+          e,
+          stacktrace);
     }
 
     _updateStartupStatus('Initializing administration server');
@@ -654,16 +659,22 @@ class _AppRootState extends State<AppRoot> {
     return config;
   }
 
-  Future<bool> _handleSystemConfigPost(SystemConfig incomingConfig) async {
-    // Incoming Config in this context will only represent what the user would like to change. Therefore we get our current running config, and merge the incoming
-    // config in with it.
-    final runningConfig = await _systemController.getSystemConfig();
+  Future<bool> _handleSystemConfigPost(SystemConfig incomingConfigDelta) async {
+    // incomingConfig in this context will only represent what the user wants to change. All properties are Nullable.
+    // TODO: Maybe split this into another type like maybe SystemConfigDelta.
 
-    // Merge in the incomingConfig with the RunningConfig and commit to the system.
-    final restartRequired = await _systemController
-        .commitSystemConfig(runningConfig.mergeWith(incomingConfig));
+    // TODO: The return type of this should be extended to include a parameter that indicates whether it was successful.
 
-    if (restartRequired == false) {
+    // Pass the incomingConfig onto the SystemController to commit to the system. It will return a boolean
+    // dictacting if a system restart is required.
+    try {
+      final restartRequired =
+          await _systemController.commitSystemConfig(incomingConfigDelta);
+      if (restartRequired == false) {
+        return false;
+      }
+    } catch (e, stacktrace) {
+      LoggingManager.instance.general.severe('$e \n $stacktrace');
       return false;
     }
 

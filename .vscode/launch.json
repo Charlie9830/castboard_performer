@@ -8,6 +8,13 @@
             "name": "castboard_player",
             "request": "launch",
             "type": "dart"
-        }
+        },
+        {
+            "type": "dart",
+            "name": "Flutter eLinux Attach",
+            "request": "attach",
+            "deviceId": "flutter-tester",
+            "observatoryUri": "http://127.0.0.1:46075/9dqytzQXHIE=/"
+          }
     ]
 }
