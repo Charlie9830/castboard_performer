@@ -1,3 +1,4 @@
+import 'package:castboard_core/logging/LoggingManager.dart';
 import 'package:castboard_core/models/system_controller/AvailableResolutions.dart';
 import 'package:castboard_core/models/system_controller/DeviceResolution.dart';
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
@@ -8,7 +9,7 @@ class RpiBootConfigModel {
 
   RpiBootConfigModel({required this.hdmi_mode});
 
-  RpiBootConfigModel.defaults() : hdmi_mode = 16;
+  const RpiBootConfigModel.defaults() : hdmi_mode = 16;
 
   RpiBootConfigModel copyWith({
     int? hdmi_mode,
@@ -29,19 +30,31 @@ class RpiBootConfigModel {
   factory RpiBootConfigModel.fromFileString(String input) {
     final lines = input.split('\n');
 
-    RegExp hdmiModeMatch = RegExp(r"^hdmi_mode=[0-9]+");
-    int hdmi_mode = 16;
+    RegExp hdmiModePattern = RegExp(r"#hdmi_mode=[0-9]+|hdmi_mode=[0-9]+");
+
+    RpiBootConfigModel config = RpiBootConfigModel.defaults();
 
     for (var line in lines) {
-      if (line.contains(hdmiModeMatch))
-        hdmi_mode = int.parse(
-            _extractValue(hdmiModeMatch.firstMatch(line)!.toString()));
+      // Ignore comment lines.
+      if (line.contains('##')) continue;
+
+      final trimmed = line.trim();
+
+      // Match hdmi_mode, but only if it isn't commented out.
+      if (hdmiModePattern.hasMatch(trimmed) &&
+          hdmiModePattern.stringMatch(trimmed)!.startsWith("#") == false) {
+        config = config.copyWith(
+            hdmi_mode: int.parse(
+                _extractValue(hdmiModePattern.stringMatch(trimmed)!)));
+      }
     }
 
-    return RpiBootConfigModel(hdmi_mode: hdmi_mode);
+    return config;
   }
 
   static String _extractValue(String line) {
+    LoggingManager.instance.systemManager
+        .info('Input to _extractValue is $line');
     return line.split('=')[1];
   }
 }

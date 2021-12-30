@@ -8,9 +8,8 @@ Future<void> sed(File file, RegExp regex, String replacement) async {
   final contents = await file.readAsString();
   final inputLines = contents.split('\n');
 
-  final output = inputLines.map((line) {
-    line.replaceAll(regex, replacement);
-  }).join('\n');
+  final output =
+      inputLines.map((line) => line.replaceAll(regex, replacement)).join('\n');
 
   await file.writeAsString(output);
 

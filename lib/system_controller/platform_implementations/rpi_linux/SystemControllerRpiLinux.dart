@@ -221,7 +221,10 @@ class SystemControllerRpiLinux implements SystemController {
 
       // Device Resolution.
       if (configDelta.deviceResolution != null) {
-        await sed(bootConfigFile, RegExp(r"^hdmi_mode=[0-9]+"),
+        await sed(
+            bootConfigFile,
+            RegExp(
+                r"^hdmi_mode=[0-9]+|^#hdmi_mode=[0-9]+"), // Match hdmi_mode even if it's commented out.
             "hdmi_mode=${_getHdmiModeInteger(configDelta.deviceResolution!)}");
       }
 
@@ -267,15 +270,11 @@ class SystemControllerRpiLinux implements SystemController {
     return config;
   }
 
-  int _getHdmiGroupInteger(DeviceResolution resolution) {
-    // We try to only use either 'auto' (0) or 'CEA' (1) hdmi_group on the Rpi
-    return resolution.auto ? 0 : 1;
-  }
-
   int _getHdmiModeInteger(DeviceResolution resolution) {
     // Map the incoming mode to an Rpi hdmi_mode integer.
-    return rpiHdmiModes.keys
-        .firstWhere((key) => rpiHdmiModes[key] == resolution, orElse: () => 16);
+    return rpiHdmiModes.keys.firstWhere(
+        (key) => rpiHdmiModes[key] == resolution,
+        orElse: () => RpiBootConfigModel.defaults().hdmi_mode);
   }
 
   bool _assertInit() {

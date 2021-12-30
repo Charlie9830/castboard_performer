@@ -9,10 +9,16 @@
             "command": "flutter-elinux build elinux --target-arch=arm64 --target-sysroot=/opt/ubuntu18-arm64-sysroot --system-include-directories=/usr/aarch64-linux-gnu/include/c++/9/aarch64-linux-gnu --debug ",
         },
         {
+            // Installs the castboard_remote from the latest Yocto build into the static_debug location on the rpi.
+            "label": "Install debug castboard_remote",
+            "type": "shell",
+            "command": "ssh root@10.101.1.2 mkdir -p /static_debug/web_app/ && scp -r /media/charliehall/samsung/rpi_64_yocto/raspberrypi4-64/tmp/sysroots-components/aarch64/castboard-remote/usr/share/castboard-remote/web/* root@10.101.1.2:/static_debug/web_app/"
+        },
+        {
             "label": "Deploy to Rpi4",
             "type": "shell",
-            "dependsOn": "Build eLinux Arm64",
-            "command": "ssh root@10.101.1.2 rm -rf /usr/share/castboard_player/ && scp -r ./build/elinux/arm64/debug/bundle root@10.101.1.2:/usr/share/castboard_player/"
+            "dependsOn": ["Build eLinux Arm64"],
+            "command": "ssh root@10.101.1.2 rm -rf /usr/share/castboard-player/ && scp -r ./build/elinux/arm64/debug/bundle root@10.101.1.2:/usr/share/castboard-player/ && ssh root@10.101.1.2 mv /usr/share/castboard-player/castboard_player /usr/share/castboard-player/player && ssh root@10.101.1.2 systemctl start cage@tty7"
         },
         
     ]
