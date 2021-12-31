@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
+import 'package:castboard_player/system_controller/SystemConfigCommitResult.dart';
 import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/SystemControllerRpiLinux.dart';
 import 'package:castboard_player/system_controller/platform_implementations/noop/SystemControllerNoop.dart';
 
@@ -35,7 +36,7 @@ abstract class SystemController {
 
   /// Writes the provided [SystemConfig] to all relevant locations. Returns a Future that resolves to a bool representing if the device needs to be rebooted
   /// for changes to take affect.
-  Future<bool> commitSystemConfig(SystemConfig config);
+  Future<SystemConfigCommitResult> commitSystemConfig(SystemConfig config);
 
   Future<SystemConfig> getSystemConfig();
 

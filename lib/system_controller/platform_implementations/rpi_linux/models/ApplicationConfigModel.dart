@@ -1,13 +1,19 @@
 import 'dart:convert';
 
+import 'package:castboard_player/extensions/string/parseBool.dart';
+
 class ApplicationConfigModel {
   final int deviceRotation;
+  final bool playShowOnIdle;
 
   ApplicationConfigModel({
     required this.deviceRotation,
+    required this.playShowOnIdle,
   });
 
-  const ApplicationConfigModel.defaults() : deviceRotation = 0;
+  const ApplicationConfigModel.defaults()
+      : deviceRotation = 0,
+        playShowOnIdle = true;
 
   factory ApplicationConfigModel.fromFile(String fileContents) {
     if (fileContents.isEmpty) {
@@ -20,12 +26,25 @@ class ApplicationConfigModel {
     return ApplicationConfigModel(
       deviceRotation:
           int.tryParse(map['deviceRotation'] ?? '') ?? defaults.deviceRotation,
+      playShowOnIdle: map['playShowOnIdle'] != null
+          ? (map['playShowOnIdle'] as String).parseBool()
+          : defaults.playShowOnIdle,
     );
+  }
+
+  ApplicationConfigModel copyWith({
+    int? deviceRotation,
+    bool? playShowOnIdle,
+  }) {
+    return ApplicationConfigModel(
+        deviceRotation: deviceRotation ?? this.deviceRotation,
+        playShowOnIdle: playShowOnIdle ?? this.playShowOnIdle);
   }
 
   String toConfigFileString() {
     final List<String> lines = [
       "deviceRotation=$deviceRotation",
+      "playShowOnIdle=$playShowOnIdle"
     ];
 
     return lines.join('\n');

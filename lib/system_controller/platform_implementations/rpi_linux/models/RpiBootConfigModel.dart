@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:castboard_core/logging/LoggingManager.dart';
 import 'package:castboard_core/models/system_controller/AvailableResolutions.dart';
 import 'package:castboard_core/models/system_controller/DeviceResolution.dart';
@@ -24,11 +26,13 @@ class RpiBootConfigModel {
       deviceResolution: rpiHdmiModes[hdmi_mode],
       availableResolutions: AvailableResolutions.defaults(),
       deviceOrientation: null,
+      playShowOnIdle: null,
     );
   }
 
   factory RpiBootConfigModel.fromFileString(String input) {
-    final lines = input.split('\n');
+    final ls = LineSplitter();
+    final lines = ls.convert(input);
 
     RegExp hdmiModePattern = RegExp(r"#hdmi_mode=[0-9]+|hdmi_mode=[0-9]+");
 

@@ -5,6 +5,7 @@ import 'package:castboard_core/models/system_controller/AvailableResolutions.dar
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_core/models/system_controller/DeviceOrientation.dart';
 import 'package:castboard_core/models/system_controller/DeviceResolution.dart';
+import 'package:castboard_player/system_controller/SystemConfigCommitResult.dart';
 import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/getRpiBootConfigFile.dart';
 import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/models/ApplicationConfigModel.dart';
 import 'package:castboard_player/system_controller/SystemController.dart';
@@ -36,8 +37,6 @@ const String _unMountCommand = 'umount';
 
 // Command Args
 const List<String> _mountArgs = [_rpiConfigMntDir];
-const String _hdmiModePattern = 'hdmi_mode=[0-107].';
-const String _hdmiGroupPattern = 'hdmi_group=[0-2]';
 
 const Map<DeviceOrientation, int> _deviceOrientationMap = {
   DeviceOrientation.landscape: 0,
@@ -140,14 +139,8 @@ class SystemControllerRpiLinux implements SystemController {
     }
   }
 
-  Future<DeviceOrientation> getCurrentOrientation() async {
-    _assertInit();
-
-    LoggingManager.instance.systemManager.info('Reading current orientation.');
-
-    final currentConfig = await readConfigFile();
-
-    switch (currentConfig.deviceRotation) {
+  DeviceOrientation _parseDeviceOrientation(int orientation) {
+    switch (orientation) {
       case 0:
         return DeviceOrientation.landscape;
       case 90:
@@ -189,7 +182,23 @@ class SystemControllerRpiLinux implements SystemController {
   }
 
   @override
-  Future<bool> commitSystemConfig(SystemConfig configDelta) async {
+  Future<SystemConfigCommitResult> commitSystemConfig(
+      SystemConfig configDelta) async {
+    try {
+      return await _commitSystemConfig(configDelta);
+    } catch (e, stacktrace) {
+      LoggingManager.instance.systemManager.severe(
+          'An exception was thrown whilst commiting a System Configuration. configDelta: ${configDelta.toMap().toString()}',
+          e,
+          stacktrace);
+
+      return SystemConfigCommitResult(
+          success: false, restartRequired: false, resultingConfig: configDelta);
+    }
+  }
+
+  Future<SystemConfigCommitResult> _commitSystemConfig(
+      SystemConfig configDelta) async {
     // configDelta represents only the properties that have been modifed by the user, untouched properties will be null.
     _assertInit();
 
@@ -201,13 +210,26 @@ class SystemControllerRpiLinux implements SystemController {
 
     // Apply Changes (if any) to the Application Configuration.
     if (_containsApplicationConfigUpdates(configDelta)) {
-      LoggingManager.instance.systemManager
-          .info('Updating application configuration');
-      await writeApplicationConfigFile(ApplicationConfigModel(
-          deviceRotation:
-              _deviceOrientationMap[configDelta.deviceOrientation!]!));
+      LoggingManager.instance.systemManager.info(
+          'Updating application configuration.. Reading existing Application Configuration');
+      final runningAppConfig = await readApplicationConfigFile();
+      ApplicationConfigModel newAppConfig = runningAppConfig.copyWith();
 
-      restartRequired = true;
+      // Orientation
+      if (configDelta.deviceOrientation != null) {
+        restartRequired = true;
+        newAppConfig = newAppConfig.copyWith(
+            deviceRotation:
+                _deviceOrientationMap[configDelta.deviceOrientation]!);
+      }
+
+      // playShowOnIdle
+      if (configDelta.playShowOnIdle != null) {
+        newAppConfig =
+            newAppConfig.copyWith(playShowOnIdle: configDelta.playShowOnIdle!);
+      }
+
+      await writeApplicationConfigFile(newAppConfig);
     }
 
     // Apply Rpi Boot Config Changes if any.
@@ -231,7 +253,14 @@ class SystemControllerRpiLinux implements SystemController {
       restartRequired = true;
     }
 
-    return restartRequired;
+    // Read back the final resulting Config to provide as a component of our result.
+    final resultingConfig = await getSystemConfig();
+
+    return SystemConfigCommitResult(
+      success: true,
+      restartRequired: restartRequired,
+      resultingConfig: resultingConfig,
+    );
   }
 
   @override
@@ -240,7 +269,7 @@ class SystemControllerRpiLinux implements SystemController {
 
     LoggingManager.instance.systemManager.info('Reading system configuration');
 
-    DeviceOrientation? ori;
+    ApplicationConfigModel? appConfig;
     RpiBootConfigModel? bootConfig;
 
     // Append an auto resolution option to the begining of the available resolutions list.
@@ -250,7 +279,7 @@ class SystemControllerRpiLinux implements SystemController {
 
     final requests = [
       readRpiBootConfigFile().then((result) => bootConfig = result),
-      getCurrentOrientation().then((result) => ori = result),
+      readApplicationConfigFile().then((result) => appConfig = result),
     ];
 
     await Future.wait(requests);
@@ -258,9 +287,12 @@ class SystemControllerRpiLinux implements SystemController {
     final defaults = SystemConfig.defaults();
 
     final config = SystemConfig(
+      deviceOrientation: appConfig != null
+          ? _parseDeviceOrientation(appConfig!.deviceRotation)
+          : defaults.deviceOrientation,
+      playShowOnIdle: appConfig?.playShowOnIdle ?? defaults.playShowOnIdle,
       deviceResolution:
           bootConfig?.toSystemConfig().deviceResolution ?? rpiHdmiModes[16],
-      deviceOrientation: ori ?? defaults.deviceOrientation,
       availableResolutions: availableResolutions,
     );
 

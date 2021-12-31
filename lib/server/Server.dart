@@ -8,6 +8,7 @@ import 'package:castboard_player/server/Routes.dart';
 import 'package:castboard_core/system-commands/SystemCommands.dart';
 import 'package:castboard_player/server/getAssetBundleRootPath.dart';
 import 'package:castboard_player/server/routeHandlers.dart';
+import 'package:castboard_player/system_controller/SystemConfigCommitResult.dart';
 import 'package:path/path.dart' as p;
 
 // Shelf
@@ -26,7 +27,8 @@ typedef RemoteShowData OnShowDataPullCallback();
 typedef Future<bool> OnShowDataReceivedCallback(RemoteShowData data);
 typedef void OnHeartbeatCallback(String sessionId);
 typedef Future<SystemConfig?> OnSystemConfigPullCallback();
-typedef Future<bool> OnSystemConfigPostCallback(SystemConfig config);
+typedef Future<SystemConfigCommitResult> OnSystemConfigPostCallback(
+    SystemConfig config);
 typedef Future<File> OnShowfileDownloadCallback();
 
 // Config

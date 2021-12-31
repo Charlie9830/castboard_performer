@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 Future<void> sed(File file, RegExp regex, String replacement) async {
@@ -6,7 +7,8 @@ Future<void> sed(File file, RegExp regex, String replacement) async {
   }
 
   final contents = await file.readAsString();
-  final inputLines = contents.split('\n');
+  final ls = LineSplitter();
+  final inputLines = ls.convert(contents);
 
   final output =
       inputLines.map((line) => line.replaceAll(regex, replacement)).join('\n');

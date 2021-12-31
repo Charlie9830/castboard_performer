@@ -3,6 +3,7 @@ import 'package:castboard_core/models/system_controller/AvailableResolutions.dar
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_core/models/system_controller/DeviceOrientation.dart';
 import 'package:castboard_core/models/system_controller/DeviceResolution.dart';
+import 'package:castboard_player/system_controller/SystemConfigCommitResult.dart';
 import 'package:castboard_player/system_controller/SystemController.dart';
 import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/RpiHdmiModes.dart';
 
@@ -33,11 +34,13 @@ class SystemControllerNoop implements SystemController {
   }
 
   @override
-  Future<bool> commitSystemConfig(SystemConfig config) async {
+  Future<SystemConfigCommitResult> commitSystemConfig(
+      SystemConfig config) async {
     print(' === Device Config Parameters === \n');
     config.toMap().forEach((key, value) => print('$key=$value \n'));
     print(' === END OF FILE ===');
-    return true;
+    return SystemConfigCommitResult(
+        success: true, restartRequired: true, resultingConfig: config);
   }
 
   @override

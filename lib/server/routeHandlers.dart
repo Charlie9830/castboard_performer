@@ -230,9 +230,14 @@ Future<Response> handleSystemConfigPost(
   final rawJson = await request.readAsString();
   final config = SystemConfig.fromMap(json.decode(rawJson));
 
-  final restartRequired = await callback(config);
+  final commitResult = await callback(config);
 
-  return Response.ok(restartRequired.toString());
+  if (commitResult.success == true) {
+    return Response.ok(commitResult.restartRequired.toString());
+  } else {
+    return Response.internalServerError(
+        body: 'An error occurred. Please try again');
+  }
 }
 
 Future<Response> handleAlive(Request req) async {

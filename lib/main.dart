@@ -33,6 +33,7 @@ import 'package:castboard_player/SlideCycler.dart';
 import 'package:castboard_player/fontLoadingHelpers.dart';
 import 'package:castboard_player/scheduleRestart.dart';
 import 'package:castboard_player/server/Server.dart';
+import 'package:castboard_player/system_controller/SystemConfigCommitResult.dart';
 import 'package:castboard_player/system_controller/SystemController.dart';
 import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/models/ApplicationConfigModel.dart';
 import 'package:flutter/foundation.dart';
@@ -111,6 +112,9 @@ class _AppRootState extends State<AppRoot> {
 
   // File Manifest
   ManifestModel _fileManifest = ManifestModel();
+
+  // Current running configuration.
+  SystemConfig _runningConfig = SystemConfig.defaults();
 
   // Non Tracked State
   Server? _server;
@@ -212,9 +216,10 @@ class _AppRootState extends State<AppRoot> {
         .removeWhere((id, lastThump) => lastThump.isBefore(cutOffTime));
 
     // If there are no more active sessions and if we are paused and if we have slides to player and the cycler is active, then
-    // Restart the slide show.
+    // Restart the slide show.. Oh and also if the playShowOnIdle Config property is true.
     if (_sessionHeartbeats.isEmpty &&
         _playing == false &&
+        _runningConfig.playShowOnIdle == true &&
         _slides.isNotEmpty &&
         _cycler != null) {
       LoggingManager.instance.player
@@ -316,6 +321,11 @@ class _AppRootState extends State<AppRoot> {
     try {
       LoggingManager.instance.player.info('Initializing SystemController');
       await _systemController.initialize();
+
+      LoggingManager.instance.player.info('SystemController Initialized');
+      LoggingManager.instance.player.info('Reading System Configuration');
+      final systemConfig = await _systemController.getSystemConfig();
+      _loadSystemConfig(systemConfig);
     } catch (e, stacktrace) {
       LoggingManager.instance.player.severe(
           "SystemController initialization failed, ${e.toString} \n ${stacktrace.toString()}",
@@ -634,14 +644,6 @@ class _AppRootState extends State<AppRoot> {
     }
   }
 
-  @override
-  void dispose() {
-    if (_server != null) {
-      _server!.shutdown();
-    }
-    super.dispose();
-  }
-
   Future<SystemConfig?> _handleSystemConfigPull() async {
     final SystemConfig? config;
 
@@ -659,29 +661,44 @@ class _AppRootState extends State<AppRoot> {
     return config;
   }
 
-  Future<bool> _handleSystemConfigPost(SystemConfig incomingConfigDelta) async {
+  Future<SystemConfigCommitResult> _handleSystemConfigPost(
+      SystemConfig incomingConfigDelta) async {
     // incomingConfig in this context will only represent what the user wants to change. All properties are Nullable.
     // TODO: Maybe split this into another type like maybe SystemConfigDelta.
 
-    // TODO: The return type of this should be extended to include a parameter that indicates whether it was successful.
+    // Pass the incomingConfig onto the SystemController to commit to the system. It will return a result dictating
+    // if it was successfull, if a restart is requried and the resulting configuration.
+    final result =
+        await _systemController.commitSystemConfig(incomingConfigDelta);
 
-    // Pass the incomingConfig onto the SystemController to commit to the system. It will return a boolean
-    // dictacting if a system restart is required.
-    try {
-      final restartRequired =
-          await _systemController.commitSystemConfig(incomingConfigDelta);
-      if (restartRequired == false) {
-        return false;
-      }
-    } catch (e, stacktrace) {
-      LoggingManager.instance.general.severe('$e \n $stacktrace');
-      return false;
+    if (result.success == false) {
+      // Something wen't wrong. Pass it back to the server to inform the user.
+      return result;
     }
 
-    // Schedule a restart for a few seconds in the future. This will give time for the Server to send a response back to the remote informing it that a
-    // restart is imminent.
-    scheduleRestart(Duration(seconds: 5), _systemController);
+    if (result.restartRequired) {
+      // Schedule a restart for a few seconds in the future. This will give time for the Server to send a response back to the remote informing it that a
+      // restart is imminent.
+      scheduleRestart(Duration(seconds: 5), _systemController);
+      return result;
+    } else {
+      // No Restart required. Push the new running Config to state and return execution back to the server.
+      _loadSystemConfig(result.resultingConfig);
+      return result;
+    }
+  }
 
-    return true;
+  void _loadSystemConfig(SystemConfig config) {
+    setState(() {
+      _runningConfig = config;
+    });
+  }
+
+  @override
+  void dispose() {
+    if (_server != null) {
+      _server!.shutdown();
+    }
+    super.dispose();
   }
 }
