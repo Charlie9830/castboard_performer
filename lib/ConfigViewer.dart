@@ -29,16 +29,15 @@ class ConfigViewer extends StatelessWidget {
               vSpacer,
             ],
           ),
-          Spacer(),
           Text(
-              'Connect your phone, tablet or computer to the following Wireless Network',
+              'Connect your phone, tablet or computer to the following Wireless network',
               style: Theme.of(context).textTheme.subtitle1),
           vSpacer,
           _WirelessConfigCard(
               cardMaxWidth: cardMaxWidth, hSpacer: hSpacer, vSpacer: vSpacer),
           vSpacer,
           Text(
-              'Enter the following address into your web browser to access the Configuration Dashboard',
+              'Then enter the address below into your browser',
               style: Theme.of(context).textTheme.subtitle1),
           vSpacer,
           _DashboardAddressCard(
@@ -46,7 +45,7 @@ class ConfigViewer extends StatelessWidget {
           ),
           Spacer(),
           _DebugInfoPanel(),
-          Spacer(),
+          
         ],
       ),
     );
@@ -61,6 +60,7 @@ class _DebugInfoPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      margin: EdgeInsets.all(24),
       padding: EdgeInsets.all(8),
       foregroundDecoration: BoxDecoration(
           border: Border.all(color: Theme.of(context).dividerColor)),
