@@ -47,3 +47,8 @@ app.*.map.json
 
 # Debug Web Server Artifacts
 /static_debug
+
+# Flutter Platform specific builds.
+/windows
+/linux
+/elinux
