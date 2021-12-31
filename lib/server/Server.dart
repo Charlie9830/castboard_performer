@@ -30,6 +30,7 @@ typedef Future<SystemConfig?> OnSystemConfigPullCallback();
 typedef Future<SystemConfigCommitResult> OnSystemConfigPostCallback(
     SystemConfig config);
 typedef Future<File> OnShowfileDownloadCallback();
+typedef Future<File> OnLogsDownloadCallback();
 
 // Config
 const _webAppFilePath = 'web_app/';
@@ -54,6 +55,7 @@ class Server {
   final OnSystemConfigPullCallback? onSystemConfigPull;
   final OnSystemConfigPostCallback? onSystemConfigPostCallback;
   final OnShowfileDownloadCallback? onShowfileDownload;
+  final OnLogsDownloadCallback? onLogsDownloadCallback;
 
   late HttpServer server;
 
@@ -68,6 +70,7 @@ class Server {
     this.onSystemConfigPull,
     this.onSystemConfigPostCallback,
     this.onShowfileDownload,
+    this.onLogsDownloadCallback,
     required this.onHeartbeatReceived,
   });
 
@@ -169,6 +172,12 @@ class Server {
     router.post(Routes.show, (Request req) {
       LoggingManager.instance.server.info('Show Data POST command received');
       return handleShowDataPost(req, onShowDataReceived);
+    });
+
+    // Logs Download
+    router.get(Routes.logsDownload, (Request req) {
+      LoggingManager.instance.server.info('Logs Download GET received');
+      return handleLogsDownload(req, onLogsDownloadCallback);
     });
 
     return router;

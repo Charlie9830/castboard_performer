@@ -149,7 +149,8 @@ class _AppRootState extends State<AppRoot> {
         onShowDataReceived: _handleShowDataReceived,
         onSystemCommandReceived: _handleSystemCommandReceived,
         onSystemConfigPull: _handleSystemConfigPull,
-        onSystemConfigPostCallback: _handleSystemConfigPost);
+        onSystemConfigPostCallback: _handleSystemConfigPost,
+        onLogsDownloadCallback: _handleLogsDownload);
 
     _heartbeatTimer =
         Timer.periodic(Duration(seconds: 30), (_) => _checkHeartbeats(30));
@@ -692,6 +693,13 @@ class _AppRootState extends State<AppRoot> {
     setState(() {
       _runningConfig = config;
     });
+  }
+
+  Future<File> _handleLogsDownload() async {
+    LoggingManager.instance.general.info('Exporting Log Files');
+    final file = await LoggingManager.instance.exportLogs();
+
+    return file;
   }
 
   @override

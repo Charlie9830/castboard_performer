@@ -9,6 +9,7 @@ import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_core/storage/Storage.dart';
 import 'package:castboard_core/system-commands/SystemCommands.dart';
 import 'package:castboard_player/server/Server.dart';
+import 'package:castboard_player/server/generateFileHeaders.dart';
 import 'package:shelf/shelf.dart';
 
 Future<Response> handleHeartbeat(
@@ -111,13 +112,7 @@ Future<Response> handleDownloadReq(
         body: 'Storage is busy. Please try again');
   }
 
-  final stat = await file.stat();
-
-  final headers = {
-    HttpHeaders.contentLengthHeader: stat.size.toString(),
-  };
-
-  return Response.ok(file.openRead(), headers: headers);
+  return Response.ok(file.openRead(), headers: await generateFileHeaders(file));
 }
 
 Future<Response> handleUploadReq(
@@ -243,4 +238,18 @@ Future<Response> handleSystemConfigPost(
 Future<Response> handleAlive(Request req) async {
   LoggingManager.instance.server.info('Received an are you alive ping');
   return Response.ok(null);
+}
+
+Future<Response> handleLogsDownload(
+    Request req, OnLogsDownloadCallback? callback) async {
+  if (callback == null) {
+    LoggingManager.instance.server
+        .warning('Tried to call OnLogsDownloadCallback but it was null');
+    return Response.internalServerError(body: 'An error occured');
+  }
+
+  final logsArchive = await callback();
+
+  return Response.ok(logsArchive.openRead(),
+      headers: await generateFileHeaders(logsArchive));
 }
