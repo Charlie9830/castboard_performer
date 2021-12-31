@@ -1,4 +1,5 @@
-import 'package:castboard_player/constants.dart';
+import 'package:castboard_core/logging/LoggingManager.dart';
+import 'package:castboard_core/storage/Storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -59,18 +60,25 @@ class _DebugInfoPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTextStyle(
-      style: Theme.of(context).textTheme.caption!,
-      child: Column(
-        children: [
-          Text(
-            'Yocto Asset Bundle Path = $kYoctoAssetBundlePath',
-          ),
-          Text(
-            'kDebugMode = $kDebugMode',
-          ),
-          Text('kReleaseMode = $kReleaseMode')
-        ],
+    return Container(
+      padding: EdgeInsets.all(8),
+      foregroundDecoration: BoxDecoration(
+          border: Border.all(color: Theme.of(context).dividerColor)),
+      child: DefaultTextStyle(
+        style: Theme.of(context).textTheme.caption!,
+        child: Column(
+          children: [
+            Text('Geek Zone', style: Theme.of(context).textTheme.overline),
+            Text(
+              'kDebugMode: $kDebugMode',
+            ),
+            Text('Storage Path: ${Storage.instance.appRootStoragePath}'),
+            Text(
+                'Diagnostics Path: ${LoggingManager.instance.logsStoragePath}'),
+            Text(
+                'Logger.RunAsRelease: ${LoggingManager.instance.runAsRelease}'),
+          ],
+        ),
       ),
     );
   }
