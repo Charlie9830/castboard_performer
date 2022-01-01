@@ -144,7 +144,7 @@ class _AppRootState extends State<AppRoot> {
         onHeartbeatReceived: _handleHeartbeatReceived,
         onPlaybackCommand: _handlePlaybackCommand,
         onShowFileReceived: _handleShowfileReceived,
-        onShowfileDownload: _handleShowfileDownloadRequest,
+        onPrepareShowfileDownload: _handlePrepareShowfileDownloadRequest,
         onShowDataPull: _handleShowDataPull,
         onShowDataReceived: _handleShowDataReceived,
         onSystemCommandReceived: _handleSystemCommandReceived,
@@ -257,8 +257,8 @@ class _AppRootState extends State<AppRoot> {
     }
   }
 
-  Future<File> _handleShowfileDownloadRequest() async {
-    final file = await Storage.instance.archiveActiveShow();
+  Future<File> _handlePrepareShowfileDownloadRequest() async {
+    final file = await Storage.instance.archiveActiveShowForExport();
 
     return file;
   }

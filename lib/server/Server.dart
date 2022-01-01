@@ -28,7 +28,7 @@ typedef void OnHeartbeatCallback(String sessionId);
 typedef Future<SystemConfig?> OnSystemConfigPullCallback();
 typedef Future<SystemConfigCommitResult> OnSystemConfigPostCallback(
     SystemConfig config);
-typedef Future<File> OnShowfileDownloadCallback();
+typedef Future<File> onPrepareShowfileDownloadCallback();
 typedef Future<File> OnLogsDownloadCallback();
 
 // Config
@@ -53,8 +53,10 @@ class Server {
   final OnSystemCommandReceivedCallback? onSystemCommandReceived;
   final OnSystemConfigPullCallback? onSystemConfigPull;
   final OnSystemConfigPostCallback? onSystemConfigPostCallback;
-  final OnShowfileDownloadCallback? onShowfileDownload;
+  final onPrepareShowfileDownloadCallback? onPrepareShowfileDownload;
   final OnLogsDownloadCallback? onLogsDownloadCallback;
+
+  File? showfileDownloadTarget;
 
   late HttpServer server;
 
@@ -68,7 +70,7 @@ class Server {
     this.onSystemCommandReceived,
     this.onSystemConfigPull,
     this.onSystemConfigPostCallback,
-    this.onShowfileDownload,
+    this.onPrepareShowfileDownload,
     this.onLogsDownloadCallback,
     required this.onHeartbeatReceived,
   });
@@ -154,21 +156,41 @@ class Server {
       return handleUploadReq(req, onShowFileReceived);
     });
 
-    // Show File Download
-    // router.get(Routes.download, (Request req) {
-    //   LoggingManager.instance.server
-    //       .info('Show File Download GET command received');
-    //   return handleDownloadReq(req, onShowfileDownload);
-    // });
+    // Prepare Showfile download
+    router.get(Routes.prepareShowfileDownload, (Request req) {
+      LoggingManager.instance.server
+          .info('Prepare Showfile for download GET received.');
+      return (Request innerReq) async {
+        final result = await handlePrepareShowfileDownloadReq(
+            innerReq, onPrepareShowfileDownload);
 
-    router.get(Routes.download, (req) async {
-      print("PING");
+        if (result.file != null) {
+          showfileDownloadTarget = result.file;
+          return result.response;
+        }
 
-      final file = File(p.join(p.current, "static_debug", "testtarget",
-          "Les Borkerables.castboard"));
+        return result.response;
+      };
+    });
 
-      return file;
-    }, use: download(filename: 'Cool Whip.zip'));
+    // Showfile download.
+    router.get(Routes.showfileDownload, (Request req) async {
+      if (showfileDownloadTarget == null) {
+        LoggingManager.instance.server.warning(
+            'A showfile download was called, but the showfileTargetFile was null.');
+        return Response.internalServerError(
+            body: 'An error occurred, please try again');
+      }
+
+      if (await showfileDownloadTarget!.exists() == false) {
+        LoggingManager.instance.server.warning(
+            "A showfile download was called, but the target file does not exist");
+        return Response.internalServerError(
+            body: 'An error occurred, please try again');
+      }
+
+      return showfileDownloadTarget;
+    }, use: download(filename: 'Showfile.zip'));
 
     // Show Data Pull
     router.get(Routes.show, (Request req) {

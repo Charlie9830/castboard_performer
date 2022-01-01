@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -8,9 +9,12 @@ import 'package:castboard_core/models/system_controller/AvailableResolutions.dar
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_core/storage/Storage.dart';
 import 'package:castboard_core/system-commands/SystemCommands.dart';
+import 'package:castboard_player/server/PrepareShowfileDownloadTuple.dart';
 import 'package:castboard_player/server/Server.dart';
 import 'package:castboard_player/server/generateFileHeaders.dart';
 import 'package:shelf/shelf.dart';
+import 'package:shelf_plus/shelf_plus.dart';
+import 'package:path/path.dart' as p;
 
 Future<Response> handleHeartbeat(
     Request request, void Function(String sessionId) onHeartbeat) async {
@@ -81,20 +85,25 @@ Future<Response> handleShowDataPost(
   }
 }
 
-Future<Response> handleDownloadReq(
-    Request request, OnShowfileDownloadCallback? callback) async {
+Future<PrepareShowfileDownloadTuple> handlePrepareShowfileDownloadReq(
+    Request request, onPrepareShowfileDownloadCallback? callback) async {
   if (callback == null) {
     LoggingManager.instance.server.warning(
         "A download request was denied because the OnShowfileDownloadCallback is null");
-    return Response.internalServerError(
-        body: "The OnShowfileDownloadCallback is null");
+    return PrepareShowfileDownloadTuple(
+        Response.internalServerError(
+            body: "The OnShowfileDownloadCallback is null"),
+        null);
   }
 
   // Call out to the main thread to Pack up the showfile into an archive and give us a reference to the completed archive.
   final file = await callback();
 
   if (await file.exists() == false) {
-    return Response.notFound('File not Found');
+    return PrepareShowfileDownloadTuple(
+      Response.notFound('File not Found'),
+      null,
+    );
   }
 
   if (Storage.instance.isWriting || Storage.instance.isReading) {
@@ -108,11 +117,15 @@ Future<Response> handleDownloadReq(
           "A download request was denied because the Storage class is busy reading");
     }
 
-    return Response.internalServerError(
-        body: 'Storage is busy. Please try again');
+    return PrepareShowfileDownloadTuple(
+        Response.internalServerError(body: 'Storage is busy. Please try again'),
+        null);
   }
 
-  return Response.ok(file.openRead(), headers: await generateFileHeaders(file));
+  return PrepareShowfileDownloadTuple(
+    Response.ok(null),
+    file,
+  );
 }
 
 Future<Response> handleUploadReq(
