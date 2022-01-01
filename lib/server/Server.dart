@@ -28,8 +28,8 @@ typedef void OnHeartbeatCallback(String sessionId);
 typedef Future<SystemConfig?> OnSystemConfigPullCallback();
 typedef Future<SystemConfigCommitResult> OnSystemConfigPostCallback(
     SystemConfig config);
-typedef Future<File> onPrepareShowfileDownloadCallback();
-typedef Future<File> OnLogsDownloadCallback();
+typedef Future<File> OnPrepareShowfileDownloadCallback();
+typedef Future<File> OnPrepareLogsDownloadCallback();
 
 // Config
 const _webAppFilePath = 'web_app/';
@@ -53,10 +53,11 @@ class Server {
   final OnSystemCommandReceivedCallback? onSystemCommandReceived;
   final OnSystemConfigPullCallback? onSystemConfigPull;
   final OnSystemConfigPostCallback? onSystemConfigPostCallback;
-  final onPrepareShowfileDownloadCallback? onPrepareShowfileDownload;
-  final OnLogsDownloadCallback? onLogsDownloadCallback;
+  final OnPrepareShowfileDownloadCallback? onPrepareShowfileDownload;
+  final OnPrepareLogsDownloadCallback? onPrepareLogsDownloadCallback;
 
-  File? showfileDownloadTarget;
+  File? _showfileDownloadTarget;
+  File? _logsDownloadTarget;
 
   late HttpServer server;
 
@@ -71,7 +72,7 @@ class Server {
     this.onSystemConfigPull,
     this.onSystemConfigPostCallback,
     this.onPrepareShowfileDownload,
-    this.onLogsDownloadCallback,
+    this.onPrepareLogsDownloadCallback,
     required this.onHeartbeatReceived,
   });
 
@@ -165,7 +166,7 @@ class Server {
             innerReq, onPrepareShowfileDownload);
 
         if (result.file != null) {
-          showfileDownloadTarget = result.file;
+          _showfileDownloadTarget = result.file;
           return result.response;
         }
 
@@ -175,22 +176,59 @@ class Server {
 
     // Showfile download.
     router.get(Routes.showfileDownload, (Request req) async {
-      if (showfileDownloadTarget == null) {
+      if (_showfileDownloadTarget == null) {
         LoggingManager.instance.server.warning(
-            'A showfile download was called, but the showfileTargetFile was null.');
+            'A showfile download was called, but the _showfileDownloadTarget was null.');
         return Response.internalServerError(
             body: 'An error occurred, please try again');
       }
 
-      if (await showfileDownloadTarget!.exists() == false) {
+      if (await _showfileDownloadTarget!.exists() == false) {
         LoggingManager.instance.server.warning(
             "A showfile download was called, but the target file does not exist");
         return Response.internalServerError(
             body: 'An error occurred, please try again');
       }
 
-      return showfileDownloadTarget;
+      return _showfileDownloadTarget;
     }, use: download(filename: 'Showfile.zip'));
+
+
+    // Prepare logs download.
+    router.get(Routes.prepareLogsDownload, (Request req) {
+      LoggingManager.instance.server
+          .info('Prepare logs for download GET received');
+      return (Request innerReq) async {
+        final result = await handlePrepareLogsDownloadReq(
+            innerReq, onPrepareLogsDownloadCallback);
+            
+        if (result.file != null) {
+          _logsDownloadTarget = result.file;
+          return result.response;
+        }
+
+        return result.response;
+      };
+    });
+
+    // Logs Download
+    router.get(Routes.logsDownload, (Request req) async {
+      if (_logsDownloadTarget == null) {
+        LoggingManager.instance.server.warning(
+            'A log files download was called, but the _logsDownloadTarget was null.');
+        return Response.internalServerError(
+            body: 'An error occurred, please try again');
+      }
+
+      if (await _logsDownloadTarget!.exists() == false) {
+        LoggingManager.instance.server.warning(
+            "A logs file download was called, but the target file does not exist");
+        return Response.internalServerError(
+            body: 'An error occurred, please try again');
+      }
+
+      return _logsDownloadTarget;
+    }, use: download(filename: 'logs.zip'));
 
     // Show Data Pull
     router.get(Routes.show, (Request req) {
@@ -202,12 +240,6 @@ class Server {
     router.post(Routes.show, (Request req) {
       LoggingManager.instance.server.info('Show Data POST command received');
       return handleShowDataPost(req, onShowDataReceived);
-    });
-
-    // Logs Download
-    router.get(Routes.logsDownload, (Request req) {
-      LoggingManager.instance.server.info('Logs Download GET received');
-      return handleLogsDownload(req, onLogsDownloadCallback);
     });
 
     return router;

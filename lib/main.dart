@@ -150,7 +150,7 @@ class _AppRootState extends State<AppRoot> {
         onSystemCommandReceived: _handleSystemCommandReceived,
         onSystemConfigPull: _handleSystemConfigPull,
         onSystemConfigPostCallback: _handleSystemConfigPost,
-        onLogsDownloadCallback: _handleLogsDownload);
+        onPrepareLogsDownloadCallback: _handlePrepareLogsDownloadRequest);
 
     _heartbeatTimer =
         Timer.periodic(Duration(seconds: 30), (_) => _checkHeartbeats(30));
@@ -695,7 +695,7 @@ class _AppRootState extends State<AppRoot> {
     });
   }
 
-  Future<File> _handleLogsDownload() async {
+  Future<File> _handlePrepareLogsDownloadRequest() async {
     LoggingManager.instance.general.info('Exporting Log Files');
     final file = await LoggingManager.instance.exportLogs();
 

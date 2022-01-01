@@ -9,7 +9,7 @@ import 'package:castboard_core/models/system_controller/AvailableResolutions.dar
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_core/storage/Storage.dart';
 import 'package:castboard_core/system-commands/SystemCommands.dart';
-import 'package:castboard_player/server/PrepareShowfileDownloadTuple.dart';
+import 'package:castboard_player/server/PrepareDownloadTuple.dart';
 import 'package:castboard_player/server/Server.dart';
 import 'package:castboard_player/server/generateFileHeaders.dart';
 import 'package:shelf/shelf.dart';
@@ -85,12 +85,38 @@ Future<Response> handleShowDataPost(
   }
 }
 
-Future<PrepareShowfileDownloadTuple> handlePrepareShowfileDownloadReq(
-    Request request, onPrepareShowfileDownloadCallback? callback) async {
+Future<PrepareDownloadTuple> handlePrepareLogsDownloadReq(
+    Request request, OnPrepareLogsDownloadCallback? callback) async {
+  if (callback == null) {
+    LoggingManager.instance.server.warning(
+        "A download request was denied because the OnPrepareLogsDownloadCallback is null");
+    return PrepareDownloadTuple(
+        Response.internalServerError(
+            body: "The OnPrepareLogsDownloadCallback is null"),
+        null);
+  }
+
+  final file = await callback();
+
+  if (await file.exists() == false) {
+    return PrepareDownloadTuple(
+      Response.notFound('File not Found'),
+      null,
+    );
+  }
+
+  return PrepareDownloadTuple(
+    Response.ok(null),
+    file,
+  );
+}
+
+Future<PrepareDownloadTuple> handlePrepareShowfileDownloadReq(
+    Request request, OnPrepareShowfileDownloadCallback? callback) async {
   if (callback == null) {
     LoggingManager.instance.server.warning(
         "A download request was denied because the OnShowfileDownloadCallback is null");
-    return PrepareShowfileDownloadTuple(
+    return PrepareDownloadTuple(
         Response.internalServerError(
             body: "The OnShowfileDownloadCallback is null"),
         null);
@@ -100,7 +126,7 @@ Future<PrepareShowfileDownloadTuple> handlePrepareShowfileDownloadReq(
   final file = await callback();
 
   if (await file.exists() == false) {
-    return PrepareShowfileDownloadTuple(
+    return PrepareDownloadTuple(
       Response.notFound('File not Found'),
       null,
     );
@@ -117,12 +143,12 @@ Future<PrepareShowfileDownloadTuple> handlePrepareShowfileDownloadReq(
           "A download request was denied because the Storage class is busy reading");
     }
 
-    return PrepareShowfileDownloadTuple(
+    return PrepareDownloadTuple(
         Response.internalServerError(body: 'Storage is busy. Please try again'),
         null);
   }
 
-  return PrepareShowfileDownloadTuple(
+  return PrepareDownloadTuple(
     Response.ok(null),
     file,
   );
@@ -254,7 +280,7 @@ Future<Response> handleAlive(Request req) async {
 }
 
 Future<Response> handleLogsDownload(
-    Request req, OnLogsDownloadCallback? callback) async {
+    Request req, OnPrepareLogsDownloadCallback? callback) async {
   if (callback == null) {
     LoggingManager.instance.server
         .warning('Tried to call OnLogsDownloadCallback but it was null');

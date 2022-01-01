@@ -8,5 +8,6 @@ class Routes {
   static const String system = "/system";
   static const String systemCommand = "$system/command";
   static const String alive = "/alive";
-  static const String logsDownload = "/logs";
+  static const String prepareLogsDownload = "/prepareLogsDownload";
+  static const String logsDownload = "/logsDownload";
 }
