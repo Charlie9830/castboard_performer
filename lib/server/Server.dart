@@ -18,6 +18,7 @@ import 'package:shelf_cors_headers/shelf_cors_headers.dart';
 import 'package:shelf_router/shelf_router.dart';
 import 'package:shelf_static/shelf_static.dart';
 
+
 typedef void OnSystemCommandReceivedCallback(SystemCommand command);
 typedef Future<
     List<DeviceResolution>> OnAvailableResolutionsRequestedCallback();
