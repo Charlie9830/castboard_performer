@@ -22,18 +22,19 @@ environment:
   sdk: '>=2.12.0 <3.0.0'
 
 dependencies:
-  flutter:
-    sdk: flutter
   castboard_core:
     path: ../castboard_core/
   crypto: ^3.0.1
   cupertino_icons: ^1.0.1
+  dbus: ^0.6.3
+  flutter:
+    sdk: flutter
   http_server: ^1.0.0
   shelf: ^1.1.4
+  shelf_cors_headers: ^0.1.1
+  shelf_plus: ^1.0.0
   shelf_router: ^1.0.0
   shelf_static: ^1.0.0
-  shelf_cors_headers: ^0.1.1
-  dbus: ^0.6.3
 
 dev_dependencies:
   flutter_test:
@@ -50,10 +51,10 @@ flutter:
   uses-material-design: true
   assets:
     - assets/web_app/
-  
+
   fonts:
     - family: Roboto
-      fonts: 
+      fonts:
         - asset: assets/fonts/Roboto/Roboto-Black.ttf
         - asset: assets/fonts/Roboto/Roboto-BlackItalic.ttf
         - asset: assets/fonts/Roboto/Roboto-Bold.ttf
@@ -85,8 +86,6 @@ flutter:
         - asset: assets/fonts/Poppins/Poppins-SemiBoldItalic.ttf
         - asset: assets/fonts/Poppins/Poppins-Thin.ttf
         - asset: assets/fonts/Poppins/Poppins-ThinItalic.ttf
-
-
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg

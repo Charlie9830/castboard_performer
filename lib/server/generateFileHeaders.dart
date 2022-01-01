@@ -5,5 +5,7 @@ Future<Map<String, String>> generateFileHeaders(File file) async {
 
   return {
     HttpHeaders.contentLengthHeader: stat.size.toString(),
+    HttpHeaders.contentTypeHeader: 'binary/octet-stream',
+    'Content-Disposition': 'attachment; filename="cool.zip"'
   };
 }

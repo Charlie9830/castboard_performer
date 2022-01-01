@@ -6,18 +6,16 @@ import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_core/models/system_controller/DeviceResolution.dart';
 import 'package:castboard_player/server/Routes.dart';
 import 'package:castboard_core/system-commands/SystemCommands.dart';
+import 'package:castboard_player/server/generateFileHeaders.dart';
 import 'package:castboard_player/server/getAssetBundleRootPath.dart';
 import 'package:castboard_player/server/routeHandlers.dart';
 import 'package:castboard_player/system_controller/SystemConfigCommitResult.dart';
 import 'package:path/path.dart' as p;
 
 // Shelf
-import 'package:shelf/shelf.dart';
+import 'package:shelf_plus/shelf_plus.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_cors_headers/shelf_cors_headers.dart';
-import 'package:shelf_router/shelf_router.dart';
-import 'package:shelf_static/shelf_static.dart';
-
 
 typedef void OnSystemCommandReceivedCallback(SystemCommand command);
 typedef Future<
@@ -116,8 +114,8 @@ class Server {
     return;
   }
 
-  Router _initializeRouter() {
-    Router router = Router();
+  RouterPlus _initializeRouter() {
+    RouterPlus router = Router().plus;
 
     // Alive
     router.get(Routes.alive, (Request req) {
@@ -157,11 +155,20 @@ class Server {
     });
 
     // Show File Download
-    router.get(Routes.download, (Request req) {
-      LoggingManager.instance.server
-          .info('Show File Download GET command received');
-      return handleDownloadReq(req, onShowfileDownload);
-    });
+    // router.get(Routes.download, (Request req) {
+    //   LoggingManager.instance.server
+    //       .info('Show File Download GET command received');
+    //   return handleDownloadReq(req, onShowfileDownload);
+    // });
+
+    router.get(Routes.download, (req) async {
+      print("PING");
+
+      final file = File(p.join(p.current, "static_debug", "testtarget",
+          "Les Borkerables.castboard"));
+
+      return file;
+    }, use: download(filename: 'Cool Whip.zip'));
 
     // Show Data Pull
     router.get(Routes.show, (Request req) {
