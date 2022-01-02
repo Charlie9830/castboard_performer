@@ -4,6 +4,8 @@ import 'package:castboard_core/logging/LoggingManager.dart';
 import 'package:castboard_core/models/RemoteShowData.dart';
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_core/models/system_controller/DeviceResolution.dart';
+import 'package:castboard_core/storage/ShowfIleValidationResult.dart';
+import 'package:castboard_player/models/ShowFileUploadResult.dart';
 import 'package:castboard_player/server/Routes.dart';
 import 'package:castboard_core/system-commands/SystemCommands.dart';
 import 'package:castboard_player/server/generateFileHeaders.dart';
@@ -21,7 +23,8 @@ typedef void OnSystemCommandReceivedCallback(SystemCommand command);
 typedef Future<
     List<DeviceResolution>> OnAvailableResolutionsRequestedCallback();
 typedef void OnPlaybackCommandReceivedCallback(PlaybackCommand command);
-typedef Future<bool> OnShowFileReceivedCallback(List<int> bytes);
+typedef Future<ShowfileUploadResult> OnShowFileReceivedCallback(
+    List<int> bytes);
 typedef RemoteShowData OnShowDataPullCallback();
 typedef Future<bool> OnShowDataReceivedCallback(RemoteShowData data);
 typedef void OnHeartbeatCallback(String sessionId);
@@ -154,7 +157,7 @@ class Server {
     // Show File Upload
     router.put(Routes.upload, (Request req) {
       LoggingManager.instance.server.info('Show File Upload PUT received');
-      return handleUploadReq(req, onShowFileReceived);
+      return handleShowfileUploadReq(req, onShowFileReceived);
     });
 
     // Prepare Showfile download
@@ -193,7 +196,6 @@ class Server {
       return _showfileDownloadTarget;
     }, use: download(filename: 'Showfile.zip'));
 
-
     // Prepare logs download.
     router.get(Routes.prepareLogsDownload, (Request req) {
       LoggingManager.instance.server
@@ -201,7 +203,7 @@ class Server {
       return (Request innerReq) async {
         final result = await handlePrepareLogsDownloadReq(
             innerReq, onPrepareLogsDownloadCallback);
-            
+
         if (result.file != null) {
           _logsDownloadTarget = result.file;
           return result.response;

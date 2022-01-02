@@ -154,7 +154,7 @@ Future<PrepareDownloadTuple> handlePrepareShowfileDownloadReq(
   );
 }
 
-Future<Response> handleUploadReq(
+Future<Response> handleShowfileUploadReq(
     Request request, OnShowFileReceivedCallback? callback) async {
   if (request.contentLength == null || request.contentLength == 0) {
     return Response(400); // Bad Request.
@@ -173,12 +173,28 @@ Future<Response> handleUploadReq(
 
   final result = await callback(buffer);
 
-  if (result == true) {
-    return Response.ok(null);
-  } else {
+  // Good Showfile.
+  if (result.generalResult == true) return Response.ok(null);
+  
+  // Unknown error.
+  if (result.validationResult == null)
     return Response.internalServerError(
-        body: "Something went wrong, please try again");
-  }
+        body: 'An error occurred. Please try again');
+
+  // Showfile is incompatiable with this version of the software.
+  if (result.validationResult!.isCompatiableFileVersion == false)
+    return Response.internalServerError(
+        body:
+            'Showfile was created by a newer version of Castboard. Please update player software');
+
+  // Showfile failed validation.
+  if (result.validationResult!.isValid == false)
+    return Response.internalServerError(
+        body:
+            'Invalid showfile. Please check you have the correct file and try again.');
+
+  // Fallen through. But something is probably wrong.
+  return Response.internalServerError(body: 'An unknown error occurred');
 }
 
 Future<Response> handlePlaybackReq(

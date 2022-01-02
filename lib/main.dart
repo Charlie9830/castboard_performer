@@ -21,8 +21,10 @@ import 'package:castboard_core/models/TrackRef.dart';
 import 'package:castboard_core/models/system_controller/DeviceResolution.dart';
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_core/storage/ImportedShowData.dart';
+import 'package:castboard_core/storage/ShowfIleValidationResult.dart';
 import 'package:castboard_core/storage/Storage.dart';
 import 'package:castboard_core/system-commands/SystemCommands.dart';
+import 'package:castboard_core/version/fileVersion.dart';
 import 'package:castboard_player/ConfigViewer.dart';
 import 'package:castboard_player/CriticalError.dart';
 import 'package:castboard_player/DbusTesting.dart';
@@ -31,6 +33,7 @@ import 'package:castboard_player/Player.dart';
 import 'package:castboard_player/RouteNames.dart';
 import 'package:castboard_player/SlideCycler.dart';
 import 'package:castboard_player/fontLoadingHelpers.dart';
+import 'package:castboard_player/models/ShowFileUploadResult.dart';
 import 'package:castboard_player/scheduleRestart.dart';
 import 'package:castboard_player/server/Server.dart';
 import 'package:castboard_player/system_controller/SystemConfigCommitResult.dart';
@@ -263,21 +266,23 @@ class _AppRootState extends State<AppRoot> {
     return file;
   }
 
-  Future<bool> _handleShowfileReceived(List<int> bytes) async {
+  Future<ShowfileUploadResult> _handleShowfileReceived(List<int> bytes) async {
     // Dump the current route and push the loading splash. This ensures that we don't end up deleting an image file
     // just as an ImageProvider is trying to access it.
     navigatorKey.currentState!.popAndPushNamed(RouteNames.loadingSplash);
 
     // Validate the incoming show file.
-    if (await Storage.instance.validateShowFile(bytes) == false) {
-      // Invalid show file received. Log it, then return back to the player route if a suitable show remains
-      // in active storage otherwise return back to the config route.
+    final validationResult =
+        await Storage.instance.validateShowfile(bytes, kMaxAllowedFileVersion);
+    if (validationResult.isValid == false) {
+      // File is invalid. Log it based on the reason then attempt to return back to the player route if we can.
+      if (validationResult.isCompatiableFileVersion == true)
+        LoggingManager.instance.general
+            .warning('Invalid showfile received. Rejecting request.');
 
-      // TODO: Instead of just returning a bool we should return an object that will allow us to provide more detailed
-      // information back to the remote as to why the show was rejected.
-
-      LoggingManager.instance.server
-          .info('Invalid showfile received. Rejecting request');
+      if (validationResult.isCompatiableFileVersion == false)
+        LoggingManager.instance.general
+            .warning("Incompatiable showfile recieved. Rejecting request");
 
       final canReturnToSlideShow =
           await Storage.instance.isPlayerStoragePopulated();
@@ -286,16 +291,24 @@ class _AppRootState extends State<AppRoot> {
       } else {
         navigatorKey.currentState!.popAndPushNamed(RouteNames.configViewer);
       }
-      return false;
+      return ShowfileUploadResult(
+          validationResult: validationResult, generalResult: false);
     }
 
     // Read the incoming show.
-    final showdata = await Storage.instance.loadArchivedShowfile(bytes);
+    try {
+      final showdata = await Storage.instance.loadArchivedShowfile(bytes);
 
-    // Load into state.
-    _loadShow(showdata);
+      // Load into state.
+      _loadShow(showdata);
 
-    return true;
+      return ShowfileUploadResult.good();
+    } catch (e, stacktrace) {
+      LoggingManager.instance.general
+          .severe('Failed to load uploaded show into storage.', e, stacktrace);
+
+      return ShowfileUploadResult(generalResult: false, validationResult: null);
+    }
   }
 
   void _updateStartupStatus(String status) {
