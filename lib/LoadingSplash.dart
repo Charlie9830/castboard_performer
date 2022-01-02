@@ -1,3 +1,4 @@
+import 'package:castboard_player/PackageInfoDisplay.dart';
 import 'package:flutter/material.dart';
 
 class LoadingSplash extends StatelessWidget {
@@ -8,30 +9,36 @@ class LoadingSplash extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      child: Container(
-        color: Colors.black,
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Hero(
-                  tag: 'title',
-                  child: Text('Castboard',
-                      style: Theme.of(context).textTheme.headline1)),
-              SizedBox(
-                  width: 512,
-                  child: LinearProgressIndicator(
-                    color: Colors.orangeAccent,
-                  )),
-              SizedBox(height: 16),
-              Text(status,
-                  style: Theme.of(context)
-                      .textTheme
-                      .bodyText2!
-                      .copyWith(color: Colors.grey)),
-            ],
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            color: Colors.black,
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Hero(
+                      tag: 'title',
+                      child: Text('Castboard',
+                          style: Theme.of(context).textTheme.headline1)),
+                  SizedBox(
+                      width: 512,
+                      child: LinearProgressIndicator(
+                        color: Colors.orangeAccent,
+                      )),
+                  SizedBox(height: 16),
+                  Text(status,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyText2!
+                          .copyWith(color: Colors.grey)),
+                ],
+              ),
+            ),
           ),
-        ),
+          Positioned(left: 24, bottom: 24, child: PackageInfoDisplay())
+        ],
       ),
     );
   }

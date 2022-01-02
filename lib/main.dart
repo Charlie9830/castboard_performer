@@ -368,7 +368,12 @@ class _AppRootState extends State<AppRoot> {
             .info("Show file read complete. Loading into state");
 
         _updateStartupStatus('Loading show file');
+        await _pauseForEffect();
 
+        // Pause for effect a bit further incase we need to read the splash debug info.
+        _updateStartupStatus('Stretching...');
+        await _pauseForEffect();
+        _updateStartupStatus('Running to mic checks...');
         await _pauseForEffect();
 
         _loadShow(data);
@@ -379,6 +384,12 @@ class _AppRootState extends State<AppRoot> {
             .severe("Show file read failed", e, stacktrace);
       }
     } else {
+      // Pause for effect a bit further incase we need to read the splash debug info.
+      _updateStartupStatus('Doing vocal warmups...');
+      await _pauseForEffect();
+      _updateStartupStatus('Adjusting wig cap...');
+      await _pauseForEffect();
+
       await _pauseForEffect();
       LoggingManager.instance.player
           .info('No existing show file found. Proceeding to config route');
