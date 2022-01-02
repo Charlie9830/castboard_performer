@@ -27,7 +27,6 @@ import 'package:castboard_core/system-commands/SystemCommands.dart';
 import 'package:castboard_core/version/fileVersion.dart';
 import 'package:castboard_player/ConfigViewer.dart';
 import 'package:castboard_player/CriticalError.dart';
-import 'package:castboard_player/DbusTesting.dart';
 import 'package:castboard_player/LoadingSplash.dart';
 import 'package:castboard_player/Player.dart';
 import 'package:castboard_player/RouteNames.dart';
@@ -181,7 +180,6 @@ class _AppRootState extends State<AppRoot> {
         ),
         initialRoute: RouteNames.loadingSplash,
         routes: {
-          'DbusTesting': (_) => DbusTesting(),
           RouteNames.loadingSplash: (_) => LoadingSplash(
                 status: _startupStatus,
               ),
