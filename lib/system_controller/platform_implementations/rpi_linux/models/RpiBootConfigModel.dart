@@ -27,6 +27,9 @@ class RpiBootConfigModel {
       availableResolutions: AvailableResolutions.defaults(),
       deviceOrientation: null,
       playShowOnIdle: null,
+      playerBuildNumber: '',
+      playerVersion: '',
+      playerBuildSignature: '',
     );
   }
 

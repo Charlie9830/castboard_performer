@@ -294,6 +294,9 @@ class SystemControllerRpiLinux implements SystemController {
       deviceResolution:
           bootConfig?.toSystemConfig().deviceResolution ?? rpiHdmiModes[16],
       availableResolutions: availableResolutions,
+      playerBuildNumber: '',
+      playerBuildSignature: '',
+      playerVersion: '',
     );
 
     LoggingManager.instance.systemManager.info(

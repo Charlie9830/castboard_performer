@@ -41,6 +41,7 @@ import 'package:castboard_player/system_controller/platform_implementations/rpi_
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
@@ -681,7 +682,18 @@ class _AppRootState extends State<AppRoot> {
       return null;
     }
 
-    return config;
+    try {
+      // Append the PackageInfo.
+      final info = await PackageInfo.fromPlatform();
+      return config.copyWith(
+        playerVersion: info.version,
+        playerBuildNumber: info.buildNumber,
+        playerBuildSignature: info.buildSignature,
+      );
+    } catch (e) {
+      LoggingManager.instance.general.severe('PackageInfo threw an exception');
+      return null;
+    }
   }
 
   Future<SystemConfigCommitResult> _handleSystemConfigPost(
