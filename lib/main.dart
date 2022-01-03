@@ -51,8 +51,8 @@ void main() async {
 
   try {
     await _initLogging();
-  } catch (error) {
-    criticalError = error.toString();
+  } catch (error, stacktrace) {
+    criticalError = error.toString() + "\n" + stacktrace.toString();
     stderr.write('Failed to initialize LoggingManager. ${error.toString()}');
   }
 
