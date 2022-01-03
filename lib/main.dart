@@ -51,9 +51,11 @@ void main() async {
 
   try {
     await _initLogging();
+    print('Logging Initialized');
   } catch (error, stacktrace) {
     criticalError = error.toString() + "\n" + stacktrace.toString();
     stderr.write('Failed to initialize LoggingManager. ${error.toString()}');
+    print(criticalError);
   }
 
   try {
@@ -61,6 +63,7 @@ void main() async {
       criticalError: criticalError,
     ));
   } catch (e, stacktrace) {
+    print('Uncaught exception in runApp(). $e \n ${stacktrace.toString()}');
     LoggingManager.instance.general
         .severe('Uncaught Exception: ', e, stacktrace);
   }
