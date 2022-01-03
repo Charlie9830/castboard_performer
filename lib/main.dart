@@ -46,7 +46,7 @@ import 'package:package_info_plus/package_info_plus.dart';
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
-  print('Standard Output Test2');
+  WidgetsFlutterBinding.ensureInitialized();
   String criticalError = '';
 
   try {
