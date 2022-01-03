@@ -8,8 +8,13 @@ class CriticalError extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
         home: Scaffold(
+            backgroundColor: Colors.black,
             body: Center(
-      child: Text(errorMessage),
-    )));
+              child: Text(errorMessage,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyText1!
+                      .copyWith(color: Colors.white)),
+            )));
   }
 }
