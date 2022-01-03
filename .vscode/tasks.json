@@ -4,14 +4,24 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "Run Debug eLinux X64",
+            "type": "shell",
+            "command": "flutter-elinux run --dart-define=ELINUX_IS_ELINUX=true --dart-define=ELINUX_TMP_PATH=/tmp/ --dart-define=ELINUX_HOME_PATH=/home/charliehall "
+        },
+        {
+            "label": "Build Release eLinux X64",
+            "type": "shell",
+            "command": "flutter-elinux build --dart-define=ELINUX_IS_ELINUX=true --dart-define=ELINUX_TMP_PATH=/tmp/ --dart-define=ELINUX_HOME_PATH=/home/charliehall "
+        },
+        {
             "label": "Build Debug eLinux Arm64",
             "type": "shell",
-            "command": "flutter-elinux build elinux --target-arch=arm64 --target-sysroot=/opt/ubuntu18-arm64-sysroot --system-include-directories=/usr/aarch64-linux-gnu/include/c++/9/aarch64-linux-gnu --debug ",
+            "command": "flutter-elinux build elinux --dart-define=ELINUX_IS_ELINUX=true --dart-define=ELINUX_TMP_PATH=/tmp/ --dart-define=ELINUX_HOME_PATH=/home/cage --target-arch=arm64 --target-sysroot=/opt/ubuntu18-arm64-sysroot --system-include-directories=/usr/aarch64-linux-gnu/include/c++/9/aarch64-linux-gnu --debug ",
         },
         {
             "label": "Build Release eLinux Arm64",
             "type": "shell",
-            "command": "flutter-elinux build elinux --target-arch=arm64 --target-sysroot=/opt/ubuntu18-arm64-sysroot --system-include-directories=/usr/aarch64-linux-gnu/include/c++/9/aarch64-linux-gnu",
+            "command": "flutter-elinux build elinux --dart-define=ELINUX_IS_ELINUX=true --dart-define=ELINUX_TMP_PATH=/tmp/ --dart-define=ELINUX_HOME_PATH=/home/cage --target-arch=arm64 --target-sysroot=/opt/ubuntu18-arm64-sysroot --system-include-directories=/usr/aarch64-linux-gnu/include/c++/9/aarch64-linux-gnu",
         },
         {
             // Installs the castboard_remote from the latest Yocto build into the static_debug location on the rpi.
