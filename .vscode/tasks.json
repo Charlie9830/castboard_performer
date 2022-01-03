@@ -23,14 +23,14 @@
             "label": "Deploy Debug to Rpi4",
             "type": "shell",
             "dependsOn": ["Build Debug eLinux Arm64"],
-            "command": "ssh root@10.101.1.2 rm -rf /usr/share/castboard-player/ && scp -r ./build/elinux/arm64/debug/bundle root@10.101.1.2:/usr/share/castboard-player/ && ssh root@10.101.1.2 mv /usr/share/castboard-player/castboard_player /usr/share/castboard-player/player && ssh root@10.101.1.2 systemctl start cage@tty7"
+            "command": "ssh root@10.101.1.2 systemctl stop cage@tty7 && sleep 5 && rm -rf /usr/share/castboard-player/ && scp -r ./build/elinux/arm64/debug/bundle/* root@10.101.1.2:/usr/share/castboard-player/ && ssh root@10.101.1.2 mv /usr/share/castboard-player/castboard_player /usr/share/castboard-player/player && ssh root@10.101.1.2 systemctl start cage@tty7"
         },
 
         {
             "label": "Deploy Release to Rpi4",
             "type": "shell",
             "dependsOn": ["Build Release eLinux Arm64"],
-            "command": "ssh root@10.101.1.2 rm -rf /usr/share/castboard-player/ && scp -r ./build/elinux/arm64/release/bundle root@10.101.1.2:/usr/share/castboard-player/ && ssh root@10.101.1.2 mv /usr/share/castboard-player/castboard_player /usr/share/castboard-player/player && ssh root@10.101.1.2 systemctl start cage@tty7"
+            "command": "ssh root@10.101.1.2 systemctl stop cage@tty7 && sleep 5 && rm -rf /usr/share/castboard-player/ && scp -r ./build/elinux/arm64/release/bundle/* root@10.101.1.2:/usr/share/castboard-player/ && ssh root@10.101.1.2 mv /usr/share/castboard-player/castboard_player /usr/share/castboard-player/player && ssh root@10.101.1.2 systemctl start cage@tty7"
         },
         
     ]
