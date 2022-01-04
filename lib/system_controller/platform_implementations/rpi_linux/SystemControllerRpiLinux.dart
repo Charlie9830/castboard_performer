@@ -354,13 +354,11 @@ class SystemControllerRpiLinux implements SystemController {
 
   @override
   Future<UpdateStatus> getUpdateStatus() async {
-    return UpdateStatus.success;
     return getUpdateStatusInternal();
   }
 
   @override
   Future<void> resetUpdateStatus() async {
-    return;
     return resetUpdateStatusInternal();
   }
 }
