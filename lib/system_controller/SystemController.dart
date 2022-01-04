@@ -40,5 +40,8 @@ abstract class SystemController {
 
   Future<SystemConfig> getSystemConfig();
 
+  // Updates the application using the provided zip file.
+  Future<void> updateApplication(List<int> byteData);
+
   Future<void> dispose();
 }

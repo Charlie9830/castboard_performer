@@ -59,4 +59,10 @@ class SystemControllerNoop implements SystemController {
       DeviceResolution(1920, 1080),
     ]));
   }
+
+  @override
+  Future<void> updateApplication(List<int> byteData) async {
+    print("Update Application called");
+    return;
+  }
 }

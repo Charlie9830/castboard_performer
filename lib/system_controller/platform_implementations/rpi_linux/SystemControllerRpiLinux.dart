@@ -14,6 +14,7 @@ import 'package:castboard_player/system_controller/platform_implementations/rpi_
 import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/readApplicationConfigFile.dart';
 import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/readRpiBootConfigFile.dart';
 import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/sed.dart';
+import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/updateApplicationInternal.dart';
 import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/writeApplicationConfigFile.dart';
 import 'package:dbus/dbus.dart';
 import 'package:castboard_player/system_controller/DBusLocations.dart';
@@ -344,5 +345,10 @@ class SystemControllerRpiLinux implements SystemController {
   /// Determins if the provided DeviceConfig contains updates to the RPI Boot Configuration
   bool _containsRpiBootConfigUpdates(SystemConfig config) {
     return config.deviceResolution != null;
+  }
+
+  @override
+  Future<void> updateApplication(List<int> byteData) {
+    return updateApplicationInternal(byteData, _systemBus);
   }
 }
