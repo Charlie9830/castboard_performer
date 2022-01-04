@@ -1,4 +1,5 @@
 import 'package:castboard_player/PackageInfoDisplay.dart';
+import 'package:castboard_player/versionCodename.dart';
 import 'package:flutter/material.dart';
 
 class LoadingSplash extends StatelessWidget {
@@ -37,7 +38,8 @@ class LoadingSplash extends StatelessWidget {
               ),
             ),
           ),
-          Positioned(left: 24, bottom: 24, child: PackageInfoDisplay())
+          Positioned(left: 24, bottom: 24, child: PackageInfoDisplay()),
+          Positioned(right: 24, bottom: 24, child: Text(kVersionCodename))
         ],
       ),
     );
