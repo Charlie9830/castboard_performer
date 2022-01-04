@@ -175,7 +175,7 @@ Future<Response> handleShowfileUploadReq(
 
   // Good Showfile.
   if (result.generalResult == true) return Response.ok(null);
-  
+
   // Unknown error.
   if (result.validationResult == null)
     return Response.internalServerError(
@@ -195,6 +195,33 @@ Future<Response> handleShowfileUploadReq(
 
   // Fallen through. But something is probably wrong.
   return Response.internalServerError(body: 'An unknown error occurred');
+}
+
+Future<Response> handleSoftwareUpdateReq(
+    Request request, OnSoftwareUpdateCallback? callback) async {
+  if (request.contentLength == null || request.contentLength == 0) {
+    return Response(400); // Bad Request.
+  }
+
+  if (callback == null) {
+    LoggingManager.instance.server
+        .severe('OnShowFileReceivedCallback was null');
+    return Response.internalServerError(body: 'An error occured');
+  }
+
+  final buffer = <int>[];
+  await for (var bytes in request.read()) {
+    buffer.addAll(bytes.toList());
+  }
+
+  final result = await callback(buffer);
+
+  if (result == false) {
+    // Something wen't wrong. Likely the file failed validation.
+    return Response.internalServerError(body: 'Invalid Software Update File');
+  } else {
+    return Response.ok(null);
+  }
 }
 
 Future<Response> handlePlaybackReq(

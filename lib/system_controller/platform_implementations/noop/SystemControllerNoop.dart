@@ -61,8 +61,19 @@ class SystemControllerNoop implements SystemController {
   }
 
   @override
-  Future<void> updateApplication(List<int> byteData) async {
+  Future<bool> updateApplication(List<int> byteData) async {
     print("Update Application called");
+    return true;
+  }
+
+  @override
+  Future<UpdateStatus> getUpdateStatus() async {
+    return UpdateStatus.none;
+  }
+
+  @override
+  Future<void> resetUpdateStatus() async {
+    print('resetUpdateStatus called');
     return;
   }
 }

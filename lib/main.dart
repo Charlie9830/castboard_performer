@@ -31,6 +31,7 @@ import 'package:castboard_player/LoadingSplash.dart';
 import 'package:castboard_player/Player.dart';
 import 'package:castboard_player/RouteNames.dart';
 import 'package:castboard_player/SlideCycler.dart';
+import 'package:castboard_player/UpdateStatusSplash.dart';
 import 'package:castboard_player/fontLoadingHelpers.dart';
 import 'package:castboard_player/models/ShowFileUploadResult.dart';
 import 'package:castboard_player/scheduleRestart.dart';
@@ -155,7 +156,8 @@ class _AppRootState extends State<AppRoot> {
         onSystemCommandReceived: _handleSystemCommandReceived,
         onSystemConfigPull: _handleSystemConfigPull,
         onSystemConfigPostCallback: _handleSystemConfigPost,
-        onPrepareLogsDownloadCallback: _handlePrepareLogsDownloadRequest);
+        onPrepareLogsDownloadCallback: _handlePrepareLogsDownloadRequest,
+        onSoftwareUpdate: _handleSoftwareUpdate);
 
     _heartbeatTimer =
         Timer.periodic(Duration(seconds: 30), (_) => _checkHeartbeats(30));
@@ -319,7 +321,7 @@ class _AppRootState extends State<AppRoot> {
   }
 
   void _initializePlayer() async {
-    print('StdOutput Test from Within the the APP');
+    print('StdOutput Test from Within the the App');
     _updateStartupStatus('Initializing internal storage');
     // Init Storage
     try {
@@ -375,10 +377,9 @@ class _AppRootState extends State<AppRoot> {
 
         // Pause for effect a bit further incase we need to read the splash debug info.
         _updateStartupStatus('Stretching...');
-        await _pauseForEffect();
+        await _pauseForEffect(seconds: 2);
         _updateStartupStatus('Running to mic checks...');
-        await _pauseForEffect();
-
+        await _pauseForEffect(seconds: 2);
         _loadShow(data);
 
         LoggingManager.instance.player.info("Show file loaded into state");
@@ -388,15 +389,16 @@ class _AppRootState extends State<AppRoot> {
       }
     } else {
       // Pause for effect a bit further incase we need to read the splash debug info.
-      _updateStartupStatus('Doing vocal warmups...');
-      await _pauseForEffect();
+      _updateStartupStatus('Finishing vocal warmups...');
+      await _pauseForEffect(seconds: 2);
       _updateStartupStatus('Adjusting wig cap...');
       await _pauseForEffect();
 
-      await _pauseForEffect();
+      await _pauseForEffect(seconds: 2);
       LoggingManager.instance.player
           .info('No existing show file found. Proceeding to config route');
-      navigatorKey.currentState?.pushNamed(RouteNames.configViewer);
+      await _checkUpdateStatusAndPushNextNamedRoute(
+          nextNamedRoute: RouteNames.configViewer);
     }
   }
 
@@ -506,7 +508,9 @@ class _AppRootState extends State<AppRoot> {
 
     LoggingManager.instance.player
         .info("Load show completed. Pushing player route");
-    navigatorKey.currentState?.pushNamed(RouteNames.player);
+
+    await _checkUpdateStatusAndPushNextNamedRoute(
+        nextNamedRoute: RouteNames.player);
   }
 
   void _resetImageCache(BuildContext context) {
@@ -661,9 +665,9 @@ class _AppRootState extends State<AppRoot> {
     return withUpdatedPresets;
   }
 
-  Future<void> _pauseForEffect() async {
+  Future<void> _pauseForEffect({int seconds = 5}) async {
     if (Platform.isLinux && kDebugMode == false) {
-      await Future.delayed(Duration(seconds: 5));
+      await Future.delayed(Duration(seconds: seconds));
       return;
     } else {
       return;
@@ -736,6 +740,43 @@ class _AppRootState extends State<AppRoot> {
     final file = await LoggingManager.instance.exportLogs();
 
     return file;
+  }
+
+  Future<bool> _handleSoftwareUpdate(List<int> byteData) {
+    return _systemController.updateApplication(byteData);
+  }
+
+  Future<void> _checkUpdateStatusAndPushNextNamedRoute({
+    required String nextNamedRoute,
+  }) async {
+    final updateStatus = await _systemController.getUpdateStatus();
+    if (updateStatus != UpdateStatus.none) {
+      // Reset the updateStatus flag if it is set to success.
+      if (updateStatus == UpdateStatus.success)
+        await _systemController.resetUpdateStatus();
+
+      // Now show a status splash that will update the user of the finished state
+      // of the update.
+      await _showUpdateStatusSplash(updateStatus);
+    }
+
+    // Push the correct route based on the value of showLoaded.
+    navigatorKey.currentState?.popAndPushNamed(nextNamedRoute);
+  }
+
+  Future<void> _showUpdateStatusSplash(UpdateStatus status) async {
+    // Push the UpdateStatusSplash to the Navigator.
+    // It will automatically pop itself of after the given duration.
+    await navigatorKey.currentState!.push(MaterialPageRoute(
+      builder: (_) => UpdateStatusSplash(
+        success: status == UpdateStatus.success,
+        holdDuration: Duration(seconds: 8),
+      ),
+      fullscreenDialog: true,
+      maintainState: false,
+    ));
+
+    return;
   }
 
   @override

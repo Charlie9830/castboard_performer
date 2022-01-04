@@ -5,6 +5,8 @@ import 'package:castboard_player/system_controller/SystemConfigCommitResult.dart
 import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/SystemControllerRpiLinux.dart';
 import 'package:castboard_player/system_controller/platform_implementations/noop/SystemControllerNoop.dart';
 
+enum UpdateStatus { none, success, started, failed }
+
 abstract class SystemController {
   static SystemController? _instance;
 
@@ -41,7 +43,14 @@ abstract class SystemController {
   Future<SystemConfig> getSystemConfig();
 
   // Updates the application using the provided zip file.
-  Future<void> updateApplication(List<int> byteData);
+  Future<bool> updateApplication(List<int> byteData);
+
+  // Checks if the player has just been updated and is booting for the first time
+  // since.
+  Future<UpdateStatus> getUpdateStatus();
+
+  // Resets the update status.
+  Future<void> resetUpdateStatus();
 
   Future<void> dispose();
 }

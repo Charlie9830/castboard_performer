@@ -33,6 +33,7 @@ typedef Future<SystemConfigCommitResult> OnSystemConfigPostCallback(
     SystemConfig config);
 typedef Future<File> OnPrepareShowfileDownloadCallback();
 typedef Future<File> OnPrepareLogsDownloadCallback();
+typedef Future<bool> OnSoftwareUpdateCallback(List<int> byteData);
 
 // Config
 const _webAppFilePath = 'web_app/';
@@ -58,6 +59,7 @@ class Server {
   final OnSystemConfigPostCallback? onSystemConfigPostCallback;
   final OnPrepareShowfileDownloadCallback? onPrepareShowfileDownload;
   final OnPrepareLogsDownloadCallback? onPrepareLogsDownloadCallback;
+  final OnSoftwareUpdateCallback? onSoftwareUpdate;
 
   File? _showfileDownloadTarget;
   File? _logsDownloadTarget;
@@ -76,6 +78,7 @@ class Server {
     this.onSystemConfigPostCallback,
     this.onPrepareShowfileDownload,
     this.onPrepareLogsDownloadCallback,
+    this.onSoftwareUpdate,
     required this.onHeartbeatReceived,
   });
 
@@ -158,6 +161,12 @@ class Server {
     router.put(Routes.upload, (Request req) {
       LoggingManager.instance.server.info('Show File Upload PUT received');
       return handleShowfileUploadReq(req, onShowFileReceived);
+    });
+
+    router.put(Routes.systemSoftwareUpdate, (Request req) {
+      LoggingManager.instance.server
+          .info('System Software Update PUT Received');
+      return handleSoftwareUpdateReq(req, onSoftwareUpdate);
     });
 
     // Prepare Showfile download
