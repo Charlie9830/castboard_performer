@@ -6,7 +6,7 @@
         {
             "label": "Prepare Arm64 Update File",
             "type": "shell",
-            "command": "mkdir -p ./updatezips && zip -r ./updatezips/update ./build/elinux/arm64/release/bundle/"
+            "command": "rm -f ./updatezips/update.zip && mkdir -p ./updatezips && cd ./build/elinux/arm64/release/bundle/ && zip -r '/home/charliehall/Desktop/Code Projects/castboard_player/updatezips/update' ./"
         },
         {
             "label": "Run Debug eLinux X64",
