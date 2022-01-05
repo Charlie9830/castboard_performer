@@ -56,3 +56,6 @@ app.*.map.json
 # Build Artifacts
 /updatezips
 /assets/web_app
+
+# Build Script Artifacts
+/build_scripts/__pycache__

@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:castboard_core/logging/LoggingManager.dart';
 import 'package:castboard_core/path_provider_shims.dart';
 import 'package:castboard_core/storage/Storage.dart';
 import 'package:castboard_player/system_controller/DBusLocations.dart';
@@ -18,42 +19,83 @@ const String _rollbackDirectoryName = 'rollback';
 const String _castboardUpdaterServiceName = 'castboard-updater.service';
 
 Future<bool> updateApplicationInternal(
-    List<int> byteData, DBusClient _systemBus) async {
+    List<int> byteData, DBusClient systemBus) async {
   // Unzip the contents of byteData to a tempory directory.
   final tmpDir = await getTemporaryDirectoryShim();
   Directory updateSourceDir =
       Directory(p.join(tmpDir.path, 'castboard-player-updates'));
 
-  await updateSourceDir.delete();
+  LoggingManager.instance.systemManager.info("Starting Software Update");
+  LoggingManager.instance.systemManager
+      .info("Saving incoming update file to ${updateSourceDir.path}");
+
+  // If the updateSourceDir already exists. Delete it to clear out any old
+  // updates.
+  if (await updateSourceDir.exists())
+    await updateSourceDir.delete(recursive: true);
+
   await updateSourceDir.create();
 
+  LoggingManager.instance.systemManager.info("Decompressing update file");
+
+  // Decompress the incoming update to the sourceDir.
   updateSourceDir =
       await Storage.instance.decompressGenericZip(byteData, updateSourceDir);
 
+  LoggingManager.instance.systemManager.info("Decompression complete.");
+  LoggingManager.instance.systemManager.info("Validating file");
+
   // Validate the update.
   if (await _validateIncomingUpdate(updateSourceDir)) {
+    LoggingManager.instance.systemManager
+        .info("Update file failed validation. Rejecting");
     return false;
   }
+
+  LoggingManager.instance.systemManager.info("File passed validation checks");
+  LoggingManager.instance.systemManager
+      .info("Ensuring update_status file is reset");
 
   // Ensure the castboard-updater update-status file has been reset.
   final updateStatusFile = await _getUpdateStatusFile(createIfNeeded: true);
   await updateStatusFile.writeAsString('none');
 
+  LoggingManager.instance.systemManager
+      .info("update_status file reset complete");
+  LoggingManager.instance.systemManager
+      .info("Setting up the Updater Arguments");
+
   // Setup the args.env file for castboard-updater.
   final argsEnv = UpdaterArgsModel(
     appPath: _appPath,
-    updateSourcePath: _updateStatusFilePath,
+    updateSourcePath: updateSourceDir.path,
     updaterConfPath: _updaterConfPath,
     appUnitName: _appUnitName,
-    rollbackPath: (await _getRollbackDirectory()).path,
+    rollbackPath: (await _getRollbackDirectory(kVersionCodename)).path,
     outgoingCodename: kVersionCodename,
-    incomingCodename: 'Unknown',
+    incomingCodename: await _readCodenameFromFile(updateSourceDir),
   );
+
+  LoggingManager.instance.systemManager
+      .info("Writing the updater args env file");
+
   final argsEnvFile = await _getArgsEnvFile();
   await argsEnvFile.writeAsString(argsEnv.toEnvFileString());
 
+  LoggingManager.instance.systemManager
+      .info("Updater Args Env file write complete");
+  LoggingManager.instance.systemManager
+      .info("Obtaining systemd d-bus interface");
+
+  // Obtain the systemd d-bus interface.
+  final object = DBusLocations.systemdManager.object(systemBus);
+
+  LoggingManager.instance.systemManager
+      .info("Executing StartUnit on $_castboardUpdaterServiceName");
+
   // Call out to systemd to start the castboard-updater script.
-  final object = DBusLocations.systemdManager.object(_systemBus);
+  // The updater script will wait for a few seconds before shutting down castboard
+  // giving us time to send notifications back to the remote.
   await object.callMethod(
     DBusLocations.systemdManager.interface,
     'StartUnit',
@@ -63,6 +105,9 @@ Future<bool> updateApplicationInternal(
           'replace'), // Restart Mode, one of 'replace', 'fail', 'isolate', 'ignore-dependencies' or 'ignore-requirements'.
     ],
   );
+
+  LoggingManager.instance.systemManager
+      .info("StartUnit Execution complete. Castboard shutdown imminent...");
 
   return true;
 }
@@ -80,6 +125,16 @@ Future<UpdateStatus> getUpdateStatusInternal() async {
   if (contents == 'started') return UpdateStatus.started;
 
   return UpdateStatus.none;
+}
+
+Future<String> _readCodenameFromFile(Directory sourceDir) async {
+  final codenameFile = File(p.join(sourceDir.path, 'codename'));
+
+  if (await codenameFile.exists() == false) {
+    return 'Unknown';
+  }
+
+  return await codenameFile.readAsString();
 }
 
 Future<void> resetUpdateStatusInternal() async {
@@ -128,11 +183,12 @@ Future<File> _getArgsEnvFile() async {
   return file;
 }
 
-Future<Directory> _getRollbackDirectory() async {
+Future<Directory> _getRollbackDirectory(String versionCodename) async {
   final baseDir = await getApplicationsDocumentDirectoryShim();
-  final dir = await Directory(p.join(baseDir.path, _rollbackDirectoryName));
+  final dir = await Directory(
+      p.join(baseDir.path, _rollbackDirectoryName, versionCodename));
 
-  if (await dir.exists() == false) await dir.create();
+  if (await dir.exists() == false) await dir.create(recursive: true);
 
   return dir;
 }
