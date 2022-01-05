@@ -55,3 +55,4 @@ app.*.map.json
 
 # Build Artifacts
 /updatezips
+/assets/web_app
