@@ -52,3 +52,6 @@ app.*.map.json
 /windows
 /linux
 /elinux
+
+# Build Artifacts
+/updatezips

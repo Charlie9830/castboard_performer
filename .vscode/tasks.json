@@ -4,6 +4,11 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "Prepare Arm64 Update File",
+            "type": "shell",
+            "command": "mkdir -p ./updatezips && zip -r ./updatezips/update ./build/elinux/arm64/release/bundle/"
+        },
+        {
             "label": "Run Debug eLinux X64",
             "type": "shell",
             "command": "flutter-elinux run --dart-define=ELINUX_IS_ELINUX=true --dart-define=ELINUX_TMP_PATH=/tmp/ --dart-define=ELINUX_HOME_PATH=/home/charliehall "
