@@ -3,6 +3,14 @@
     // for the documentation about the tasks.json format
     "version": "2.0.0",
     "tasks": [
+        { 
+            "label": "Generate Player update",
+            "detail": "Generates a Player update file from an existing yocto build",
+            "type": "shell",
+            "command": "python3 ./build_scripts/do_packageExistingYoctoBundleAsUpdate.py ./ /media/charliehall/samsung/rpi_64_yocto/raspberrypi4-64/tmp/deploy/images/raspberrypi4-64/castboard-rpi-image-dev-raspberrypi4-64.tar /usr/share/castboard-player/ ./build/update/ "
+        },
+
+
         {
             "label": "Run Debug eLinux X64",
             "type": "shell",
@@ -21,7 +29,7 @@
         {
             "label": "Build Release eLinux Arm64",
             "type": "shell",
-            "command": "flutter-elinux build elinux --dart-define=ELINUX_IS_ELINUX=true --dart-define=ELINUX_TMP_PATH=/tmp/ --dart-define=ELINUX_HOME_PATH=/home/cage --target-arch=arm64 --target-sysroot=/opt/ubuntu18-arm64-sysroot --system-include-directories=/usr/aarch64-linux-gnu/include/c++/9/aarch64-linux-gnu",
+            "command": "python3 ./build_scripts/buildRpiRelease.py",
         },
         {
             // Installs the castboard_remote from the latest Yocto build into the static_debug location on the rpi.
@@ -40,7 +48,7 @@
             "label": "Deploy Release to Rpi4",
             "type": "shell",
             "dependsOn": ["Build Release eLinux Arm64"],
-            "command": "ssh root@10.101.1.2 systemctl stop cage@tty7 && sleep 5 && rm -rf /usr/share/castboard-player/ && scp -r ./build/elinux/arm64/release/bundle/* root@10.101.1.2:/usr/share/castboard-player/ && ssh root@10.101.1.2 mv /usr/share/castboard-player/castboard_player /usr/share/castboard-player/player && ssh root@10.101.1.2 systemctl start cage@tty7"
+            "command": "ssh root@10.101.1.2 systemctl stop cage@tty7 && sleep 5 && rm -rf /usr/share/castboard-player/ && scp -r ./build/elinux/arm64/release/bundle/* root@10.101.1.2:/usr/share/castboard-player/ && ssh root@10.101.1.2 systemctl start cage@tty7"
         },
         
     ]

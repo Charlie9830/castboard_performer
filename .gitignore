@@ -52,3 +52,10 @@ app.*.map.json
 /windows
 /linux
 /elinux
+
+# Build Artifacts
+/updatezips
+/assets/web_app
+
+# Build Script Artifacts
+/build_scripts/__pycache__
