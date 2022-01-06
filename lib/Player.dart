@@ -22,6 +22,7 @@ const double _basePauseIndicatorSize = 124;
 class Player extends StatelessWidget {
   final Map<String, SlideModel> slides;
   final Map<TrackRef, TrackModel> tracks;
+  final Map<String, TrackRef> trackRefsByName;
   final Map<ActorRef, ActorModel> actors;
   final CastChangeModel displayedCastChange;
   final String currentSlideId;
@@ -35,6 +36,7 @@ class Player extends StatelessWidget {
     required this.slides,
     required this.tracks,
     required this.actors,
+    required this.trackRefsByName,
     required this.displayedCastChange,
     required this.currentSlideId,
     required this.slideSize,
@@ -116,6 +118,7 @@ class Player extends StatelessWidget {
           slide: slide,
           actors: actors,
           tracks: tracks,
+          trackRefsByName: trackRefsByName,
           castChange: displayedCastChange,
         ),
         renderScale: renderScale,

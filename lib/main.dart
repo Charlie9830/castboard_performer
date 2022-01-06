@@ -94,6 +94,7 @@ class _AppRootState extends State<AppRoot> {
   String _startupStatus = 'Starting Up';
   Map<ActorRef, ActorModel> _actors = {};
   Map<TrackRef, TrackModel> _tracks = {};
+  Map<String, TrackRef> _trackRefsByName = {};
 
   // Presets and Cast Changes
   Map<String, PresetModel> _presets = {};
@@ -195,6 +196,7 @@ class _AppRootState extends State<AppRoot> {
                 slides: _slides,
                 actors: _actors,
                 tracks: _tracks,
+                trackRefsByName: _trackRefsByName,
                 displayedCastChange: _displayedCastChange,
                 slideSize: _slideSize,
                 slideOrientation: _slideOrientation,
@@ -487,6 +489,7 @@ class _AppRootState extends State<AppRoot> {
     setState(() {
       _actors = data.actors;
       _tracks = data.tracks;
+      _trackRefsByName = data.trackRefsByName;
       _presets = data.presets;
       _slides = data.slides;
       _currentSlideId = initialSlide?.uid ?? _currentSlideId;
