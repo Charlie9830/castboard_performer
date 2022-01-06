@@ -7,7 +7,7 @@
             "label": "Generate Player update",
             "detail": "Generates a Player update file from an existing yocto build",
             "type": "shell",
-            "command": "python3 ./build_scripts/do_packageExistingYoctoBundleAsUpdate.py ./ /media/charliehall/samsung/rpi_64_yocto/raspberrypi4-64/tmp/deploy/images/raspberrypi4-64/castboard-rpi-image-dev-raspberrypi4-64.tar ./build/update/ "
+            "command": "python3 ./build_scripts/do_packageExistingYoctoBundleAsUpdate.py ./ /media/charliehall/samsung/rpi_64_yocto/raspberrypi4-64/tmp/deploy/images/raspberrypi4-64/castboard-rpi-image-dev-raspberrypi4-64.tar /usr/share/castboard-player/ ./build/update/ "
         },
 
 

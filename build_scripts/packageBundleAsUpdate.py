@@ -10,16 +10,17 @@ import os
 ## /player
 ## /codename
 
-def packageBundleAsUpdate(projectRootPath, absBundlePath, outputDirPath, versionCodename):
+def packageBundleAsUpdate(projectRootPath, bundlePath, outputDirPath, versionCodename):
     # Remove any remnant .zip files from the bundle.
     runShellCommands([
         'rm -f *.zip',
-    ], absBundlePath)
+    ], bundlePath)
 
     # Zip the contents of bundle.
+    print('Archiving bundle contents..')
     runShellCommands([
         'zip -r ' +versionCodename+'.zip ./*',
-    ], absBundlePath)
+    ], bundlePath)
 
     # Make an output Directory.
     runShellCommands([
@@ -29,12 +30,14 @@ def packageBundleAsUpdate(projectRootPath, absBundlePath, outputDirPath, version
     # Delete any existing matching artifact in the output directory.
     print('Deleting matching artifacts from output directory')
     runShellCommands([
-        'rm '+'"'+os.path.join(absBundlePath, versionCodename)+'.zip'+'"'
-    ])
+        'rm -f '+'"'+os.path.join(outputDirPath, versionCodename)+'.zip'+'"'
+    ], projectRootPath)
+
 
     # Move the archived bundle to that directory.
+    print('Moving zipped file to output directory.')
     runShellCommands([
-        'mv ' + '"'+os.path.join(absBundlePath, versionCodename+'.zip')+'"'+ ' ' +'"'+outputDirPath+'"'
+        'mv ' + '"'+os.path.join(bundlePath, versionCodename+'.zip')+'"'+ ' ' +'"'+outputDirPath+'"'
     ], projectRootPath)
 
     print('Update file output to '+outputDirPath+'/'+versionCodename)

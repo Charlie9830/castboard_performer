@@ -4,6 +4,14 @@ import os
 
 projectRootPath = sys.argv[1]
 artifactFilePath = sys.argv[2]
-outputDirPath = sys.argv[3]
+rootFsPath= sys.argv[3] # Represents the path to castboard-player from the rpi rootfs root.
+outputDirPath = sys.argv[4]
 
-generatePlayerUpdateFromYoctoArtifacts(os.path.abspath(projectRootPath), os.path.abspath(artifactFilePath), os.path.abspath(outputDirPath))
+generatePlayerUpdateFromYoctoArtifacts(
+os.path.abspath(projectRootPath),
+os.path.abspath(artifactFilePath),
+rootFsPath,
+os.path.abspath(outputDirPath)
+)
+
+print('\n do_packageExistingYoctoBundleAsUpdate finished successfully. \n')

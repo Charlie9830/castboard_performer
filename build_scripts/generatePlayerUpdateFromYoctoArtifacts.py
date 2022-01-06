@@ -2,7 +2,7 @@ import os
 from packageBundleAsUpdate import packageBundleAsUpdate
 from helpers import runShellCommands, readCodenameFile
 
-def generatePlayerUpdateFromYoctoArtifacts(projectRootPath, artifactFilePath, outputDirPath):
+def generatePlayerUpdateFromYoctoArtifacts(projectRootPath, artifactFilePath, rootFsPath, outputDirPath):
     tarUnpackDir = "/tmp/castboard_build_scripts/yocto_build_artifacts"
     
     print('Deleting existing work directory at '+tarUnpackDir)
@@ -22,7 +22,7 @@ def generatePlayerUpdateFromYoctoArtifacts(projectRootPath, artifactFilePath, ou
     ], cwd=projectRootPath)
 
 
-    bundlePath = os.path.join(tarUnpackDir, 'usr', 'share', 'castboard-player')
+    bundlePath = tarUnpackDir + rootFsPath
 
     print('Reading Version Codename value from extracted bundle')
     versionCodename = readCodenameFile(os.path.join(bundlePath, 'codename'))
