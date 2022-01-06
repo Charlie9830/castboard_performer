@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:castboard_core/classes/StandardSlideSizes.dart';
 import 'package:castboard_core/enums.dart';
 import 'package:castboard_core/logging/LoggingManager.dart';
 import 'package:castboard_core/models/ActorModel.dart';
@@ -108,7 +107,6 @@ class _AppRootState extends State<AppRoot> {
 
   // Slides
   Map<String, SlideModel> _slides = {};
-  SlideSizeModel _slideSize = StandardSlideSizes.defaultSize;
   SlideOrientation _slideOrientation = SlideOrientation.landscape;
 
   // Playback
@@ -198,7 +196,8 @@ class _AppRootState extends State<AppRoot> {
                 tracks: _tracks,
                 trackRefsByName: _trackRefsByName,
                 displayedCastChange: _displayedCastChange,
-                slideSize: _slideSize,
+                slideSize:
+                    SlideSizeModel.defaultSize().orientated(_slideOrientation),
                 slideOrientation: _slideOrientation,
                 playing: _playing,
               ),
@@ -499,8 +498,6 @@ class _AppRootState extends State<AppRoot> {
           initialSlide: initialSlide!,
           onPlaybackOrSlideChange: _handleSlideCycle);
       _playing = true;
-      _slideSize = StandardSlideSizes.all[data.slideSizeId] ??
-          StandardSlideSizes.defaultSize;
       _slideOrientation = data.slideOrientation;
       _currentPresetId = currentPresetId;
       _combinedPresetIds = combinedPresetIds;
