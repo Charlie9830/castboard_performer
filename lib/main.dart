@@ -306,7 +306,7 @@ class _AppRootState extends State<AppRoot> {
       // Load into state.
       _loadShow(showdata);
 
-      return ShowfileUploadResult.good();
+      return ShowfileUploadResult.good(validationResult.manifest);
     } catch (e, stacktrace) {
       LoggingManager.instance.general
           .severe('Failed to load uploaded show into storage.', e, stacktrace);
