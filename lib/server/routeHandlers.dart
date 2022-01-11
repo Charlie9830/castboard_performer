@@ -185,7 +185,7 @@ Future<Response> handleShowfileUploadReq(
   if (result.validationResult!.isCompatiableFileVersion == false)
     return Response.internalServerError(
         body:
-            'Showfile was created with a newer version of Castboard. Please update player software');
+            'Showfile was created with a newer version of Castboard. Please update Performer software');
 
   // Showfile failed validation.
   if (result.validationResult!.isValid == false)

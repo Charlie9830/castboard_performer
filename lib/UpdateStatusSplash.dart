@@ -50,7 +50,7 @@ class _Success extends StatelessWidget {
           child: Icon(Icons.check_circle, color: Colors.green, size: 64),
         ),
         Text('Update complete', style: Theme.of(context).textTheme.headline5),
-        Text('Player will resume in a few seconds',
+        Text('Performer will resume in a few seconds',
             style: Theme.of(context).textTheme.headline5),
         SizedBox(height: 16),
         Text('Version codename', style: Theme.of(context).textTheme.caption),

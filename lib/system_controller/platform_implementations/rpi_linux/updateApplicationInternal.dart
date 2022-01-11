@@ -10,7 +10,7 @@ import 'package:castboard_performer/versionCodename.dart';
 import 'package:dbus/dbus.dart';
 import 'package:path/path.dart' as p;
 
-const String _appPath = '/usr/share/castboard-player/';
+const String _appPath = '/usr/share/castboard-performer/';
 const String _updaterConfPath = '/etc/castboard-updater/';
 const String _updateStatusFilePath = '${_updaterConfPath}update_status';
 const String _argsEnvFilePath = '${_updaterConfPath}args.env';
@@ -23,7 +23,7 @@ Future<bool> updateApplicationInternal(
   // Unzip the contents of byteData to a tempory directory.
   final tmpDir = await getTemporaryDirectoryShim();
   Directory updateSourceDir =
-      Directory(p.join(tmpDir.path, 'castboard-player-updates'));
+      Directory(p.join(tmpDir.path, 'castboard-performer-updates'));
 
   LoggingManager.instance.systemManager.info("Starting Software Update");
   LoggingManager.instance.systemManager
@@ -158,7 +158,8 @@ Future<bool> _validateIncomingUpdate(Directory updateDir) async {
     }
 
     if (entity is Directory) {
-      if (name == 'player') hasExecutable = true;
+      // TODO: This could be wrong. Should'nt it be a file?
+      if (name == 'performer') hasExecutable = true;
     }
   }
 

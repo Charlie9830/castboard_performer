@@ -161,7 +161,7 @@ class _AppRootState extends State<AppRoot> {
     _heartbeatTimer =
         Timer.periodic(Duration(seconds: 30), (_) => _checkHeartbeats(30));
 
-    _initializePlayer();
+    _initializePerformer();
   }
 
   @override
@@ -223,7 +223,7 @@ class _AppRootState extends State<AppRoot> {
     _sessionHeartbeats
         .removeWhere((id, lastThump) => lastThump.isBefore(cutOffTime));
 
-    // If there are no more active sessions and if we are paused and if we have slides to player and the cycler is active, then
+    // If there are no more active sessions and if we are paused and if we have slides to play and the cycler is active, then
     // Restart the slide show.. Oh and also if the playShowOnIdle Config property is true.
     if (_sessionHeartbeats.isEmpty &&
         _playing == false &&
@@ -289,7 +289,7 @@ class _AppRootState extends State<AppRoot> {
             .warning("Incompatiable showfile recieved. Rejecting request");
 
       final canReturnToSlideShow =
-          await Storage.instance.isPlayerStoragePopulated();
+          await Storage.instance.isPerformerStoragePopulated();
       if (canReturnToSlideShow) {
         navigatorKey.currentState!.popAndPushNamed(RouteNames.player);
       } else {
@@ -321,13 +321,13 @@ class _AppRootState extends State<AppRoot> {
     });
   }
 
-  void _initializePlayer() async {
+  void _initializePerformer() async {
     print('StdOutput Test from Within the the App');
     _updateStartupStatus('Initializing internal storage');
     // Init Storage
     try {
       LoggingManager.instance.player.info('Initializing storage');
-      await Storage.initialize(StorageMode.player);
+      await Storage.initialize(StorageMode.performer);
       LoggingManager.instance.player.info("Storage initialization success");
     } catch (e, stacktrace) {
       LoggingManager.instance.player
@@ -365,7 +365,7 @@ class _AppRootState extends State<AppRoot> {
     LoggingManager.instance.player
         .info("Searching for previously loaded show file");
     _updateStartupStatus('Looking for previously loaded show file');
-    if (await Storage.instance.isPlayerStoragePopulated()) {
+    if (await Storage.instance.isPerformerStoragePopulated()) {
       try {
         LoggingManager.instance.player
             .info("Show file located, starting show file read");
@@ -599,7 +599,7 @@ class _AppRootState extends State<AppRoot> {
     // Update Permanent Storage.
     try {
       LoggingManager.instance.player.info("Updating permanent storage");
-      await Storage.instance.updatePlayerShowData(
+      await Storage.instance.updatePerformerShowData(
         showData: ShowDataModel(
           actors: _actors,
           tracks: _tracks,
