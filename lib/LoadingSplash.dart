@@ -1,3 +1,5 @@
+import 'package:castboard_player/ApplicationSubtitle.dart';
+import 'package:castboard_player/ApplicationTitle.dart';
 import 'package:castboard_player/PackageInfoDisplay.dart';
 import 'package:castboard_player/versionCodename.dart';
 import 'package:flutter/material.dart';
@@ -22,14 +24,15 @@ class LoadingSplash extends StatelessWidget {
                 Positioned(
                   top: 16,
                   left: 16,
-                  child: Text('Castboard',
-                      style: Theme.of(context).textTheme.headline2),
+                  child:
+                      Hero(tag: 'application-title', child: ApplicationTitle()),
                 ),
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('Performer',
-                        style: Theme.of(context).textTheme.headline5),
+                    Hero(
+                        tag: 'application-subtitle',
+                        child: ApplicationSubtitle()),
                     SizedBox(height: 24),
                     SizedBox(
                         width: 400,

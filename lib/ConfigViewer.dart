@@ -1,5 +1,7 @@
 import 'package:castboard_core/logging/LoggingManager.dart';
 import 'package:castboard_core/storage/Storage.dart';
+import 'package:castboard_player/ApplicationSubtitle.dart';
+import 'package:castboard_player/ApplicationTitle.dart';
 import 'package:castboard_player/versionCodename.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -15,35 +17,48 @@ class ConfigViewer extends StatelessWidget {
 
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
-      child: Column(
+      child: Stack(
+        fit: StackFit.expand,
+        alignment: Alignment.center,
         children: [
-          Spacer(),
-          Text('Performer', style: Theme.of(context).textTheme.headline5),
-          Spacer(),
+          Positioned(
+            top: 16,
+            left: 16,
+            child: Hero(tag: 'application-title', child: ApplicationTitle()),
+          ),
           Column(
             children: [
-              Text('Ready for a showfile',
-                  style: Theme.of(context).textTheme.headline6!.copyWith(
-                      color: Theme.of(context).colorScheme.secondary)),
+              Spacer(),
+              Hero(tag: 'application-subtitle', child: ApplicationSubtitle()),
+              Spacer(),
+              Column(
+                children: [
+                  Text('Ready for a showfile',
+                      style: Theme.of(context).textTheme.headline6!.copyWith(
+                          color: Theme.of(context).colorScheme.secondary)),
+                  vSpacer,
+                  vSpacer,
+                ],
+              ),
+              Text(
+                  'Connect your phone, tablet or computer to the following Wireless network.',
+                  style: Theme.of(context).textTheme.subtitle1),
               vSpacer,
+              _WirelessConfigCard(
+                  cardMaxWidth: cardMaxWidth,
+                  hSpacer: hSpacer,
+                  vSpacer: vSpacer),
               vSpacer,
+              Text('Then enter the address below into your browser',
+                  style: Theme.of(context).textTheme.subtitle1),
+              vSpacer,
+              _DashboardAddressCard(
+                cardMaxWidth: cardMaxWidth,
+              ),
+              Spacer(),
+              _DebugInfoPanel(),
             ],
           ),
-          Text(
-              'Connect your phone, tablet or computer to the following Wireless network.',
-              style: Theme.of(context).textTheme.subtitle1),
-          vSpacer,
-          _WirelessConfigCard(
-              cardMaxWidth: cardMaxWidth, hSpacer: hSpacer, vSpacer: vSpacer),
-          vSpacer,
-          Text('Then enter the address below into your browser',
-              style: Theme.of(context).textTheme.subtitle1),
-          vSpacer,
-          _DashboardAddressCard(
-            cardMaxWidth: cardMaxWidth,
-          ),
-          Spacer(),
-          _DebugInfoPanel(),
         ],
       ),
     );
