@@ -3,10 +3,10 @@ import 'dart:io';
 import 'package:castboard_core/logging/LoggingManager.dart';
 import 'package:castboard_core/path_provider_shims.dart';
 import 'package:castboard_core/storage/Storage.dart';
-import 'package:castboard_player/system_controller/DBusLocations.dart';
-import 'package:castboard_player/system_controller/SystemController.dart';
-import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/models/UpdaterArgsModel.dart';
-import 'package:castboard_player/versionCodename.dart';
+import 'package:castboard_performer/system_controller/DBusLocations.dart';
+import 'package:castboard_performer/system_controller/SystemController.dart';
+import 'package:castboard_performer/system_controller/platform_implementations/rpi_linux/models/UpdaterArgsModel.dart';
+import 'package:castboard_performer/versionCodename.dart';
 import 'package:dbus/dbus.dart';
 import 'package:path/path.dart' as p;
 

@@ -1,4 +1,4 @@
-import 'package:castboard_player/system_controller/DBusLocation.dart';
+import 'package:castboard_performer/system_controller/DBusLocation.dart';
 import 'package:dbus/dbus.dart';
 
 class DBusLocations {

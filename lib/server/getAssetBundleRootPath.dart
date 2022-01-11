@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:castboard_player/constants.dart';
+import 'package:castboard_performer/constants.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 
@@ -16,9 +16,7 @@ String getAssetBundleRootPath() {
   if (Platform.isLinux) {
     // Sony Layout
     return p.join(kYoctoAssetBundlePath, 'assets');
-  }
-
-  else {
+  } else {
     throw "Platform not currently supported by getAssetBundleRootPath(). Add conditional handling for this platform";
   }
 }

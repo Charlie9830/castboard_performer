@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:castboard_player/extensions/string/parseBool.dart';
+import 'package:castboard_performer/extensions/string/parseBool.dart';
 
 class ApplicationConfigModel {
   final int deviceRotation;

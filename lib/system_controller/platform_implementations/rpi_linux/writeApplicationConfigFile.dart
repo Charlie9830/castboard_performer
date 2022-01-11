@@ -1,6 +1,6 @@
 import 'dart:io';
-import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/models/ApplicationConfigModel.dart';
-import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/getAppConfigFIle.dart';
+import 'package:castboard_performer/system_controller/platform_implementations/rpi_linux/models/ApplicationConfigModel.dart';
+import 'package:castboard_performer/system_controller/platform_implementations/rpi_linux/getAppConfigFIle.dart';
 
 ///
 /// Writes the contents of [config] to the System config file, overwriting anything that exists there.

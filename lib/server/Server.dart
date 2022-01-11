@@ -5,13 +5,13 @@ import 'package:castboard_core/models/RemoteShowData.dart';
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_core/models/system_controller/DeviceResolution.dart';
 import 'package:castboard_core/storage/ShowfIleValidationResult.dart';
-import 'package:castboard_player/models/ShowFileUploadResult.dart';
-import 'package:castboard_player/server/Routes.dart';
+import 'package:castboard_performer/models/ShowFileUploadResult.dart';
+import 'package:castboard_performer/server/Routes.dart';
 import 'package:castboard_core/system-commands/SystemCommands.dart';
-import 'package:castboard_player/server/generateFileHeaders.dart';
-import 'package:castboard_player/server/getAssetBundleRootPath.dart';
-import 'package:castboard_player/server/routeHandlers.dart';
-import 'package:castboard_player/system_controller/SystemConfigCommitResult.dart';
+import 'package:castboard_performer/server/generateFileHeaders.dart';
+import 'package:castboard_performer/server/getAssetBundleRootPath.dart';
+import 'package:castboard_performer/server/routeHandlers.dart';
+import 'package:castboard_performer/system_controller/SystemConfigCommitResult.dart';
 import 'package:path/path.dart' as p;
 
 // Shelf

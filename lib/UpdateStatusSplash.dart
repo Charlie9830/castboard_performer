@@ -1,4 +1,4 @@
-import 'package:castboard_player/versionCodename.dart';
+import 'package:castboard_performer/versionCodename.dart';
 import 'package:flutter/material.dart';
 
 class UpdateStatusSplash extends StatefulWidget {

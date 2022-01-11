@@ -9,9 +9,9 @@ import 'package:castboard_core/models/system_controller/AvailableResolutions.dar
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_core/storage/Storage.dart';
 import 'package:castboard_core/system-commands/SystemCommands.dart';
-import 'package:castboard_player/server/PrepareDownloadTuple.dart';
-import 'package:castboard_player/server/Server.dart';
-import 'package:castboard_player/server/generateFileHeaders.dart';
+import 'package:castboard_performer/server/PrepareDownloadTuple.dart';
+import 'package:castboard_performer/server/Server.dart';
+import 'package:castboard_performer/server/generateFileHeaders.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf_plus/shelf_plus.dart';
 import 'package:path/path.dart' as p;

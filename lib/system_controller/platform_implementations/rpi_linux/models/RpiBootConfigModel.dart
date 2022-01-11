@@ -4,7 +4,7 @@ import 'package:castboard_core/logging/LoggingManager.dart';
 import 'package:castboard_core/models/system_controller/AvailableResolutions.dart';
 import 'package:castboard_core/models/system_controller/DeviceResolution.dart';
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
-import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/RpiHdmiModes.dart';
+import 'package:castboard_performer/system_controller/platform_implementations/rpi_linux/RpiHdmiModes.dart';
 
 class RpiBootConfigModel {
   final int hdmi_mode;

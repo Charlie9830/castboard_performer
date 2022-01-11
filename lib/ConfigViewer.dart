@@ -1,8 +1,8 @@
 import 'package:castboard_core/logging/LoggingManager.dart';
 import 'package:castboard_core/storage/Storage.dart';
-import 'package:castboard_player/ApplicationSubtitle.dart';
-import 'package:castboard_player/ApplicationTitle.dart';
-import 'package:castboard_player/versionCodename.dart';
+import 'package:castboard_performer/ApplicationSubtitle.dart';
+import 'package:castboard_performer/ApplicationTitle.dart';
+import 'package:castboard_performer/versionCodename.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 

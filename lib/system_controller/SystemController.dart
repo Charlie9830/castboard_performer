@@ -1,9 +1,9 @@
 import 'dart:io';
 
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
-import 'package:castboard_player/system_controller/SystemConfigCommitResult.dart';
-import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/SystemControllerRpiLinux.dart';
-import 'package:castboard_player/system_controller/platform_implementations/noop/SystemControllerNoop.dart';
+import 'package:castboard_performer/system_controller/SystemConfigCommitResult.dart';
+import 'package:castboard_performer/system_controller/platform_implementations/rpi_linux/SystemControllerRpiLinux.dart';
+import 'package:castboard_performer/system_controller/platform_implementations/noop/SystemControllerNoop.dart';
 
 enum UpdateStatus { none, success, started, failed }
 

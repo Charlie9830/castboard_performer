@@ -3,9 +3,9 @@ import 'package:castboard_core/models/system_controller/AvailableResolutions.dar
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_core/models/system_controller/DeviceOrientation.dart';
 import 'package:castboard_core/models/system_controller/DeviceResolution.dart';
-import 'package:castboard_player/system_controller/SystemConfigCommitResult.dart';
-import 'package:castboard_player/system_controller/SystemController.dart';
-import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/RpiHdmiModes.dart';
+import 'package:castboard_performer/system_controller/SystemConfigCommitResult.dart';
+import 'package:castboard_performer/system_controller/SystemController.dart';
+import 'package:castboard_performer/system_controller/platform_implementations/rpi_linux/RpiHdmiModes.dart';
 
 class SystemControllerNoop implements SystemController {
   @override

@@ -5,19 +5,19 @@ import 'package:castboard_core/models/system_controller/AvailableResolutions.dar
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_core/models/system_controller/DeviceOrientation.dart';
 import 'package:castboard_core/models/system_controller/DeviceResolution.dart';
-import 'package:castboard_player/system_controller/SystemConfigCommitResult.dart';
-import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/getRpiBootConfigFile.dart';
-import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/models/ApplicationConfigModel.dart';
-import 'package:castboard_player/system_controller/SystemController.dart';
-import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/RpiHdmiModes.dart';
-import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/models/RpiBootConfigModel.dart';
-import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/readApplicationConfigFile.dart';
-import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/readRpiBootConfigFile.dart';
-import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/sed.dart';
-import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/updateApplicationInternal.dart';
-import 'package:castboard_player/system_controller/platform_implementations/rpi_linux/writeApplicationConfigFile.dart';
+import 'package:castboard_performer/system_controller/SystemConfigCommitResult.dart';
+import 'package:castboard_performer/system_controller/platform_implementations/rpi_linux/getRpiBootConfigFile.dart';
+import 'package:castboard_performer/system_controller/platform_implementations/rpi_linux/models/ApplicationConfigModel.dart';
+import 'package:castboard_performer/system_controller/SystemController.dart';
+import 'package:castboard_performer/system_controller/platform_implementations/rpi_linux/RpiHdmiModes.dart';
+import 'package:castboard_performer/system_controller/platform_implementations/rpi_linux/models/RpiBootConfigModel.dart';
+import 'package:castboard_performer/system_controller/platform_implementations/rpi_linux/readApplicationConfigFile.dart';
+import 'package:castboard_performer/system_controller/platform_implementations/rpi_linux/readRpiBootConfigFile.dart';
+import 'package:castboard_performer/system_controller/platform_implementations/rpi_linux/sed.dart';
+import 'package:castboard_performer/system_controller/platform_implementations/rpi_linux/updateApplicationInternal.dart';
+import 'package:castboard_performer/system_controller/platform_implementations/rpi_linux/writeApplicationConfigFile.dart';
 import 'package:dbus/dbus.dart';
-import 'package:castboard_player/system_controller/DBusLocations.dart';
+import 'package:castboard_performer/system_controller/DBusLocations.dart';
 
 /// Platform Interface implementation of SystemController specific to the Rpi4 with our custom Yocto image and the poky-centerstage distro.
 /// For System Commands we utilize dbus to talk to systemd.
