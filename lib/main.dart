@@ -70,7 +70,7 @@ void main() async {
 }
 
 Future<void> _initLogging() async {
-  await LoggingManager.initialize('castboard_player_runtime_logs',
+  await LoggingManager.initialize('castboard_performer_runtime_logs',
       runAsRelease: true);
   LoggingManager.instance.general.info('\n \n *********************** \n \n');
   LoggingManager.instance.general.info('LoggingManager initialized.');
