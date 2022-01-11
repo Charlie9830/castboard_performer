@@ -1,5 +1,6 @@
 import 'package:castboard_core/logging/LoggingManager.dart';
 import 'package:castboard_core/storage/Storage.dart';
+import 'package:castboard_player/versionCodename.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -66,6 +67,7 @@ class _DebugInfoPanel extends StatelessWidget {
         child: Column(
           children: [
             Text('Geek Zone', style: Theme.of(context).textTheme.overline),
+            Text('Build Codename: $kVersionCodename'),
             Text(
               'kDebugMode: $kDebugMode',
             ),
