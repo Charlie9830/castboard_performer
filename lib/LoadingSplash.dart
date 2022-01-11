@@ -15,27 +15,36 @@ class LoadingSplash extends StatelessWidget {
         children: [
           Container(
             color: Colors.black,
-            child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Hero(
-                      tag: 'title',
-                      child: Text('Castboard',
-                          style: Theme.of(context).textTheme.headline1)),
-                  SizedBox(
-                      width: 512,
-                      child: LinearProgressIndicator(
-                        color: Colors.orangeAccent,
-                      )),
-                  SizedBox(height: 16),
-                  Text(status,
-                      style: Theme.of(context)
-                          .textTheme
-                          .bodyText2!
-                          .copyWith(color: Colors.grey)),
-                ],
-              ),
+            child: Stack(
+              fit: StackFit.expand,
+              alignment: Alignment.center,
+              children: [
+                Positioned(
+                  top: 16,
+                  left: 16,
+                  child: Text('Castboard',
+                      style: Theme.of(context).textTheme.headline2),
+                ),
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('Performer',
+                        style: Theme.of(context).textTheme.headline5),
+                    SizedBox(height: 24),
+                    SizedBox(
+                        width: 400,
+                        child: LinearProgressIndicator(
+                          color: Colors.orangeAccent,
+                        )),
+                    SizedBox(height: 16),
+                    Text(status,
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyText2!
+                            .copyWith(color: Colors.grey)),
+                  ],
+                ),
+              ],
             ),
           ),
           Positioned(left: 24, bottom: 24, child: PackageInfoDisplay()),

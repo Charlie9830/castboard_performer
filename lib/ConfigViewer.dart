@@ -16,13 +16,12 @@ class ConfigViewer extends StatelessWidget {
       color: Theme.of(context).scaffoldBackgroundColor,
       child: Column(
         children: [
-          Hero(
-              tag: 'title',
-              child: Text('Castboard',
-                  style: Theme.of(context).textTheme.headline1)),
+          Spacer(),
+          Text('Performer', style: Theme.of(context).textTheme.headline5),
+          Spacer(),
           Column(
             children: [
-              Text('No Showfile Loaded',
+              Text('Ready for a showfile',
                   style: Theme.of(context).textTheme.headline6!.copyWith(
                       color: Theme.of(context).colorScheme.secondary)),
               vSpacer,
@@ -30,14 +29,13 @@ class ConfigViewer extends StatelessWidget {
             ],
           ),
           Text(
-              'Connect your phone, tablet or computer to the following Wireless network',
+              'Connect your phone, tablet or computer to the following Wireless network.',
               style: Theme.of(context).textTheme.subtitle1),
           vSpacer,
           _WirelessConfigCard(
               cardMaxWidth: cardMaxWidth, hSpacer: hSpacer, vSpacer: vSpacer),
           vSpacer,
-          Text(
-              'Then enter the address below into your browser',
+          Text('Then enter the address below into your browser',
               style: Theme.of(context).textTheme.subtitle1),
           vSpacer,
           _DashboardAddressCard(
@@ -45,7 +43,6 @@ class ConfigViewer extends StatelessWidget {
           ),
           Spacer(),
           _DebugInfoPanel(),
-          
         ],
       ),
     );
@@ -101,7 +98,7 @@ class _DashboardAddressCard extends StatelessWidget {
             padding: EdgeInsets.all(16),
             child: Center(
               child: Text(
-                'http://192.168.1.1',
+                '192.168.1.1',
                 style: Theme.of(context)
                     .textTheme
                     .subtitle1!
