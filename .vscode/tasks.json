@@ -4,10 +4,10 @@
     "version": "2.0.0",
     "tasks": [
         { 
-            "label": "Generate Player update",
-            "detail": "Generates a Player update file from an existing yocto build",
+            "label": "Generate Performer update",
+            "detail": "Generates a Performer update file from an existing yocto build",
             "type": "shell",
-            "command": "python3 ./build_scripts/do_packageExistingYoctoBundleAsUpdate.py ./ /media/charliehall/samsung/rpi_64_yocto/raspberrypi4-64/tmp/deploy/images/raspberrypi4-64/castboard-rpi-image-dev-raspberrypi4-64.tar /usr/share/castboard-player/ ./build/update/ "
+            "command": "python3 ./build_scripts/do_packageExistingYoctoBundleAsUpdate.py ./ /media/charliehall/samsung/rpi_64_yocto/raspberrypi4-64/tmp/deploy/images/raspberrypi4-64/castboard-rpi-image-dev-raspberrypi4-64.tar /usr/share/castboard-performer/ ./build/update/ "
         },
 
 
@@ -41,14 +41,14 @@
             "label": "Deploy Debug to Rpi4",
             "type": "shell",
             "dependsOn": ["Build Debug eLinux Arm64"],
-            "command": "ssh root@10.101.1.2 systemctl stop cage@tty7 && sleep 5 && rm -rf /usr/share/castboard-player/ && scp -r ./build/elinux/arm64/debug/bundle/* root@10.101.1.2:/usr/share/castboard-player/ && ssh root@10.101.1.2 mv /usr/share/castboard-player/castboard_player /usr/share/castboard-player/player && ssh root@10.101.1.2 systemctl start cage@tty7"
+            "command": "ssh root@10.101.1.2 systemctl stop cage@tty7 && sleep 5 && rm -rf /usr/share/castboard-performer/ && scp -r ./build/elinux/arm64/debug/bundle/* root@10.101.1.2:/usr/share/castboard-performer/ && ssh root@10.101.1.2 mv /usr/share/castboard-performer/castboard_performer /usr/share/castboard-performer/performer && ssh root@10.101.1.2 systemctl start cage@tty7"
         },
 
         {
             "label": "Deploy Release to Rpi4",
             "type": "shell",
             "dependsOn": ["Build Release eLinux Arm64"],
-            "command": "ssh root@10.101.1.2 systemctl stop cage@tty7 && sleep 5 && rm -rf /usr/share/castboard-player/ && scp -r ./build/elinux/arm64/release/bundle/* root@10.101.1.2:/usr/share/castboard-player/ && ssh root@10.101.1.2 systemctl start cage@tty7"
+            "command": "ssh root@10.101.1.2 systemctl stop cage@tty7 && sleep 5 && rm -rf /usr/share/castboard-performer/ && scp -r ./build/elinux/arm64/release/bundle/* root@10.101.1.2:/usr/share/castboard-performer/ && ssh root@10.101.1.2 systemctl start cage@tty7"
         },
         
     ]

@@ -30,5 +30,5 @@ def buildRpiRelease():
 
     # Rename the exectuable to match what the Yocto build does.
     runShellCommands([
-        'mv '+'"'+absBundlePath+'"'+'/castboard_player'+ ' ' +'"'+absBundlePath+'"'+'/player'
+        'mv '+'"'+absBundlePath+'"'+'/castboard_performer'+ ' ' +'"'+absBundlePath+'"'+'/performer'
     ], projectRootPath)

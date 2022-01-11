@@ -7,7 +7,7 @@ import os
 ## Generated output zip structure:
 ## /lib/
 ## /data/
-## /player
+## /performer
 ## /codename
 
 def packageBundleAsUpdate(projectRootPath, bundlePath, outputDirPath, versionCodename):

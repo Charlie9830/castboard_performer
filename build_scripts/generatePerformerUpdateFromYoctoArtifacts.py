@@ -2,7 +2,7 @@ import os
 from packageBundleAsUpdate import packageBundleAsUpdate
 from helpers import runShellCommands, readCodenameFile
 
-def generatePlayerUpdateFromYoctoArtifacts(projectRootPath, artifactFilePath, rootFsPath, outputDirPath):
+def generatePerformerUpdateFromYoctoArtifacts(projectRootPath, artifactFilePath, rootFsPath, outputDirPath):
     tarUnpackDir = "/tmp/castboard_build_scripts/yocto_build_artifacts"
     
     print('Deleting existing work directory at '+tarUnpackDir)
