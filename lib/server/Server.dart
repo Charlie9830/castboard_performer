@@ -83,13 +83,6 @@ class Server {
   });
 
   Future<void> initalize() async {
-    // final discoverySocket = await ServerSocket.bind(InternetAddress(address), port + 1);
-    // print('Discovery Socket Ready');
-    // discoverySocket.listen((socket) async {
-    //   final result = await socket.single;
-    //   print(utf8.decode(result));
-    // });
-
     try {
       // Serve directly from the _webAppFilePath. In future we may change this to the Asset Bundle Root so that we could
       // serve routes to Debug logs etc.
@@ -119,6 +112,7 @@ class Server {
       LoggingManager.instance
         ..server
             .severe('General error starting the shelf server', e, stacktrace);
+      throw e;
     }
     return;
   }

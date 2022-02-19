@@ -6,7 +6,9 @@ import 'package:flutter/material.dart';
 
 class LoadingSplash extends StatelessWidget {
   final String status;
-  const LoadingSplash({Key? key, this.status = 'Starting Up'})
+  final bool criticalError;
+  const LoadingSplash(
+      {Key? key, this.status = 'Starting Up', this.criticalError = false})
       : super(key: key);
 
   @override
@@ -37,6 +39,7 @@ class LoadingSplash extends StatelessWidget {
                     SizedBox(
                         width: 400,
                         child: LinearProgressIndicator(
+                          value: criticalError ? 0 : null,
                           color: Colors.orangeAccent,
                         )),
                     SizedBox(height: 16),

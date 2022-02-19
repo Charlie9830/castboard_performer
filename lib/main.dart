@@ -71,7 +71,7 @@ void main() async {
 
 Future<void> _initLogging() async {
   await LoggingManager.initialize('castboard_performer_runtime_logs',
-      runAsRelease: true);
+      runAsRelease: false);
   LoggingManager.instance.general.info('\n \n *********************** \n \n');
   LoggingManager.instance.general.info('LoggingManager initialized.');
   LoggingManager.instance.general.info('Application started');
@@ -91,6 +91,7 @@ class AppRoot extends StatefulWidget {
 
 class _AppRootState extends State<AppRoot> {
   String _startupStatus = 'Starting Up';
+  bool _criticalError = false;
   Map<ActorRef, ActorModel> _actors = {};
   Map<TrackRef, TrackModel> _tracks = {};
   Map<String, TrackRef> _trackRefsByName = {};
@@ -186,6 +187,7 @@ class _AppRootState extends State<AppRoot> {
         routes: {
           RouteNames.loadingSplash: (_) => LoadingSplash(
                 status: _startupStatus,
+                criticalError: _criticalError,
               ),
           RouteNames.player: (_) => Player(
                 currentSlideId: _currentSlideId,
@@ -315,6 +317,13 @@ class _AppRootState extends State<AppRoot> {
     }
   }
 
+  void _postCriticalError(String status) {
+    setState(() {
+      _criticalError = true;
+      _startupStatus = status;
+    });
+  }
+
   void _updateStartupStatus(String status) {
     setState(() {
       _startupStatus = status;
@@ -322,9 +331,8 @@ class _AppRootState extends State<AppRoot> {
   }
 
   void _initializePerformer() async {
-    print('StdOutput Test from Within the the App');
+    // Initialize the Storage backend.
     _updateStartupStatus('Initializing internal storage');
-    // Init Storage
     try {
       LoggingManager.instance.player.info('Initializing storage');
       await Storage.initialize(StorageMode.performer);
@@ -332,6 +340,10 @@ class _AppRootState extends State<AppRoot> {
     } catch (e, stacktrace) {
       LoggingManager.instance.player
           .severe("Storage initialization failed", e, stacktrace);
+
+      _postCriticalError(
+          'An error occurred. The Storage module failed to start.');
+      return;
     }
 
     // Init SystemController
@@ -349,6 +361,10 @@ class _AppRootState extends State<AppRoot> {
           "SystemController initialization failed, ${e.toString} \n ${stacktrace.toString()}",
           e,
           stacktrace);
+
+      _postCriticalError(
+          'An error occurred. The SystemController failed to start.');
+      return;
     }
 
     _updateStartupStatus('Initializing administration server');
@@ -360,6 +376,9 @@ class _AppRootState extends State<AppRoot> {
     } catch (e, stacktrace) {
       LoggingManager.instance.player
           .severe("Server initialization failed", e, stacktrace);
+
+      _postCriticalError('An error occurred. The Server failed to start.');
+      return;
     }
 
     LoggingManager.instance.player
@@ -387,6 +406,8 @@ class _AppRootState extends State<AppRoot> {
       } catch (e, stacktrace) {
         LoggingManager.instance.player
             .severe("Show file read failed", e, stacktrace);
+
+        _postCriticalError('An error occurred. The Show file failed to load');
       }
     } else {
       // Pause for effect a bit further incase we need to read the splash debug info.
