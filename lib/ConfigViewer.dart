@@ -29,17 +29,9 @@ class ConfigViewer extends StatelessWidget {
           Column(
             children: [
               Spacer(),
+              Spacer(),
               Hero(tag: 'application-subtitle', child: ApplicationSubtitle()),
               Spacer(),
-              Column(
-                children: [
-                  Text('Ready for a showfile',
-                      style: Theme.of(context).textTheme.headline6!.copyWith(
-                          color: Theme.of(context).colorScheme.secondary)),
-                  vSpacer,
-                  vSpacer,
-                ],
-              ),
               Text(
                   'Connect your phone, tablet or computer to the following Wireless network.',
                   style: Theme.of(context).textTheme.subtitle1),
