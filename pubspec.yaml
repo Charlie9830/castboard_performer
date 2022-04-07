@@ -84,6 +84,157 @@ flutter:
         - asset: assets/fonts/Poppins/Poppins-SemiBoldItalic.ttf
         - asset: assets/fonts/Poppins/Poppins-Thin.ttf
         - asset: assets/fonts/Poppins/Poppins-ThinItalic.ttf
+    #
+    # In Built Google Fonts.
+    #
+    - family: Abril Fatface
+      fonts:
+        - asset: assets/fonts/Abril_Fatface/AbrilFatface-Regular.ttf
+    - family: Alfa Slab One
+      fonts:
+        - asset: assets/fonts/Alfa_Slab_One/AlfaSlabOne-Regular.ttf
+    - family: Arima Madurai
+      fonts:
+        - asset: assets/fonts/Arima_Madurai/ArimaMadurai-Black.ttf
+        - asset: assets/fonts/Arima_Madurai/ArimaMadurai-Bold.ttf
+        - asset: assets/fonts/Arima_Madurai/ArimaMadurai-ExtraBold.ttf
+        - asset: assets/fonts/Arima_Madurai/ArimaMadurai-ExtraLight.ttf
+        - asset: assets/fonts/Arima_Madurai/ArimaMadurai-Light.ttf
+        - asset: assets/fonts/Arima_Madurai/ArimaMadurai-Medium.ttf
+        - asset: assets/fonts/Arima_Madurai/ArimaMadurai-Regular.ttf
+        - asset: assets/fonts/Arima_Madurai/ArimaMadurai-Thin.ttf
+    - family: Arvo
+      fonts:
+        - asset: assets/fonts/Arvo/Arvo-Bold.ttf
+        - asset: assets/fonts/Arvo/Arvo-BoldItalic.ttf
+        - asset: assets/fonts/Arvo/Arvo-Italic.ttf
+        - asset: assets/fonts/Arvo/Arvo-Regular.ttf
+    - family: Averia Serif Libre
+      fonts:
+        - asset: assets/fonts/Averia_Serif_Libre/AveriaSerifLibre-Bold.ttf
+        - asset: assets/fonts/Averia_Serif_Libre/AveriaSerifLibre-BoldItalic.ttf
+        - asset: assets/fonts/Averia_Serif_Libre/AveriaSerifLibre-Italic.ttf
+        - asset: assets/fonts/Averia_Serif_Libre/AveriaSerifLibre-Light.ttf
+        - asset: assets/fonts/Averia_Serif_Libre/AveriaSerifLibre-LightItalic.ttf
+        - asset: assets/fonts/Averia_Serif_Libre/AveriaSerifLibre-Regular.ttf
+    - family: Bebas Neue
+      fonts:
+        - asset: assets/fonts/Bebas_Neue/BebasNeue-Regular.ttf
+    - family: Cardo
+      fonts:
+        - asset: assets/fonts/Cardo/Cardo-Bold.ttf
+        - asset: assets/fonts/Cardo/Cardo-Italic.ttf
+        - asset: assets/fonts/Cardo/Cardo-Regular.ttf
+    - family: Chonburi
+      fonts:
+        - asset: assets/fonts/Chonburi/Chonburi-Regular.ttf
+    - family: Cinzel
+      fonts:
+        - asset: assets/fonts/Cinzel/Cinzel-VariableFont_wght.ttf
+        - asset: assets/fonts/Cinzel/README.txt
+    - family: Comfortaa
+      fonts:
+        - asset: assets/fonts/Comfortaa/Comfortaa-VariableFont_wght.ttf
+        - asset: assets/fonts/Comfortaa/README.txt
+    - family: Concert One
+      fonts:
+        - asset: assets/fonts/Concert_One/ConcertOne-Regular.ttf
+    - family: Cormorant Garamond
+      fonts:
+        - asset: assets/fonts/Cormorant_Garamond/CormorantGaramond-Bold.ttf
+        - asset: assets/fonts/Cormorant_Garamond/CormorantGaramond-BoldItalic.ttf
+        - asset: assets/fonts/Cormorant_Garamond/CormorantGaramond-Italic.ttf
+        - asset: assets/fonts/Cormorant_Garamond/CormorantGaramond-Light.ttf
+        - asset: assets/fonts/Cormorant_Garamond/CormorantGaramond-LightItalic.ttf
+        - asset: assets/fonts/Cormorant_Garamond/CormorantGaramond-Medium.ttf
+        - asset: assets/fonts/Cormorant_Garamond/CormorantGaramond-MediumItalic.ttf
+        - asset: assets/fonts/Cormorant_Garamond/CormorantGaramond-Regular.ttf
+        - asset: assets/fonts/Cormorant_Garamond/CormorantGaramond-SemiBold.ttf
+        - asset: assets/fonts/Cormorant_Garamond/CormorantGaramond-SemiBoldItalic.ttf
+    - family: EB Garamond
+      fonts:
+        - asset: assets/fonts/EB_Garamond/EBGaramond-Italic-VariableFont_wght.ttf
+        - asset: assets/fonts/EB_Garamond/EBGaramond-VariableFont_wght.ttf
+        - asset: assets/fonts/EB_Garamond/README.txt
+    - family: Fredoka One
+      fonts:
+        - asset: assets/fonts/Fredoka_One/FredokaOne-Regular.ttf
+    - family: Gravitas One
+      fonts:
+        - asset: assets/fonts/Gravitas_One/GravitasOne-Regular.ttf
+    - family: Libre Baskerville
+      fonts:
+        - asset: assets/fonts/Libre_Baskerville/LibreBaskerville-Bold.ttf
+        - asset: assets/fonts/Libre_Baskerville/LibreBaskerville-Italic.ttf
+        - asset: assets/fonts/Libre_Baskerville/LibreBaskerville-Regular.ttf
+    - family: Limelight
+      fonts:
+        - asset: assets/fonts/Limelight/Limelight-Regular.ttf
+    - family: Lobster
+      fonts:
+        - asset: assets/fonts/Lobster/Lobster-Regular.ttf
+    - family: Lobster Two
+      fonts:
+        - asset: assets/fonts/Lobster_Two/LobsterTwo-Bold.ttf
+        - asset: assets/fonts/Lobster_Two/LobsterTwo-BoldItalic.ttf
+        - asset: assets/fonts/Lobster_Two/LobsterTwo-Italic.ttf
+        - asset: assets/fonts/Lobster_Two/LobsterTwo-Regular.ttf
+    - family: Lora
+      fonts:
+        - asset: assets/fonts/Lora/Lora-Italic-VariableFont_wght.ttf
+        - asset: assets/fonts/Lora/Lora-VariableFont_wght.ttf
+        - asset: assets/fonts/Lora/README.txt
+    - family: Merriweather
+      fonts:
+        - asset: assets/fonts/Merriweather/Merriweather-Black.ttf
+        - asset: assets/fonts/Merriweather/Merriweather-BlackItalic.ttf
+        - asset: assets/fonts/Merriweather/Merriweather-Bold.ttf
+        - asset: assets/fonts/Merriweather/Merriweather-BoldItalic.ttf
+        - asset: assets/fonts/Merriweather/Merriweather-Italic.ttf
+        - asset: assets/fonts/Merriweather/Merriweather-Light.ttf
+        - asset: assets/fonts/Merriweather/Merriweather-LightItalic.ttf
+        - asset: assets/fonts/Merriweather/Merriweather-Regular.ttf
+    - family: Passion One
+      fonts:
+        - asset: assets/fonts/Passion_One/PassionOne-Black.ttf
+        - asset: assets/fonts/Passion_One/PassionOne-Bold.ttf
+        - asset: assets/fonts/Passion_One/PassionOne-Regular.ttf
+    - family: Patua One
+      fonts:
+        - asset: assets/fonts/Patua_One/PatuaOne-Regular.ttf
+    - family: Playfair Display
+      fonts:
+        - asset: assets/fonts/Playfair_Display/PlayfairDisplay-Italic-VariableFont_wght.ttf
+        - asset: assets/fonts/Playfair_Display/PlayfairDisplay-VariableFont_wght.ttf
+        - asset: assets/fonts/Playfair_Display/README.txt
+    - family: PT Serif
+      fonts:
+        - asset: assets/fonts/PT_Serif/PTSerif-Bold.ttf
+        - asset: assets/fonts/PT_Serif/PTSerif-BoldItalic.ttf
+        - asset: assets/fonts/PT_Serif/PTSerif-Italic.ttf
+        - asset: assets/fonts/PT_Serif/PTSerif-Regular.ttf
+    - family: Righteous
+      fonts:
+        - asset: assets/fonts/Righteous/Righteous-Regular.ttf
+    - family: Special Elite
+      fonts:
+        - asset: assets/fonts/Special_Elite/LICENSE.txt
+        - asset: assets/fonts/Special_Elite/SpecialElite-Regular.ttf
+    - family: Staatliches
+      fonts:
+        - asset: assets/fonts/Staatliches/Staatliches-Regular.ttf
+    - family: Tinos
+      fonts:
+        - asset: assets/fonts/Tinos/LICENSE.txt
+        - asset: assets/fonts/Tinos/Tinos-Bold.ttf
+        - asset: assets/fonts/Tinos/Tinos-BoldItalic.ttf
+        - asset: assets/fonts/Tinos/Tinos-Italic.ttf
+        - asset: assets/fonts/Tinos/Tinos-Regular.ttf
+    - family: Vollkorn
+      fonts:
+        - asset: assets/fonts/Vollkorn/README.txt
+        - asset: assets/fonts/Vollkorn/Vollkorn-Italic-VariableFont_wght.ttf
+        - asset: assets/fonts/Vollkorn/Vollkorn-VariableFont_wght.ttf
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg
