@@ -625,6 +625,7 @@ class _AppRootState extends State<AppRoot> {
           actors: _actors,
           tracks: _tracks,
           presets: presets,
+          trackRefsByName: _trackRefsByName,
         ),
         playbackState: data.playbackState,
       );
