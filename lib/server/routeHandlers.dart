@@ -12,9 +12,11 @@ import 'package:castboard_core/system-commands/SystemCommands.dart';
 import 'package:castboard_performer/server/PrepareDownloadTuple.dart';
 import 'package:castboard_performer/server/Server.dart';
 import 'package:castboard_performer/server/generateFileHeaders.dart';
+import 'package:castboard_performer/server/readMultipartFileRequest.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf_plus/shelf_plus.dart';
 import 'package:path/path.dart' as p;
+import 'package:shelf_multipart/multipart.dart';
 
 Future<Response> handleHeartbeat(
     Request request, void Function(String sessionId) onHeartbeat) async {
@@ -160,17 +162,20 @@ Future<Response> handleShowfileUploadReq(
     return Response(400); // Bad Request.
   }
 
+  if (request.isMultipart == false) {
+    return Response(401); // Not a mulitpart request.
+  }
+
   if (callback == null) {
     LoggingManager.instance.server
         .severe('OnShowFileReceivedCallback was null');
     return Response.internalServerError(body: 'An error occured');
   }
 
-  final buffer = <int>[];
-  await for (var bytes in request.read()) {
-    buffer.addAll(bytes.toList());
-  }
+  // Read request into buffer.
+  final buffer = await readMultipartFileRequest(request);
 
+  // Send the buffer to the Player for validation.
   final result = await callback(buffer);
 
   // Good Showfile.
@@ -203,17 +208,20 @@ Future<Response> handleSoftwareUpdateReq(
     return Response(400); // Bad Request.
   }
 
+  if (request.isMultipart == false) {
+    return Response(401); // Not a multipart request.
+  }
+
   if (callback == null) {
     LoggingManager.instance.server
         .severe('OnShowFileReceivedCallback was null');
     return Response.internalServerError(body: 'An error occured');
   }
 
-  final buffer = <int>[];
-  await for (var bytes in request.read()) {
-    buffer.addAll(bytes.toList());
-  }
+  // Read the request into a Buffer.
+  final buffer = await readMultipartFileRequest(request);
 
+  // Send the buffer to the player.
   final result = await callback(buffer);
 
   if (result == false) {

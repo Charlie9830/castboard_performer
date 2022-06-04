@@ -359,6 +359,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.0.0"
+  shelf_multipart:
+    dependency: "direct main"
+    description:
+      name: shelf_multipart
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.0.0"
   shelf_plus:
     dependency: "direct main"
     description:
