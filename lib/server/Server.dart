@@ -8,6 +8,7 @@ import 'package:castboard_core/storage/ShowfIleValidationResult.dart';
 import 'package:castboard_performer/models/ShowFileUploadResult.dart';
 import 'package:castboard_performer/server/Routes.dart';
 import 'package:castboard_core/system-commands/SystemCommands.dart';
+import 'package:castboard_performer/server/cacheHeaders.dart';
 import 'package:castboard_performer/server/generateFileHeaders.dart';
 import 'package:castboard_performer/server/getAssetBundleRootPath.dart';
 import 'package:castboard_performer/server/routeHandlers.dart';
@@ -102,7 +103,10 @@ class Server {
 
       LoggingManager.instance..server.info("Starting up shelf server");
       server = await shelf_io.serve(
-        Pipeline().addMiddleware(corsHeaders()).addHandler(cascade.handler),
+        Pipeline()
+            .addMiddleware(corsHeaders())
+            /*.addMiddleware(cacheHeaders()) */ // Disabled, staticFileHandler should be sending the correct file validation responses.
+            .addHandler(cascade.handler),
         address,
         port,
       );
