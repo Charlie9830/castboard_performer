@@ -1,6 +1,8 @@
 import 'package:shelf/shelf.dart';
 
-const _headers = {'Cache-Control': 'no-cache',};
+const _headers = {
+  'Cache-Control': 'max-age=0, must-revalidate',
+};
 
 Middleware cacheHeaders() {
   return (Handler handler) {

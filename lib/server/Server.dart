@@ -11,6 +11,7 @@ import 'package:castboard_core/system-commands/SystemCommands.dart';
 import 'package:castboard_performer/server/cacheHeaders.dart';
 import 'package:castboard_performer/server/generateFileHeaders.dart';
 import 'package:castboard_performer/server/getAssetBundleRootPath.dart';
+import 'package:castboard_performer/server/prepareStaticWebDirectory.dart';
 import 'package:castboard_performer/server/routeHandlers.dart';
 import 'package:castboard_performer/system_controller/SystemConfigCommitResult.dart';
 import 'package:path/path.dart' as p;
@@ -89,8 +90,14 @@ class Server {
       // serve routes to Debug logs etc.
       final String webAppPath =
           p.join(getAssetBundleRootPath(), _webAppFilePath);
+
+      // Prepare the Static Web Directory.
+      LoggingManager.instance.server.info('Preparing Static Web Directory');
+      await prepareStaticWebDirectory(webAppPath);
+
       LoggingManager.instance.server
           .info("Creating static file handler serving from $webAppPath");
+
       final staticFileHandler = createStaticHandler(
         webAppPath,
         defaultDocument: _defaultDocument,
@@ -105,7 +112,7 @@ class Server {
       server = await shelf_io.serve(
         Pipeline()
             .addMiddleware(corsHeaders())
-            /*.addMiddleware(cacheHeaders()) */ // Disabled, staticFileHandler should be sending the correct file validation responses.
+            .addMiddleware(cacheHeaders())
             .addHandler(cascade.handler),
         address,
         port,
