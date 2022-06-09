@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:castboard_core/logging/LoggingManager.dart';
@@ -20,17 +21,26 @@ Future<void> prepareStaticWebDirectory(String path) async {
     return;
   }
 
-  final timestampString = await timestampFile.readAsString();
-  final timestamp = DateTime.tryParse(timestampString);
+  // Attempt to read the timestamp file as a utf8 string.
+  DateTime? timestamp =
+      DateTime.tryParse((await timestampFile.readAsString()).trim());
 
   if (timestamp == null) {
+    // Unable to get timestamp from file, try again with US-ASCII encoding.
+    final usAsciiEncoding = Encoding.getByName('US-ASCII')!;
+    timestamp = DateTime.tryParse(
+        (await timestampFile.readAsString(encoding: usAsciiEncoding)).trim());
+  }
+
+  if (timestamp == null) {
+    // Still unable to read file. Post a warning a bail out.
     LoggingManager.instance.server.warning(
         'Unable to parse Showcaller build timestamp from $timestampPath');
     return;
   }
 
   LoggingManager.instance.server.info(
-      'Showcaller timestamp file found: $timestampString.  Updating web_app directory file metadata');
+      'Showcaller timestamp file found: Updating web_app directory file metadata');
 
   final webAppDirectory = Directory(path);
 
@@ -55,6 +65,8 @@ Future<void> prepareStaticWebDirectory(String path) async {
 
   LoggingManager.instance.server
       .info('web_app directory preperation completed.');
+
+  print('All Done');
   return;
 }
 
