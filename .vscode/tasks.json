@@ -14,12 +14,12 @@
         {
             "label": "Run Debug eLinux X64",
             "type": "shell",
-            "command": "flutter-elinux run --dart-define=ELINUX_IS_ELINUX=true --dart-define=ELINUX_TMP_PATH=/tmp/ --dart-define=ELINUX_HOME_PATH=/home/charliehall "
+            "command": "flutter-elinux run --dart-define=ELINUX_IS_DESKTOP=true --dart-define=ELINUX_IS_ELINUX=true --dart-define=ELINUX_TMP_PATH=/tmp/ --dart-define=ELINUX_HOME_PATH=/home/charliehall "
         },
         {
             "label": "Build Release eLinux X64",
             "type": "shell",
-            "command": "flutter-elinux build --dart-define=ELINUX_IS_ELINUX=true --dart-define=ELINUX_TMP_PATH=/tmp/ --dart-define=ELINUX_HOME_PATH=/home/charliehall "
+            "command": "flutter-elinux build --dart-define=ELINUX_IS_DESKTOP=true --dart-define=ELINUX_IS_ELINUX=true --dart-define=ELINUX_TMP_PATH=/tmp/ --dart-define=ELINUX_HOME_PATH=/home/charliehall "
         },
         {
             "label": "Build Debug eLinux Arm64",
