@@ -95,6 +95,7 @@ class _AppRootState extends State<AppRoot> {
   Map<ActorRef, ActorModel> _actors = {};
   Map<TrackRef, TrackModel> _tracks = {};
   Map<String, TrackRef> _trackRefsByName = {};
+  Map<String, List<ActorRef>> _categorizedActorRefs = {};
 
   // Presets and Cast Changes
   Map<String, PresetModel> _presets = {};
@@ -508,6 +509,7 @@ class _AppRootState extends State<AppRoot> {
 
     setState(() {
       _actors = data.actors;
+      _categorizedActorRefs = data.categorizedActorRefs;
       _tracks = data.tracks;
       _trackRefsByName = data.trackRefsByName;
       _presets = data.presets;
@@ -588,6 +590,7 @@ class _AppRootState extends State<AppRoot> {
         actors: _actors,
         presets: _presets,
       ),
+      categorizedActorRefs: _categorizedActorRefs,
       playbackState: PlaybackStateData(
         combinedPresetIds: _combinedPresetIds,
         currentPresetId: _currentPresetId,
