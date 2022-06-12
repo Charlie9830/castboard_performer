@@ -17,7 +17,11 @@ abstract class SystemController {
   }
 
   static SystemController _buildInstance() {
-    /// DBus is only available on Linux. So if we aren't on linux we want to return a NOOP instance.
+    if (const String.fromEnvironment('ELINUX_IS_DESKTOP') == 'true') {
+      // Running Flutter-Elinux Desktop (X64), Use Noop Controller.
+      return SystemControllerNoop();
+    }
+
     if (Platform.isLinux) {
       return SystemControllerRpiLinux();
     }
