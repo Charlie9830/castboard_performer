@@ -433,7 +433,7 @@ class _AppRootState extends State<AppRoot> {
 
     // Slides
     LoggingManager.instance.player.info('Sorting slides');
-    final sortedSlides = List<SlideModel>.from(data.slides.values)
+    final sortedSlides = List<SlideModel>.from(data.slideData.slides.values)
       ..sort((a, b) => a.index - b.index);
     final initialSlide = sortedSlides.isNotEmpty ? sortedSlides.first : null;
     final initialNextSlide = sortedSlides.length >= 2 ? sortedSlides[1] : null;
@@ -488,7 +488,7 @@ class _AppRootState extends State<AppRoot> {
     currentPresetId =
         currentPresetId == '' ? PresetModel.builtIn().uid : currentPresetId;
     final currentPreset =
-        data.presets[currentPresetId] ?? PresetModel.builtIn();
+        data.showData.presets[currentPresetId] ?? PresetModel.builtIn();
 
     // Get ancilliary Preset data.
     final combinedPresetIds = data.playbackState?.combinedPresetIds ?? const [];
@@ -500,18 +500,19 @@ class _AppRootState extends State<AppRoot> {
     final displayedCastChange = CastChangeModel.compose(
       base: currentPreset.castChange,
       combined: combinedPresetIds
-          .map(
-              (id) => data.presets[id]?.castChange ?? CastChangeModel.initial())
+          .map((id) =>
+              data.showData.presets[id]?.castChange ??
+              CastChangeModel.initial())
           .toList(),
       liveEdits: liveCastChangeEdits,
     );
 
     setState(() {
-      _actors = data.actors;
-      _tracks = data.tracks;
-      _trackRefsByName = data.trackRefsByName;
-      _presets = data.presets;
-      _slides = data.slides;
+      _actors = data.showData.actors;
+      _tracks = data.showData.tracks;
+      _trackRefsByName = data.showData.trackRefsByName;
+      _presets = data.showData.presets;
+      _slides = data.slideData.slides;
       _currentSlideId = initialSlide?.uid ?? _currentSlideId;
       _nextSlideId = initialNextSlide?.uid ?? '';
       _cycler = SlideCycler(
@@ -519,7 +520,7 @@ class _AppRootState extends State<AppRoot> {
           initialSlide: initialSlide!,
           onPlaybackOrSlideChange: _handleSlideCycle);
       _playing = true;
-      _slideOrientation = data.slideOrientation;
+      _slideOrientation = data.slideData.slideOrientation;
       _currentPresetId = currentPresetId;
       _combinedPresetIds = combinedPresetIds;
       _liveCastChangeEdits = liveCastChangeEdits;
