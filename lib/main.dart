@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:castboard_core/enums.dart';
 import 'package:castboard_core/logging/LoggingManager.dart';
+import 'package:castboard_core/models/ActorIndex.dart';
 import 'package:castboard_core/models/ActorModel.dart';
 import 'package:castboard_core/models/ActorRef.dart';
 import 'package:castboard_core/models/CastChangeModel.dart';
@@ -93,6 +94,7 @@ class _AppRootState extends State<AppRoot> {
   String _startupStatus = 'Starting Up';
   bool _criticalError = false;
   Map<ActorRef, ActorModel> _actors = {};
+  List<ActorIndexBase> _actorIndex = <ActorIndexBase>[];
   Map<TrackRef, TrackModel> _tracks = {};
   Map<String, TrackRef> _trackRefsByName = {};
 
@@ -509,6 +511,7 @@ class _AppRootState extends State<AppRoot> {
 
     setState(() {
       _actors = data.showData.actors;
+      _actorIndex = data.showData.actorIndex;
       _tracks = data.showData.tracks;
       _trackRefsByName = data.showData.trackRefsByName;
       _presets = data.showData.presets;
@@ -586,6 +589,8 @@ class _AppRootState extends State<AppRoot> {
     return RemoteShowData(
       showData: ShowDataModel(
         tracks: _tracks,
+        trackRefsByName: <String, TrackRef>{}, // Showcaller does not need this data, so no point sending it.
+        actorIndex: _actorIndex,
         actors: _actors,
         presets: _presets,
       ),
@@ -622,10 +627,13 @@ class _AppRootState extends State<AppRoot> {
     try {
       LoggingManager.instance.player.info("Updating permanent storage");
       await Storage.instance.updatePerformerShowData(
+        // Provide the existing values we have in state to ShowDataModel except for Presets, as presets are
+        // the only thing that showcaller actually modifies.
         showData: ShowDataModel(
           actors: _actors,
+          actorIndex: _actorIndex,
           tracks: _tracks,
-          presets: presets,
+          presets: presets, // Only Presets have actually changed.
           trackRefsByName: _trackRefsByName,
         ),
         playbackState: data.playbackState,
