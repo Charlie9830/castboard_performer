@@ -15,6 +15,7 @@ import 'package:castboard_core/models/RemoteCastChangeData.dart';
 import 'package:castboard_core/models/RemoteShowData.dart';
 import 'package:castboard_core/models/ShowDataModel.dart';
 import 'package:castboard_core/models/SlideSizeModel.dart';
+import 'package:castboard_core/models/TrackIndex.dart';
 import 'package:castboard_core/models/TrackModel.dart';
 import 'package:castboard_core/models/SlideModel.dart';
 import 'package:castboard_core/models/TrackRef.dart';
@@ -95,6 +96,7 @@ class _AppRootState extends State<AppRoot> {
   bool _criticalError = false;
   Map<ActorRef, ActorModel> _actors = {};
   List<ActorIndexBase> _actorIndex = <ActorIndexBase>[];
+  List<TrackIndexBase> _trackIndex = <TrackIndexBase>[];
   Map<TrackRef, TrackModel> _tracks = {};
   Map<String, TrackRef> _trackRefsByName = {};
 
@@ -512,6 +514,7 @@ class _AppRootState extends State<AppRoot> {
     setState(() {
       _actors = data.showData.actors;
       _actorIndex = data.showData.actorIndex;
+      _trackIndex = data.showData.trackIndex;
       _tracks = data.showData.tracks;
       _trackRefsByName = data.showData.trackRefsByName;
       _presets = data.showData.presets;
@@ -589,8 +592,10 @@ class _AppRootState extends State<AppRoot> {
     return RemoteShowData(
       showData: ShowDataModel(
         tracks: _tracks,
-        trackRefsByName: <String, TrackRef>{}, // Showcaller does not need this data, so no point sending it.
+        trackRefsByName: <String,
+            TrackRef>{}, // Showcaller does not need this data, so no point sending it.
         actorIndex: _actorIndex,
+        trackIndex: _trackIndex,
         actors: _actors,
         presets: _presets,
       ),
@@ -632,6 +637,7 @@ class _AppRootState extends State<AppRoot> {
         showData: ShowDataModel(
           actors: _actors,
           actorIndex: _actorIndex,
+          trackIndex: _trackIndex,
           tracks: _tracks,
           presets: presets, // Only Presets have actually changed.
           trackRefsByName: _trackRefsByName,
