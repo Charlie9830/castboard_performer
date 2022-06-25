@@ -542,12 +542,8 @@ class _AppRootState extends State<AppRoot> {
   }
 
   void _resetImageCache(BuildContext context) {
-    if (imageCache == null) {
-      // TODO Log that you we failed to increase the imageCache Maximum size.
-    }
-
-    imageCache!.clear();
-    imageCache!.maximumSizeBytes = 400 * 1000000;
+    imageCache.clear();
+    imageCache.maximumSizeBytes = 400 * 1000000;
   }
 
   void _handleSlideCycle(
