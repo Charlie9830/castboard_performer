@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 class FadePageTransition extends StatefulWidget {
   final Widget child;
 
-  FadePageTransition({Key? key, required this.child}) : super(key: key);
+  const FadePageTransition({Key? key, required this.child}) : super(key: key);
 
   @override
-  _FadePageTransitionState createState() => _FadePageTransitionState();
+  FadePageTransitionState createState() => FadePageTransitionState();
 }
 
-class _FadePageTransitionState extends State<FadePageTransition>
+class FadePageTransitionState extends State<FadePageTransition>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
@@ -19,7 +19,7 @@ class _FadePageTransitionState extends State<FadePageTransition>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: Duration(seconds: 1),
+      duration: const Duration(seconds: 1),
     );
 
     _animation = Tween(begin: 0.0, end: 1.0).animate(_controller);
@@ -29,7 +29,7 @@ class _FadePageTransitionState extends State<FadePageTransition>
 
   @override
   Widget build(BuildContext context) {
-    return FadeTransition(child: widget.child, opacity: _animation);
+    return FadeTransition(opacity: _animation, child: widget.child);
   }
 
   @override

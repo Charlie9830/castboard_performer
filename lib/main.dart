@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:castboard_core/enums.dart';
 import 'package:castboard_core/logging/LoggingManager.dart';
@@ -8,7 +7,6 @@ import 'package:castboard_core/models/ActorIndex.dart';
 import 'package:castboard_core/models/ActorModel.dart';
 import 'package:castboard_core/models/ActorRef.dart';
 import 'package:castboard_core/models/CastChangeModel.dart';
-import 'package:castboard_core/models/FontModel.dart';
 import 'package:castboard_core/models/ManifestModel.dart';
 import 'package:castboard_core/models/PresetModel.dart';
 import 'package:castboard_core/models/RemoteCastChangeData.dart';
@@ -19,10 +17,8 @@ import 'package:castboard_core/models/TrackIndex.dart';
 import 'package:castboard_core/models/TrackModel.dart';
 import 'package:castboard_core/models/SlideModel.dart';
 import 'package:castboard_core/models/TrackRef.dart';
-import 'package:castboard_core/models/system_controller/DeviceResolution.dart';
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_core/storage/ImportedShowData.dart';
-import 'package:castboard_core/storage/ShowfIleValidationResult.dart';
 import 'package:castboard_core/storage/Storage.dart';
 import 'package:castboard_core/system-commands/SystemCommands.dart';
 import 'package:castboard_core/version/fileVersion.dart';
@@ -39,7 +35,6 @@ import 'package:castboard_performer/scheduleRestart.dart';
 import 'package:castboard_performer/server/Server.dart';
 import 'package:castboard_performer/system_controller/SystemConfigCommitResult.dart';
 import 'package:castboard_performer/system_controller/SystemController.dart';
-import 'package:castboard_performer/system_controller/platform_implementations/rpi_linux/models/ApplicationConfigModel.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -55,7 +50,7 @@ void main() async {
     await _initLogging();
     print('Logging Initialized');
   } catch (error, stacktrace) {
-    criticalError = error.toString() + "\n" + stacktrace.toString();
+    criticalError = "$error\n$stacktrace";
     stderr.write('Failed to initialize LoggingManager. ${error.toString()}');
     print(criticalError);
   }
@@ -85,7 +80,7 @@ Server? server;
 class AppRoot extends StatefulWidget {
   final String criticalError;
 
-  AppRoot({Key? key, this.criticalError = ''}) : super(key: key);
+  const AppRoot({Key? key, this.criticalError = ''}) : super(key: key);
 
   @override
   _AppRootState createState() => _AppRootState();
@@ -102,13 +97,13 @@ class _AppRootState extends State<AppRoot> {
 
   // Presets and Cast Changes
   Map<String, PresetModel> _presets = {};
-  CastChangeModel _liveCastChangeEdits = CastChangeModel.initial();
+  CastChangeModel _liveCastChangeEdits = const CastChangeModel.initial();
   String _currentPresetId = '';
   List<String> _combinedPresetIds = const <String>[];
 
   /// Represents the final fully composed Cast Change, composed from
   /// [_currentPresetId], [_combinedPresetIds] and [_liveCastChangeEdits].
-  CastChangeModel _displayedCastChange = CastChangeModel.initial();
+  CastChangeModel _displayedCastChange = const CastChangeModel.initial();
 
   // Slides
   Map<String, SlideModel> _slides = {};
@@ -128,12 +123,12 @@ class _AppRootState extends State<AppRoot> {
 
   // Non Tracked State
   Server? _server;
-  Map<String, DateTime> _sessionHeartbeats = {};
+  final Map<String, DateTime> _sessionHeartbeats = {};
   late Timer _heartbeatTimer;
-  SystemController _systemController = SystemController();
+  final SystemController _systemController = SystemController();
 
   // Focus
-  FocusNode _keyboardFocusNode = FocusNode();
+  final FocusNode _keyboardFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -145,8 +140,8 @@ class _AppRootState extends State<AppRoot> {
     LoggingManager.instance.player.info('Initializing Player state');
     super.initState();
 
-    final String address = '0.0.0.0';
-    final int port = 8080;
+    const String address = '0.0.0.0';
+    const int port = 8080;
 
     _server = Server(
         address: address,
@@ -164,7 +159,7 @@ class _AppRootState extends State<AppRoot> {
         onSoftwareUpdate: _handleSoftwareUpdate);
 
     _heartbeatTimer =
-        Timer.periodic(Duration(seconds: 30), (_) => _checkHeartbeats(30));
+        Timer.periodic(const Duration(seconds: 30), (_) => _checkHeartbeats(30));
 
     _initializePerformer();
   }
@@ -203,11 +198,11 @@ class _AppRootState extends State<AppRoot> {
                 trackRefsByName: _trackRefsByName,
                 displayedCastChange: _displayedCastChange,
                 slideSize:
-                    SlideSizeModel.defaultSize().orientated(_slideOrientation),
+                    const SlideSizeModel.defaultSize().orientated(_slideOrientation),
                 slideOrientation: _slideOrientation,
                 playing: _playing,
               ),
-          RouteNames.configViewer: (_) => ConfigViewer(),
+          RouteNames.configViewer: (_) => const ConfigViewer(),
         },
       ),
     );
@@ -286,13 +281,15 @@ class _AppRootState extends State<AppRoot> {
         await Storage.instance.validateShowfile(bytes, kMaxAllowedFileVersion);
     if (validationResult.isValid == false) {
       // File is invalid. Log it based on the reason then attempt to return back to the player route if we can.
-      if (validationResult.isCompatiableFileVersion == true)
+      if (validationResult.isCompatiableFileVersion == true) {
         LoggingManager.instance.general
             .warning('Invalid showfile received. Rejecting request.');
+      }
 
-      if (validationResult.isCompatiableFileVersion == false)
+      if (validationResult.isCompatiableFileVersion == false) {
         LoggingManager.instance.general
             .warning("Incompatiable showfile recieved. Rejecting request");
+      }
 
       final canReturnToSlideShow =
           await Storage.instance.isPerformerStoragePopulated();
@@ -488,16 +485,16 @@ class _AppRootState extends State<AppRoot> {
     LoggingManager.instance.player.info("Processing presets");
     // Really try not to show a blank Preset. Fallback to the Default Preset if anything is missing.
     String currentPresetId =
-        data.playbackState?.currentPresetId ?? PresetModel.builtIn().uid;
+        data.playbackState?.currentPresetId ?? const PresetModel.builtIn().uid;
     currentPresetId =
-        currentPresetId == '' ? PresetModel.builtIn().uid : currentPresetId;
+        currentPresetId == '' ? const PresetModel.builtIn().uid : currentPresetId;
     final currentPreset =
-        data.showData.presets[currentPresetId] ?? PresetModel.builtIn();
+        data.showData.presets[currentPresetId] ?? const PresetModel.builtIn();
 
     // Get ancilliary Preset data.
     final combinedPresetIds = data.playbackState?.combinedPresetIds ?? const [];
     final liveCastChangeEdits =
-        data.playbackState?.liveCastChangeEdits ?? CastChangeModel.initial();
+        data.playbackState?.liveCastChangeEdits ?? const CastChangeModel.initial();
 
     // Compose the displayed Cast Change.
     LoggingManager.instance.player.info("Composing the displayed cast change");
@@ -506,7 +503,7 @@ class _AppRootState extends State<AppRoot> {
       combined: combinedPresetIds
           .map((id) =>
               data.showData.presets[id]?.castChange ??
-              CastChangeModel.initial())
+              const CastChangeModel.initial())
           .toList(),
       liveEdits: liveCastChangeEdits,
     );
@@ -619,7 +616,7 @@ class _AppRootState extends State<AppRoot> {
       _displayedCastChange = CastChangeModel.compose(
           base: presets[data.playbackState.currentPresetId]?.castChange,
           combined: data.playbackState.combinedPresetIds
-              .map((id) => presets[id]?.castChange ?? CastChangeModel.initial())
+              .map((id) => presets[id]?.castChange ?? const CastChangeModel.initial())
               .toList(),
           liveEdits: data.playbackState.liveCastChangeEdits);
     });
@@ -753,7 +750,7 @@ class _AppRootState extends State<AppRoot> {
     if (result.restartRequired) {
       // Schedule a restart for a few seconds in the future. This will give time for the Server to send a response back to the remote informing it that a
       // restart is imminent.
-      scheduleRestart(Duration(seconds: 5), _systemController);
+      scheduleRestart(const Duration(seconds: 5), _systemController);
       return result;
     } else {
       // No Restart required. Push the new running Config to state and return execution back to the server.
@@ -785,8 +782,9 @@ class _AppRootState extends State<AppRoot> {
     final updateStatus = await _systemController.getUpdateStatus();
     if (updateStatus != UpdateStatus.none) {
       // Reset the updateStatus flag if it is set to success.
-      if (updateStatus == UpdateStatus.success)
+      if (updateStatus == UpdateStatus.success) {
         await _systemController.resetUpdateStatus();
+      }
 
       // Now show a status splash that will update the user of the finished state
       // of the update.
@@ -803,7 +801,7 @@ class _AppRootState extends State<AppRoot> {
     await navigatorKey.currentState!.push(MaterialPageRoute(
       builder: (_) => UpdateStatusSplash(
         success: status == UpdateStatus.success,
-        holdDuration: Duration(seconds: 8),
+        holdDuration: const Duration(seconds: 8),
       ),
       fullscreenDialog: true,
       maintainState: false,

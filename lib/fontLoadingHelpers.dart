@@ -20,7 +20,8 @@ Future<Set<String>> loadCustomFonts(List<FontModel> requiredFonts) async {
   await Future.wait(existenceRequests);
 
   final List<FontLoadCandidate> candidates = [];
-  final dataLoadRequests = goodFonts.map((font) => Storage.instance.getFontFile(font.ref)!
+  final dataLoadRequests = goodFonts.map((font) => Storage.instance
+      .getFontFile(font.ref)!
       .readAsBytes()
       .then((data) =>
           candidates.add(FontLoadCandidate(font.uid, font.familyName, data))));
@@ -29,12 +30,12 @@ Future<Set<String>> loadCustomFonts(List<FontModel> requiredFonts) async {
 
   final loadingResults = await FontLoading.loadFonts(candidates);
 
-  return [
+  return <String>{
     ...loadingResults
         .where((result) => result.loadResult!.success == false)
         .map((result) => result.uid),
     ...missingFonts.map((font) => font.uid)
-  ].toSet();
+  };
 }
 
 ///

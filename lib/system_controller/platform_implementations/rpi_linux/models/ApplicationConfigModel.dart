@@ -17,11 +17,11 @@ class ApplicationConfigModel {
 
   factory ApplicationConfigModel.fromFile(String fileContents) {
     if (fileContents.isEmpty) {
-      return ApplicationConfigModel.defaults();
+      return const ApplicationConfigModel.defaults();
     }
 
     final map = _parseConfigFile(fileContents);
-    final defaults = ApplicationConfigModel.defaults();
+    const defaults = ApplicationConfigModel.defaults();
 
     return ApplicationConfigModel(
       deviceRotation:
@@ -59,7 +59,7 @@ Map<String, String> _parseConfigFile(String fileContents) {
 
 List<String> _splitLines(String fileContents) {
   // Performs platform aware line splitting.
-  final ls = LineSplitter();
+  const ls = LineSplitter();
   return ls.convert(fileContents);
 }
 
@@ -69,5 +69,5 @@ MapEntry<String, String> _parseLine(String line) {
     MapEntry<String, String>(list[0], list[1]);
   }
 
-  return MapEntry<String, String>('', '');
+  return const MapEntry<String, String>('', '');
 }

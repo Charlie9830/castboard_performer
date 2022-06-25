@@ -46,7 +46,7 @@ const Map<DeviceOrientation, int> _deviceOrientationMap = {
 };
 
 class SystemControllerRpiLinux implements SystemController {
-  DBusClient _systemBus = DBusClient.system();
+  final DBusClient _systemBus = DBusClient.system();
   bool _initialized = false;
 
   @override
@@ -76,6 +76,7 @@ class SystemControllerRpiLinux implements SystemController {
   }
 
   /// Triggers a hardware Power Off.
+  @override
   Future<void> powerOff() async {
     // Send a Power Off signal via dbus. Security for this is handled by logind of which has been configured by cage for us.
 
@@ -89,7 +90,7 @@ class SystemControllerRpiLinux implements SystemController {
       await object.callMethod(
         DBusLocations.logindManager.interface,
         'PowerOff',
-        [DBusBoolean(false)],
+        [const DBusBoolean(false)],
       );
     } catch (e) {
       _handleError(e, 'PowerOff');
@@ -97,6 +98,7 @@ class SystemControllerRpiLinux implements SystemController {
   }
 
   /// Triggers a hardware reboot.
+  @override
   Future<void> reboot() async {
     // Send a Reboot signal via dbus. Security for this is handled by logind of which has been configured by cage for us.
     _assertInit();
@@ -109,13 +111,14 @@ class SystemControllerRpiLinux implements SystemController {
       await object.callMethod(
         DBusLocations.logindManager.interface,
         'Reboot',
-        [DBusBoolean(false)],
+        [const DBusBoolean(false)],
       );
     } catch (e) {
       _handleError(e, 'Reboot');
     }
   }
 
+  @override
   Future<void> restart() async {
     // Send a Soft Restart signal via dbus. Security for this is handled by polkit, of which we have configured to allow us access to the 'manage-units' scope.
     _assertInit();
@@ -130,8 +133,8 @@ class SystemControllerRpiLinux implements SystemController {
         DBusLocations.systemdManager.interface,
         'RestartUnit',
         [
-          DBusString(_unitName), // Unit
-          DBusString(
+          const DBusString(_unitName), // Unit
+          const DBusString(
               'replace'), // Restart Mode, one of 'replace', 'fail', 'isolate', 'ignore-dependencies' or 'ignore-requirements'.
         ],
       );
@@ -158,7 +161,7 @@ class SystemControllerRpiLinux implements SystemController {
 
     LoggingManager.instance.systemManager.info('Reading actual resolution');
 
-    final String command = 'cat';
+    const String command = 'cat';
     final List<String> args = ['/sys/class/graphics/fb0/virtual_size'];
 
     final result = await Process.run(command, args);
@@ -168,8 +171,7 @@ class SystemControllerRpiLinux implements SystemController {
       if (string.isEmpty ||
           string.contains(',') == false ||
           string.split(',').length < 2) {
-        throw 'Unable to get current device resolution, result of \n $command $args \n could not be parsed \n' +
-            'Result is: $result';
+        throw 'Unable to get current device resolution, result of \n $command $args \n could not be parsed \n' 'Result is: $result';
       }
 
       final int width = int.parse(string.split(',')[0]);
@@ -177,8 +179,7 @@ class SystemControllerRpiLinux implements SystemController {
 
       return DeviceResolution(width, height);
     } else {
-      throw 'Unable to get current device resolution, result of \n $command $args \n was not a String. ' +
-          'Result is a ${result.runtimeType}, toString() as ${result.toString()}';
+      throw 'Unable to get current device resolution, result of \n $command $args \n was not a String. ' 'Result is a ${result.runtimeType}, toString() as ${result.toString()}';
     }
   }
 
@@ -310,7 +311,7 @@ class SystemControllerRpiLinux implements SystemController {
     // Map the incoming mode to an Rpi hdmi_mode integer.
     return rpiHdmiModes.keys.firstWhere(
         (key) => rpiHdmiModes[key] == resolution,
-        orElse: () => RpiBootConfigModel.defaults().hdmi_mode);
+        orElse: () => const RpiBootConfigModel.defaults().hdmiMode);
   }
 
   bool _assertInit() {

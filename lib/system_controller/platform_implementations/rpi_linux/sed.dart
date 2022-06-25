@@ -7,7 +7,7 @@ Future<void> sed(File file, RegExp regex, String replacement) async {
   }
 
   final contents = await file.readAsString();
-  final ls = LineSplitter();
+  const ls = LineSplitter();
   final inputLines = ls.convert(contents);
 
   final output =

@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:castboard_core/models/SlideModel.dart';
 
-typedef void OnSlideChangeCallback(
+typedef OnSlideChangeCallback = void Function(
     String slideId, String nextSlideId, bool playing);
 
 class SlideCycler {

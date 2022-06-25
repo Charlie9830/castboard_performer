@@ -31,8 +31,9 @@ Future<bool> updateApplicationInternal(
 
   // If the updateSourceDir already exists. Delete it to clear out any old
   // updates.
-  if (await updateSourceDir.exists())
+  if (await updateSourceDir.exists()) {
     await updateSourceDir.delete(recursive: true);
+  }
 
   await updateSourceDir.create();
 
@@ -100,8 +101,8 @@ Future<bool> updateApplicationInternal(
     DBusLocations.systemdManager.interface,
     'StartUnit',
     [
-      DBusString(_castboardUpdaterServiceName), // Unit
-      DBusString(
+      const DBusString(_castboardUpdaterServiceName), // Unit
+      const DBusString(
           'replace'), // Restart Mode, one of 'replace', 'fail', 'isolate', 'ignore-dependencies' or 'ignore-requirements'.
     ],
   );
@@ -177,7 +178,7 @@ Future<File> _getUpdateStatusFile({bool createIfNeeded = false}) async {
 }
 
 Future<File> _getArgsEnvFile() async {
-  final file = await File(_argsEnvFilePath);
+  final file = File(_argsEnvFilePath);
 
   if (await file.exists() == false) await file.create();
 
@@ -186,7 +187,7 @@ Future<File> _getArgsEnvFile() async {
 
 Future<Directory> _getRollbackDirectory(String versionCodename) async {
   final baseDir = await getApplicationsDocumentDirectoryShim();
-  final dir = await Directory(
+  final dir = Directory(
       p.join(baseDir.path, _rollbackDirectoryName, versionCodename));
 
   if (await dir.exists() == false) await dir.create(recursive: true);

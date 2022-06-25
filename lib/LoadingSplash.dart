@@ -23,7 +23,7 @@ class LoadingSplash extends StatelessWidget {
               fit: StackFit.expand,
               alignment: Alignment.center,
               children: [
-                Positioned(
+                const Positioned(
                   top: 16,
                   left: 16,
                   child:
@@ -32,17 +32,17 @@ class LoadingSplash extends StatelessWidget {
                 Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Hero(
+                    const Hero(
                         tag: 'application-subtitle',
                         child: ApplicationSubtitle()),
-                    SizedBox(height: 24),
+                    const SizedBox(height: 24),
                     SizedBox(
                         width: 400,
                         child: LinearProgressIndicator(
                           value: criticalError ? 0 : null,
                           color: Colors.orangeAccent,
                         )),
-                    SizedBox(height: 16),
+                    const SizedBox(height: 16),
                     Text(status,
                         style: Theme.of(context)
                             .textTheme
@@ -53,8 +53,8 @@ class LoadingSplash extends StatelessWidget {
               ],
             ),
           ),
-          Positioned(left: 24, bottom: 24, child: PackageInfoDisplay()),
-          Positioned(right: 24, bottom: 24, child: Text(kVersionCodename))
+          const Positioned(left: 24, bottom: 24, child: PackageInfoDisplay()),
+          const Positioned(right: 24, bottom: 24, child: Text(kVersionCodename))
         ],
       ),
     );

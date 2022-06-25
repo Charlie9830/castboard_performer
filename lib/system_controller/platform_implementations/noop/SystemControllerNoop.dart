@@ -1,11 +1,8 @@
-import 'dart:io';
 import 'package:castboard_core/models/system_controller/AvailableResolutions.dart';
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
-import 'package:castboard_core/models/system_controller/DeviceOrientation.dart';
 import 'package:castboard_core/models/system_controller/DeviceResolution.dart';
 import 'package:castboard_performer/system_controller/SystemConfigCommitResult.dart';
 import 'package:castboard_performer/system_controller/SystemController.dart';
-import 'package:castboard_performer/system_controller/platform_implementations/rpi_linux/RpiHdmiModes.dart';
 
 class SystemControllerNoop implements SystemController {
   @override
@@ -53,10 +50,10 @@ class SystemControllerNoop implements SystemController {
   Future<SystemConfig> getSystemConfig() async {
     return SystemConfig.defaults().copyWith(
         availableResolutions: AvailableResolutions([
-      DeviceResolution.auto(),
-      DeviceResolution(640, 480),
-      DeviceResolution(1280, 720),
-      DeviceResolution(1920, 1080),
+      const DeviceResolution.auto(),
+      const DeviceResolution(640, 480),
+      const DeviceResolution(1280, 720),
+      const DeviceResolution(1920, 1080),
     ]));
   }
 

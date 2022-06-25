@@ -2,29 +2,28 @@ import 'dart:convert';
 
 import 'package:castboard_core/logging/LoggingManager.dart';
 import 'package:castboard_core/models/system_controller/AvailableResolutions.dart';
-import 'package:castboard_core/models/system_controller/DeviceResolution.dart';
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_performer/system_controller/platform_implementations/rpi_linux/RpiHdmiModes.dart';
 
 class RpiBootConfigModel {
-  final int hdmi_mode;
+  final int hdmiMode;
 
-  RpiBootConfigModel({required this.hdmi_mode});
+  RpiBootConfigModel({required this.hdmiMode});
 
-  const RpiBootConfigModel.defaults() : hdmi_mode = 16;
+  const RpiBootConfigModel.defaults() : hdmiMode = 16;
 
   RpiBootConfigModel copyWith({
-    int? hdmi_mode,
+    int? hdmiMode,
   }) {
     return RpiBootConfigModel(
-      hdmi_mode: hdmi_mode ?? this.hdmi_mode,
+      hdmiMode: hdmiMode ?? this.hdmiMode,
     );
   }
 
   SystemConfig toSystemConfig() {
     return SystemConfig(
-      deviceResolution: rpiHdmiModes[hdmi_mode],
-      availableResolutions: AvailableResolutions.defaults(),
+      deviceResolution: rpiHdmiModes[hdmiMode],
+      availableResolutions: const AvailableResolutions.defaults(),
       deviceOrientation: null,
       playShowOnIdle: null,
       playerBuildNumber: '',
@@ -34,12 +33,12 @@ class RpiBootConfigModel {
   }
 
   factory RpiBootConfigModel.fromFileString(String input) {
-    final ls = LineSplitter();
+    const ls = LineSplitter();
     final lines = ls.convert(input);
 
     RegExp hdmiModePattern = RegExp(r"#hdmi_mode=[0-9]+|hdmi_mode=[0-9]+");
 
-    RpiBootConfigModel config = RpiBootConfigModel.defaults();
+    RpiBootConfigModel config = const RpiBootConfigModel.defaults();
 
     for (var line in lines) {
       // Ignore comment lines.
@@ -51,7 +50,7 @@ class RpiBootConfigModel {
       if (hdmiModePattern.hasMatch(trimmed) &&
           hdmiModePattern.stringMatch(trimmed)!.startsWith("#") == false) {
         config = config.copyWith(
-            hdmi_mode: int.parse(
+            hdmiMode: int.parse(
                 _extractValue(hdmiModePattern.stringMatch(trimmed)!)));
       }
     }

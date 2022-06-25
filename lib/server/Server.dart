@@ -1,15 +1,12 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:castboard_core/logging/LoggingManager.dart';
 import 'package:castboard_core/models/RemoteShowData.dart';
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_core/models/system_controller/DeviceResolution.dart';
-import 'package:castboard_core/storage/ShowfIleValidationResult.dart';
 import 'package:castboard_performer/models/ShowFileUploadResult.dart';
 import 'package:castboard_performer/server/Routes.dart';
 import 'package:castboard_core/system-commands/SystemCommands.dart';
 import 'package:castboard_performer/server/cacheHeaders.dart';
-import 'package:castboard_performer/server/generateFileHeaders.dart';
 import 'package:castboard_performer/server/getAssetBundleRootPath.dart';
 import 'package:castboard_performer/server/prepareStaticWebDirectory.dart';
 import 'package:castboard_performer/server/routeHandlers.dart';
@@ -21,21 +18,21 @@ import 'package:shelf_plus/shelf_plus.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_cors_headers/shelf_cors_headers.dart';
 
-typedef void OnSystemCommandReceivedCallback(SystemCommand command);
-typedef Future<
-    List<DeviceResolution>> OnAvailableResolutionsRequestedCallback();
-typedef void OnPlaybackCommandReceivedCallback(PlaybackCommand command);
-typedef Future<ShowfileUploadResult> OnShowFileReceivedCallback(
+typedef OnSystemCommandReceivedCallback = void Function(SystemCommand command);
+typedef OnAvailableResolutionsRequestedCallback = Future<
+    List<DeviceResolution>> Function();
+typedef OnPlaybackCommandReceivedCallback = void Function(PlaybackCommand command);
+typedef OnShowFileReceivedCallback = Future<ShowfileUploadResult> Function(
     List<int> bytes);
-typedef RemoteShowData OnShowDataPullCallback();
-typedef Future<bool> OnShowDataReceivedCallback(RemoteShowData data);
-typedef void OnHeartbeatCallback(String sessionId);
-typedef Future<SystemConfig?> OnSystemConfigPullCallback();
-typedef Future<SystemConfigCommitResult> OnSystemConfigPostCallback(
+typedef OnShowDataPullCallback = RemoteShowData Function();
+typedef OnShowDataReceivedCallback = Future<bool> Function(RemoteShowData data);
+typedef OnHeartbeatCallback = void Function(String sessionId);
+typedef OnSystemConfigPullCallback = Future<SystemConfig?> Function();
+typedef OnSystemConfigPostCallback = Future<SystemConfigCommitResult> Function(
     SystemConfig config);
-typedef Future<File> OnPrepareShowfileDownloadCallback();
-typedef Future<File> OnPrepareLogsDownloadCallback();
-typedef Future<bool> OnSoftwareUpdateCallback(List<int> byteData);
+typedef OnPrepareShowfileDownloadCallback = Future<File> Function();
+typedef OnPrepareLogsDownloadCallback = Future<File> Function();
+typedef OnSoftwareUpdateCallback = Future<bool> Function(List<int> byteData);
 
 // Config
 const _webAppFilePath = 'web_app/';
@@ -110,7 +107,7 @@ class Server {
 
       LoggingManager.instance..server.info("Starting up shelf server");
       server = await shelf_io.serve(
-        Pipeline()
+        const Pipeline()
             .addMiddleware(corsHeaders())
             .addMiddleware(cacheHeaders())
             .addHandler(cascade.handler),
@@ -123,7 +120,7 @@ class Server {
       LoggingManager.instance
         ..server
             .severe('General error starting the shelf server', e, stacktrace);
-      throw e;
+      rethrow;
     }
     return;
   }

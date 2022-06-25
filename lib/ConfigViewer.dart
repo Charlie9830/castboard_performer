@@ -12,8 +12,8 @@ class ConfigViewer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cardMaxWidth = MediaQuery.of(context).size.width / 4;
-    final hSpacer = const SizedBox(width: 16);
-    final vSpacer = const SizedBox(height: 16);
+    const hSpacer = SizedBox(width: 16);
+    const vSpacer = SizedBox(height: 16);
 
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
@@ -21,17 +21,17 @@ class ConfigViewer extends StatelessWidget {
         fit: StackFit.expand,
         alignment: Alignment.center,
         children: [
-          Positioned(
+          const Positioned(
             top: 16,
             left: 16,
             child: Hero(tag: 'application-title', child: ApplicationTitle()),
           ),
           Column(
             children: [
-              Spacer(),
-              Spacer(),
-              Hero(tag: 'application-subtitle', child: ApplicationSubtitle()),
-              Spacer(),
+              const Spacer(),
+              const Spacer(),
+              const Hero(tag: 'application-subtitle', child: ApplicationSubtitle()),
+              const Spacer(),
               Text(
                   'Connect your phone, tablet or computer to the following Wireless network.',
                   style: Theme.of(context).textTheme.subtitle1),
@@ -47,8 +47,8 @@ class ConfigViewer extends StatelessWidget {
               _DashboardAddressCard(
                 cardMaxWidth: cardMaxWidth,
               ),
-              Spacer(),
-              _DebugInfoPanel(),
+              const Spacer(),
+              const _DebugInfoPanel(),
             ],
           ),
         ],
@@ -65,8 +65,8 @@ class _DebugInfoPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.all(24),
-      padding: EdgeInsets.all(8),
+      margin: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(8),
       foregroundDecoration: BoxDecoration(
           border: Border.all(color: Theme.of(context).dividerColor)),
       child: DefaultTextStyle(
@@ -74,8 +74,8 @@ class _DebugInfoPanel extends StatelessWidget {
         child: Column(
           children: [
             Text('Geek Zone', style: Theme.of(context).textTheme.overline),
-            Text('Build Codename: $kVersionCodename'),
-            Text(
+            const Text('Build Codename: $kVersionCodename'),
+            const Text(
               'kDebugMode: $kDebugMode',
             ),
             Text('Storage Path: ${Storage.instance.appRootStoragePath}'),
@@ -104,14 +104,14 @@ class _DashboardAddressCard extends StatelessWidget {
         constraints: BoxConstraints(maxWidth: cardMaxWidth),
         child: Card(
           child: Padding(
-            padding: EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16),
             child: Center(
               child: Text(
                 '192.168.1.1',
                 style: Theme.of(context)
                     .textTheme
                     .subtitle1!
-                    .copyWith(color: Theme.of(context).accentColor),
+                    .copyWith(color: Theme.of(context).colorScheme.secondary),
               ),
             ),
           ),
@@ -137,7 +137,7 @@ class _WirelessConfigCard extends StatelessWidget {
       constraints: BoxConstraints(maxWidth: cardMaxWidth),
       child: Card(
           child: Padding(
-        padding: EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16),
         child: Column(
           children: [
             Row(
@@ -150,7 +150,7 @@ class _WirelessConfigCard extends StatelessWidget {
                     style: Theme.of(context)
                         .textTheme
                         .subtitle1!
-                        .copyWith(color: Theme.of(context).accentColor)),
+                        .copyWith(color: Theme.of(context).colorScheme.secondary)),
               ],
             ),
             vSpacer,
@@ -163,7 +163,7 @@ class _WirelessConfigCard extends StatelessWidget {
                     style: Theme.of(context)
                         .textTheme
                         .subtitle1!
-                        .copyWith(color: Theme.of(context).accentColor)),
+                        .copyWith(color: Theme.of(context).colorScheme.secondary)),
               ],
             )
           ],

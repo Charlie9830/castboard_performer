@@ -1,11 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:castboard_core/enum-converters/EnumConversionError.dart';
 import 'package:castboard_core/logging/LoggingManager.dart';
 import 'package:castboard_core/models/RemoteShowData.dart';
-import 'package:castboard_core/models/system_controller/AvailableResolutions.dart';
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_core/storage/Storage.dart';
 import 'package:castboard_core/system-commands/SystemCommands.dart';
@@ -15,7 +13,6 @@ import 'package:castboard_performer/server/generateFileHeaders.dart';
 import 'package:castboard_performer/server/readMultipartFileRequest.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf_plus/shelf_plus.dart';
-import 'package:path/path.dart' as p;
 import 'package:shelf_multipart/multipart.dart';
 
 Future<Response> handleHeartbeat(
@@ -182,21 +179,24 @@ Future<Response> handleShowfileUploadReq(
   if (result.generalResult == true) return Response.ok(null);
 
   // Unknown error.
-  if (result.validationResult == null)
+  if (result.validationResult == null) {
     return Response.internalServerError(
         body: 'An error occurred. Please try again');
+  }
 
   // Showfile is incompatiable with this version of the software.
-  if (result.validationResult!.isCompatiableFileVersion == false)
+  if (result.validationResult!.isCompatiableFileVersion == false) {
     return Response.internalServerError(
         body:
             'Showfile was created with a newer version of Castboard. Please update Performer software');
+  }
 
   // Showfile failed validation.
-  if (result.validationResult!.isValid == false)
+  if (result.validationResult!.isValid == false) {
     return Response.internalServerError(
         body:
             'Invalid showfile. Please check you have the correct file and try again.');
+  }
 
   // Fallen through. But something is probably wrong.
   return Response.internalServerError(body: 'An unknown error occurred');

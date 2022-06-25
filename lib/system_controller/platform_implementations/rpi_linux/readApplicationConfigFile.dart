@@ -6,7 +6,7 @@ Future<ApplicationConfigModel> readApplicationConfigFile() async {
   final exists = await appConfigFile.exists();
 
   if (exists == false) {
-    return ApplicationConfigModel.defaults();
+    return const ApplicationConfigModel.defaults();
   }
 
   final contents = await appConfigFile.readAsString();

@@ -1,19 +1,16 @@
 import 'package:castboard_core/elements/backgroundBuilder.dart';
 import 'package:castboard_core/elements/elementBuilders.dart';
 import 'package:castboard_core/enums.dart';
-import 'package:castboard_core/inherited/RenderScaleProvider.dart';
 import 'package:castboard_core/layout-canvas/LayoutCanvas.dart';
 import 'package:castboard_core/models/ActorModel.dart';
 import 'package:castboard_core/models/ActorRef.dart';
 import 'package:castboard_core/models/CastChangeModel.dart';
-import 'package:castboard_core/models/PresetModel.dart';
 import 'package:castboard_core/models/SlideSizeModel.dart';
 import 'package:castboard_core/models/TrackModel.dart';
 import 'package:castboard_core/models/SlideModel.dart';
 import 'package:castboard_core/models/TrackRef.dart';
 import 'package:castboard_core/slide-viewport/SlideViewport.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 const double _basePauseIndicatorSize = 124;
 
@@ -46,7 +43,7 @@ class Player extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (slides[currentSlideId] == null) {
-      return Container(child: Text('Current Slide is Null'));
+      return const Text('Current Slide is Null');
     }
 
     final actualSlideSize = _getDesiredSlideSize(slideSize, slideOrientation);
@@ -80,11 +77,11 @@ class Player extends StatelessWidget {
     return AnimatedPositioned(
         top: 24 * renderScale,
         right: playing ? -((24 + _basePauseIndicatorSize) * renderScale) : 24 * renderScale,
-        duration: Duration(milliseconds: 125),
+        duration: const Duration(milliseconds: 125),
         child: Container(
           width: _basePauseIndicatorSize * renderScale,
           height: _basePauseIndicatorSize * renderScale,
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: Colors.black,
             shape: BoxShape.circle,
           ),
