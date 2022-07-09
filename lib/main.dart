@@ -158,8 +158,8 @@ class _AppRootState extends State<AppRoot> {
         onPrepareLogsDownloadCallback: _handlePrepareLogsDownloadRequest,
         onSoftwareUpdate: _handleSoftwareUpdate);
 
-    _heartbeatTimer =
-        Timer.periodic(const Duration(seconds: 30), (_) => _checkHeartbeats(30));
+    _heartbeatTimer = Timer.periodic(
+        const Duration(seconds: 30), (_) => _checkHeartbeats(30));
 
     _initializePerformer();
   }
@@ -197,8 +197,8 @@ class _AppRootState extends State<AppRoot> {
                 tracks: _tracks,
                 trackRefsByName: _trackRefsByName,
                 displayedCastChange: _displayedCastChange,
-                slideSize:
-                    const SlideSizeModel.defaultSize().orientated(_slideOrientation),
+                slideSize: const SlideSizeModel.defaultSize()
+                    .orientated(_slideOrientation),
                 slideOrientation: _slideOrientation,
                 playing: _playing,
               ),
@@ -389,7 +389,8 @@ class _AppRootState extends State<AppRoot> {
       try {
         LoggingManager.instance.player
             .info("Show file located, starting show file read");
-        final ImportedShowData data = await Storage.instance.readActiveShow();
+        final ImportedShowData data =
+            await Storage.instance.loadShowData(allowMigration: true);
         LoggingManager.instance.player
             .info("Show file read complete. Loading into state");
 
@@ -486,15 +487,16 @@ class _AppRootState extends State<AppRoot> {
     // Really try not to show a blank Preset. Fallback to the Default Preset if anything is missing.
     String currentPresetId =
         data.playbackState?.currentPresetId ?? const PresetModel.builtIn().uid;
-    currentPresetId =
-        currentPresetId == '' ? const PresetModel.builtIn().uid : currentPresetId;
+    currentPresetId = currentPresetId == ''
+        ? const PresetModel.builtIn().uid
+        : currentPresetId;
     final currentPreset =
         data.showData.presets[currentPresetId] ?? const PresetModel.builtIn();
 
     // Get ancilliary Preset data.
     final combinedPresetIds = data.playbackState?.combinedPresetIds ?? const [];
-    final liveCastChangeEdits =
-        data.playbackState?.liveCastChangeEdits ?? const CastChangeModel.initial();
+    final liveCastChangeEdits = data.playbackState?.liveCastChangeEdits ??
+        const CastChangeModel.initial();
 
     // Compose the displayed Cast Change.
     LoggingManager.instance.player.info("Composing the displayed cast change");
@@ -616,7 +618,8 @@ class _AppRootState extends State<AppRoot> {
       _displayedCastChange = CastChangeModel.compose(
           base: presets[data.playbackState.currentPresetId]?.castChange,
           combined: data.playbackState.combinedPresetIds
-              .map((id) => presets[id]?.castChange ?? const CastChangeModel.initial())
+              .map((id) =>
+                  presets[id]?.castChange ?? const CastChangeModel.initial())
               .toList(),
           liveEdits: data.playbackState.liveCastChangeEdits);
     });
