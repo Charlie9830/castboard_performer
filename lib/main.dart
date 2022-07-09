@@ -389,6 +389,7 @@ class _AppRootState extends State<AppRoot> {
       try {
         LoggingManager.instance.player
             .info("Show file located, starting show file read");
+        _updateStartupStatus("Opening show file");
         final ImportedShowData data =
             await Storage.instance.loadShowData(allowMigration: true);
         LoggingManager.instance.player
