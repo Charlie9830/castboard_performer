@@ -1,5 +1,5 @@
 import 'package:castboard_core/models/ManifestModel.dart';
-import 'package:castboard_core/storage/ShowfIleValidationResult.dart';
+import 'package:castboard_core/storage/ShowfileValidationResult.dart';
 
 class ShowfileUploadResult {
   final ShowfileValidationResult? validationResult;
