@@ -4,4 +4,4 @@
 // Previous Codenames:
 // Legolas
 // Ellesar
-const String kVersionCodename = "Erebor";
+const String kVersionCodename = "Gilraen";
