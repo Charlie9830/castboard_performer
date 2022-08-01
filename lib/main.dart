@@ -44,6 +44,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'dart:ui' as ui;
+import 'package:image/image.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey renderBoundaryKey = GlobalKey();
@@ -132,6 +133,7 @@ class _AppRootState extends State<AppRoot> {
   final Map<String, DateTime> _sessionHeartbeats = {};
   late Timer _heartbeatTimer;
   final SystemController _systemController = SystemController();
+  ImageCompressor? _previewStreamCompressor;
 
   // Focus
   final FocusNode _keyboardFocusNode = FocusNode();
@@ -862,17 +864,18 @@ class _AppRootState extends State<AppRoot> {
 
     final boundary = renderObject as RenderRepaintBoundary;
 
-    final byteData = await (await boundary.toImage())
-        .toByteData(format: ui.ImageByteFormat.png);
+    final image = await boundary.toImage(pixelRatio: 0.5);
+
+    final byteData = await image.toByteData();
 
     if (byteData == null) {
       return;
     }
 
-    final compressedImageBytes =
-        await compressImage(byteData.buffer.asUint8List(), boundary.size);
-
-    _server!.sendFrameToPreviewStream(compressedImageBytes);
+    if (_previewStreamCompressor != null) {
+      _previewStreamCompressor!.dispatchImageToCompressor(
+          byteData.buffer.asUint8List(), image.width, image.height);
+    }
   }
 
   void _updatePreviewStream() async {
@@ -884,12 +887,28 @@ class _AppRootState extends State<AppRoot> {
   }
 
   void _handlePreviewListenersChanged(
-      bool hasListeners, PreviewStreamListenerState listenerState) {
+      bool hasListeners, PreviewStreamListenerState listenerState) async {
+    if (hasListeners && _previewStreamCompressor == null) {
+      // Initialize the Image Compressor.
+      _previewStreamCompressor = ImageCompressor();
+      await _previewStreamCompressor!.spinUp();
+
+      // Plumb it's output stream to the Server.
+      _previewStreamCompressor!.outputStream
+          .listen((bytes) => _server!.sendFrameToPreviewStream(bytes));
+    }
+
     if (listenerState == PreviewStreamListenerState.listenerJoined) {
       // If we are paused. Dispatch a frame for the new listener.
       if (_playing == false) {
         _captureAndSendPreviewFrame();
       }
+    }
+
+    if (hasListeners == false && _previewStreamCompressor != null) {
+      // Shutdown the Image Compressor.
+      _previewStreamCompressor!.spinDown();
+      _previewStreamCompressor = null;
     }
   }
 

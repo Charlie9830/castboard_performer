@@ -301,7 +301,6 @@ class Server {
 
   void sendFrameToPreviewStream(Uint8List bytes) {
     for (var channel in _webSocketChannels.values) {
-      print(bytes.length / 1000);
       channel.sink.add(bytes);
     }
   }
