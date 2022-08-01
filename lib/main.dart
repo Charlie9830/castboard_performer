@@ -17,10 +17,12 @@ import 'package:castboard_core/models/TrackIndex.dart';
 import 'package:castboard_core/models/TrackModel.dart';
 import 'package:castboard_core/models/SlideModel.dart';
 import 'package:castboard_core/models/TrackRef.dart';
+import 'package:castboard_core/models/performerDeviceModel.dart';
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_core/storage/ImportedShowData.dart';
 import 'package:castboard_core/storage/Storage.dart';
 import 'package:castboard_core/system-commands/SystemCommands.dart';
+import 'package:castboard_core/utils/compressImage.dart';
 import 'package:castboard_core/version/fileVersion.dart';
 import 'package:castboard_performer/ConfigViewer.dart';
 import 'package:castboard_performer/CriticalError.dart';
@@ -33,14 +35,18 @@ import 'package:castboard_performer/fontLoadingHelpers.dart';
 import 'package:castboard_performer/models/ShowFileUploadResult.dart';
 import 'package:castboard_performer/scheduleRestart.dart';
 import 'package:castboard_performer/server/Server.dart';
+import 'package:castboard_performer/service_advertiser/serviceAdvertiser.dart';
 import 'package:castboard_performer/system_controller/SystemConfigCommitResult.dart';
 import 'package:castboard_performer/system_controller/SystemController.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'dart:ui' as ui;
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+final GlobalKey renderBoundaryKey = GlobalKey();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -156,7 +162,8 @@ class _AppRootState extends State<AppRoot> {
         onSystemConfigPull: _handleSystemConfigPull,
         onSystemConfigPostCallback: _handleSystemConfigPost,
         onPrepareLogsDownloadCallback: _handlePrepareLogsDownloadRequest,
-        onSoftwareUpdate: _handleSoftwareUpdate);
+        onSoftwareUpdate: _handleSoftwareUpdate,
+        onPreviewStreamListenersChanged: _handlePreviewListenersChanged);
 
     _heartbeatTimer = Timer.periodic(
         const Duration(seconds: 30), (_) => _checkHeartbeats(30));
@@ -170,40 +177,43 @@ class _AppRootState extends State<AppRoot> {
       return CriticalError(errorMessage: widget.criticalError);
     }
 
-    return RawKeyboardListener(
-      focusNode: _keyboardFocusNode,
-      autofocus: true,
-      onKey: _handleKeyboardEvent,
-      child: MaterialApp(
-        navigatorKey: navigatorKey,
-        title: 'Castboard Player',
-        theme: ThemeData(
-          fontFamily: 'Poppins',
-          brightness: Brightness.dark,
-          primarySwatch: Colors.grey,
+    return RepaintBoundary(
+      key: renderBoundaryKey,
+      child: RawKeyboardListener(
+        focusNode: _keyboardFocusNode,
+        autofocus: true,
+        onKey: _handleKeyboardEvent,
+        child: MaterialApp(
+          navigatorKey: navigatorKey,
+          title: 'Castboard Player',
+          theme: ThemeData(
+            fontFamily: 'Poppins',
+            brightness: Brightness.dark,
+            primarySwatch: Colors.grey,
+          ),
+          initialRoute: RouteNames.loadingSplash,
+          routes: {
+            RouteNames.loadingSplash: (_) => LoadingSplash(
+                  status: _startupStatus,
+                  criticalError: _criticalError,
+                ),
+            RouteNames.player: (_) => Player(
+                  currentSlideId: _currentSlideId,
+                  nextSlideId:
+                      _nextSlideId, // The next slide is 'Offstaged' to force Image Caching TODO: Is this required anymore?
+                  slides: _slides,
+                  actors: _actors,
+                  tracks: _tracks,
+                  trackRefsByName: _trackRefsByName,
+                  displayedCastChange: _displayedCastChange,
+                  slideSize: const SlideSizeModel.defaultSize()
+                      .orientated(_slideOrientation),
+                  slideOrientation: _slideOrientation,
+                  playing: _playing,
+                ),
+            RouteNames.configViewer: (_) => const ConfigViewer(),
+          },
         ),
-        initialRoute: RouteNames.loadingSplash,
-        routes: {
-          RouteNames.loadingSplash: (_) => LoadingSplash(
-                status: _startupStatus,
-                criticalError: _criticalError,
-              ),
-          RouteNames.player: (_) => Player(
-                currentSlideId: _currentSlideId,
-                nextSlideId:
-                    _nextSlideId, // The next slide is 'Offstaged' to force Image Caching TODO: Is this required anymore?
-                slides: _slides,
-                actors: _actors,
-                tracks: _tracks,
-                trackRefsByName: _trackRefsByName,
-                displayedCastChange: _displayedCastChange,
-                slideSize: const SlideSizeModel.defaultSize()
-                    .orientated(_slideOrientation),
-                slideOrientation: _slideOrientation,
-                playing: _playing,
-              ),
-          RouteNames.configViewer: (_) => const ConfigViewer(),
-        },
       ),
     );
   }
@@ -235,6 +245,18 @@ class _AppRootState extends State<AppRoot> {
           .info('No more heartbeats, resuming slideshow');
       _cycler!.play();
     }
+  }
+
+  Future<PerformerDeviceModel> _handleConnectivityPingReceived() async {
+    final softwareVersion = (await PackageInfo.fromPlatform()).version;
+    final showName = _fileManifest.fileName;
+    const deviceName = 'Default Device Name';
+
+    return PerformerDeviceModel.detailsOnly(
+      showName: showName,
+      deviceName: deviceName,
+      softwareVersion: softwareVersion,
+    );
   }
 
   void _handleHeartbeatReceived(String sessionId) {
@@ -380,6 +402,17 @@ class _AppRootState extends State<AppRoot> {
 
       _postCriticalError('An error occurred. The Server failed to start.');
       return;
+    }
+
+    // Init Advertising Service.
+    _updateStartupStatus('Initializing Service Advertising.');
+    try {
+      LoggingManager.instance.server.info('Initializing Service Advertising');
+      await ServiceAdvertiser.initialize(_handleConnectivityPingReceived);
+      LoggingManager.instance.server.info('Service Advertising Initialized');
+    } catch (e, stacktrace) {
+      LoggingManager.instance.server
+          .warning('Failed to initialize discovery service', e, stacktrace);
     }
 
     LoggingManager.instance.player
@@ -553,6 +586,8 @@ class _AppRootState extends State<AppRoot> {
       _nextSlideId = nextSlideId;
       _playing = playing;
     });
+
+    _updatePreviewStream();
   }
 
   Future<void> _initializeServer() async {
@@ -812,6 +847,50 @@ class _AppRootState extends State<AppRoot> {
     ));
 
     return;
+  }
+
+  void _captureAndSendPreviewFrame() async {
+    if (renderBoundaryKey.currentContext == null) {
+      return;
+    }
+
+    final renderObject = renderBoundaryKey.currentContext!.findRenderObject();
+    if (renderObject == null ||
+        renderObject is RenderRepaintBoundary == false) {
+      return;
+    }
+
+    final boundary = renderObject as RenderRepaintBoundary;
+
+    final byteData = await (await boundary.toImage())
+        .toByteData(format: ui.ImageByteFormat.png);
+
+    if (byteData == null) {
+      return;
+    }
+
+    final compressedImageBytes =
+        await compressImage(byteData.buffer.asUint8List(), boundary.size);
+
+    _server!.sendFrameToPreviewStream(compressedImageBytes);
+  }
+
+  void _updatePreviewStream() async {
+    if (_server!.previewStreamHasListeners == true) {
+      WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+        _captureAndSendPreviewFrame();
+      });
+    }
+  }
+
+  void _handlePreviewListenersChanged(
+      bool hasListeners, PreviewStreamListenerState listenerState) {
+    if (listenerState == PreviewStreamListenerState.listenerJoined) {
+      // If we are paused. Dispatch a frame for the new listener.
+      if (_playing == false) {
+        _captureAndSendPreviewFrame();
+      }
+    }
   }
 
   @override

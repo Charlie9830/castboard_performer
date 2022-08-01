@@ -1,8 +1,10 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:castboard_core/logging/LoggingManager.dart';
 import 'package:castboard_core/models/RemoteShowData.dart';
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_core/models/system_controller/DeviceResolution.dart';
+import 'package:castboard_core/utils/getUid.dart';
 import 'package:castboard_performer/models/ShowFileUploadResult.dart';
 import 'package:castboard_performer/server/Routes.dart';
 import 'package:castboard_core/system-commands/SystemCommands.dart';
@@ -17,11 +19,14 @@ import 'package:path/path.dart' as p;
 import 'package:shelf_plus/shelf_plus.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_cors_headers/shelf_cors_headers.dart';
+import 'package:shelf_web_socket/shelf_web_socket.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 
 typedef OnSystemCommandReceivedCallback = void Function(SystemCommand command);
-typedef OnAvailableResolutionsRequestedCallback = Future<
-    List<DeviceResolution>> Function();
-typedef OnPlaybackCommandReceivedCallback = void Function(PlaybackCommand command);
+typedef OnAvailableResolutionsRequestedCallback = Future<List<DeviceResolution>>
+    Function();
+typedef OnPlaybackCommandReceivedCallback = void Function(
+    PlaybackCommand command);
 typedef OnShowFileReceivedCallback = Future<ShowfileUploadResult> Function(
     List<int> bytes);
 typedef OnShowDataPullCallback = RemoteShowData Function();
@@ -33,16 +38,26 @@ typedef OnSystemConfigPostCallback = Future<SystemConfigCommitResult> Function(
 typedef OnPrepareShowfileDownloadCallback = Future<File> Function();
 typedef OnPrepareLogsDownloadCallback = Future<File> Function();
 typedef OnSoftwareUpdateCallback = Future<bool> Function(List<int> byteData);
+typedef OnPreviewStreamListenersStateChangedCallback = void Function(
+    bool hasListeners, PreviewStreamListenerState listenerState);
 
 // Config
 const _webAppFilePath = 'web_app/';
 const _defaultDocument = 'index.html';
+
+// WebSocket Stream
+final Map<String, WebSocketChannel> _webSocketChannels = {};
 
 enum PlaybackCommand {
   play,
   pause,
   next,
   prev,
+}
+
+enum PreviewStreamListenerState {
+  listenerJoined,
+  listenerLeft,
 }
 
 class Server {
@@ -59,6 +74,8 @@ class Server {
   final OnPrepareShowfileDownloadCallback? onPrepareShowfileDownload;
   final OnPrepareLogsDownloadCallback? onPrepareLogsDownloadCallback;
   final OnSoftwareUpdateCallback? onSoftwareUpdate;
+  final OnPreviewStreamListenersStateChangedCallback?
+      onPreviewStreamListenersChanged;
 
   File? _showfileDownloadTarget;
   File? _logsDownloadTarget;
@@ -78,6 +95,7 @@ class Server {
     this.onPrepareShowfileDownload,
     this.onPrepareLogsDownloadCallback,
     this.onSoftwareUpdate,
+    this.onPreviewStreamListenersChanged,
     required this.onHeartbeatReceived,
   });
 
@@ -100,12 +118,12 @@ class Server {
         defaultDocument: _defaultDocument,
       );
 
-      LoggingManager.instance..server.info("Initializing router");
+      LoggingManager.instance.server.info("Initializing router");
       final router = _initializeRouter();
 
       final cascade = Cascade().add(staticFileHandler).add(router);
 
-      LoggingManager.instance..server.info("Starting up shelf server");
+      LoggingManager.instance.server.info("Starting up shelf server");
       server = await shelf_io.serve(
         const Pipeline()
             .addMiddleware(corsHeaders())
@@ -114,12 +132,11 @@ class Server {
         address,
         port,
       );
-      LoggingManager.instance
-        ..server.info("Server running at ${server.address}:${server.port}");
+      LoggingManager.instance.server
+          .info("Server running at ${server.address}:${server.port}");
     } catch (e, stacktrace) {
-      LoggingManager.instance
-        ..server
-            .severe('General error starting the shelf server', e, stacktrace);
+      LoggingManager.instance.server
+          .severe('General error starting the shelf server', e, stacktrace);
       rethrow;
     }
     return;
@@ -255,10 +272,39 @@ class Server {
       return handleShowDataPost(req, onShowDataReceived);
     });
 
+    // Websocket
+    router.get('/ws', webSocketHandler(_handleWebSocketConnectionEstablished));
+
     return router;
+  }
+
+  void _handleWebSocketConnectionEstablished(WebSocketChannel webSocket) {
+    final String id = getUid();
+    void noop(dynamic event) {}
+
+    // Setup onDone Listener. Actual Listener is just a noop as we don't care what the client sends to us,
+    // only that they are listening on the other end.
+    webSocket.stream.listen(noop, onDone: () {
+      _webSocketChannels.remove(id);
+      onPreviewStreamListenersChanged?.call(_webSocketChannels.isNotEmpty,
+          PreviewStreamListenerState.listenerLeft);
+    }, cancelOnError: true);
+
+    _webSocketChannels[id] = webSocket;
+    onPreviewStreamListenersChanged?.call(_webSocketChannels.isNotEmpty,
+        PreviewStreamListenerState.listenerJoined);
   }
 
   Future<void> shutdown() async {
     return server.close();
   }
+
+  void sendFrameToPreviewStream(Uint8List bytes) {
+    for (var channel in _webSocketChannels.values) {
+      print(bytes.length / 1000);
+      channel.sink.add(bytes);
+    }
+  }
+
+  bool get previewStreamHasListeners => _webSocketChannels.isNotEmpty;
 }
