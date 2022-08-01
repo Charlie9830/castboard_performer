@@ -32,3 +32,5 @@ def buildRpiRelease():
     runShellCommands([
         'mv '+'"'+absBundlePath+'"'+'/castboard_performer'+ ' ' +'"'+absBundlePath+'"'+'/performer'
     ], projectRootPath)
+
+buildRpiRelease()
