@@ -543,7 +543,10 @@ class _AppRootState extends State<AppRoot> {
 
   void _resetImageCache(BuildContext context) {
     imageCache.clear();
-    imageCache.maximumSizeBytes = 400 * 1000000;
+    imageCache.maximumSizeBytes = 800 * 1000000;
+
+    LoggingManager.instance.player.info(
+        'Image Cache size set to ${imageCache.maximumSizeBytes / 1000000}mb');
   }
 
   void _handleSlideCycle(
