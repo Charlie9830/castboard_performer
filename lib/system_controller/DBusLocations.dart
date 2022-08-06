@@ -11,4 +11,5 @@ class DBusLocations {
       name: 'org.freedesktop.systemd1',
       path: DBusObjectPath.unchecked('/org/freedesktop/systemd1'),
       interface: 'org.freedesktop.systemd1.Manager');
+
 }

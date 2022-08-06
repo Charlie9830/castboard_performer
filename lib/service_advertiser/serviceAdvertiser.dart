@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:castboard_core/PerformerDiscoveryInterop.dart' as pdi;
 import 'package:castboard_core/models/performerDeviceModel.dart';
+import 'package:castboard_performer/service_advertiser/mdns/mdns.dart';
 
 typedef OnConnectivityPingCallback = Future<PerformerDeviceModel> Function();
 
@@ -20,6 +21,7 @@ class ServiceAdvertiser {
   late final RawDatagramSocket _discoverySocket;
   late final RawDatagramSocket _unicastSocket;
   late final OnConnectivityPingCallback _onConnectivityPingCallback;
+  late final MdnsBase _multicastDnsService;
 
   static Future<void> initialize(
       OnConnectivityPingCallback onConnectivityPingCallback) async {
@@ -48,14 +50,19 @@ class ServiceAdvertiser {
   )   : _discoverySocket = discoverySocket,
         _unicastSocket = unicastSocket,
         _onConnectivityPingCallback = onConnectivityPingCallback {
+    // Attach Listener to the direct Discovery Socket.
     _discoverySocket.listen(_discoverySocketListener);
+
+    // Attach Listener to the Unicast Socket.
     _unicastSocket.listen(_unicastSocketListener);
+
+    _multicastDnsService = MdnsBase.instance();
+    _multicastDnsService.advertise();
   }
 
   Future<void> _discoverySocketListener(RawSocketEvent event) async {
     if (event == RawSocketEvent.read) {
       Datagram? dg = _discoverySocket.receive();
-      print("Discovery Socket");
 
       if (dg == null) {
         return;
@@ -63,8 +70,6 @@ class ServiceAdvertiser {
 
       if (pdi.hasMagicBytes(dg.data)) {
         // Discovery Packet
-        print('Received Discovery Datagram');
-        print('Would be sending to ${dg.address}:${dg.port}');
         _discoverySocket.send(pdi.discoveryReplyPayload, dg.address, dg.port);
         return;
       }
@@ -75,7 +80,6 @@ class ServiceAdvertiser {
     if (event == RawSocketEvent.read) {
       Datagram? dg = _unicastSocket.receive();
 
-      print("Unicast Socket");
       if (dg == null) {
         return;
       }
@@ -89,11 +93,16 @@ class ServiceAdvertiser {
           port: dg.port,
         );
 
-        print('I would be sending to ${dg.address}:${dg.port}');
         _unicastSocket.send(
             utf8.encode(fullDeviceDetails.toJson()), dg.address, dg.port);
         return;
       }
     }
+  }
+
+  Future<void> stop() async {
+    _multicastDnsService.close();
+    _unicastSocket.close();
+    _discoverySocket.close();
   }
 }
