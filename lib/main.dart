@@ -38,6 +38,7 @@ import 'package:castboard_performer/server/Server.dart';
 import 'package:castboard_performer/service_advertiser/serviceAdvertiser.dart';
 import 'package:castboard_performer/system_controller/SystemConfigCommitResult.dart';
 import 'package:castboard_performer/system_controller/SystemController.dart';
+import 'package:castboard_performer/window_close.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -171,6 +172,11 @@ class _AppRootState extends State<AppRoot> {
         const Duration(seconds: 30), (_) => _checkHeartbeats(30));
 
     _initializePerformer();
+
+    registerWindowCloseHook(
+        server: _server!,
+        systemController: _systemController,
+        previewStreamCompressor: _previewStreamCompressor);
   }
 
   @override
@@ -545,6 +551,11 @@ class _AppRootState extends State<AppRoot> {
           .toList(),
       liveEdits: liveCastChangeEdits,
     );
+
+    
+
+    // TODO: It's possible that the user could upload an empty showfile. In which case stuff like
+    // initialSlide will be null and cause a crash. We need to have handling for an empty showfile.
 
     setState(() {
       _actors = data.showData.actors;
