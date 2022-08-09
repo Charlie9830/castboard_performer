@@ -22,9 +22,11 @@ class ServiceAdvertiser {
   late final RawDatagramSocket _unicastSocket;
   late final OnConnectivityPingCallback _onConnectivityPingCallback;
   late final MdnsBase _multicastDnsService;
+  late final String _deviceName;
 
   static Future<void> initialize(
-      OnConnectivityPingCallback onConnectivityPingCallback) async {
+      OnConnectivityPingCallback onConnectivityPingCallback,
+      String deviceName) async {
     // Discovery Socket.
     final discoverySocket = await RawDatagramSocket.bind(
         InternetAddress.anyIPv4, pdi.discoveryPort);
@@ -40,6 +42,7 @@ class ServiceAdvertiser {
       discoverySocket,
       unicastSocket,
       onConnectivityPingCallback,
+      deviceName,
     );
   }
 
@@ -47,9 +50,11 @@ class ServiceAdvertiser {
     RawDatagramSocket discoverySocket,
     RawDatagramSocket unicastSocket,
     OnConnectivityPingCallback onConnectivityPingCallback,
+    String deviceName,
   )   : _discoverySocket = discoverySocket,
         _unicastSocket = unicastSocket,
-        _onConnectivityPingCallback = onConnectivityPingCallback {
+        _onConnectivityPingCallback = onConnectivityPingCallback,
+        _deviceName = deviceName {
     // Attach Listener to the direct Discovery Socket.
     _discoverySocket.listen(_discoverySocketListener);
 
@@ -57,7 +62,7 @@ class ServiceAdvertiser {
     _unicastSocket.listen(_unicastSocketListener);
 
     _multicastDnsService = MdnsBase.instance();
-    _multicastDnsService.advertise();
+    _multicastDnsService.advertise(_deviceName);
   }
 
   Future<void> _discoverySocketListener(RawSocketEvent event) async {
@@ -88,6 +93,7 @@ class ServiceAdvertiser {
         // Unicast Connectivity Packet.
         final partialDeviceDetails = await _onConnectivityPingCallback();
         final fullDeviceDetails = partialDeviceDetails.copyWith(
+          deviceName: _deviceName,
           connectivityState: PerformerConnectivityState.full,
           ipAddress: dg.address.address,
           port: dg.port,

@@ -256,14 +256,13 @@ class _AppRootState extends State<AppRoot> {
   }
 
   Future<PerformerDeviceModel> _handleConnectivityPingReceived() async {
-    final softwareVersion = (await PackageInfo.fromPlatform()).version;
+    final systemConfig = await SystemController().getSystemConfig();
     final showName = _fileManifest.fileName;
-    const deviceName = 'Default Device Name';
 
     return PerformerDeviceModel.detailsOnly(
       showName: showName,
-      deviceName: deviceName,
-      softwareVersion: softwareVersion,
+      deviceName: systemConfig.deviceName ?? '',
+      softwareVersion: systemConfig.playerVersion,
     );
   }
 
@@ -416,7 +415,11 @@ class _AppRootState extends State<AppRoot> {
     _updateStartupStatus('Initializing Service Advertising.');
     try {
       LoggingManager.instance.server.info('Initializing Service Advertising');
-      await ServiceAdvertiser.initialize(_handleConnectivityPingReceived);
+      final deviceName =
+          (await _systemController.getSystemConfig()).deviceName ??
+              SystemConfig.defaults().deviceName!;
+      await ServiceAdvertiser.initialize(
+          _handleConnectivityPingReceived, deviceName);
       LoggingManager.instance.server.info('Service Advertising Initialized');
     } catch (e, stacktrace) {
       LoggingManager.instance.server
@@ -551,8 +554,6 @@ class _AppRootState extends State<AppRoot> {
           .toList(),
       liveEdits: liveCastChangeEdits,
     );
-
-    
 
     // TODO: It's possible that the user could upload an empty showfile. In which case stuff like
     // initialSlide will be null and cause a crash. We need to have handling for an empty showfile.

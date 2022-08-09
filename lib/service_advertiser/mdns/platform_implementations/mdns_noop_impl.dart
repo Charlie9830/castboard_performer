@@ -1,10 +1,9 @@
-
 import 'package:castboard_performer/service_advertiser/mdns/mdns.dart';
 
 class MdnsNoopImpl implements MdnsBase {
   @override
-  Future<void> advertise() async {
-    print('Using MdnsNoopImpl');
+  Future<void> advertise(String deviceName) async {
+    print('Using MdnsNoopImpl. Device Name = $deviceName');
     return;
   }
 

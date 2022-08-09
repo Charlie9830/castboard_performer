@@ -16,8 +16,10 @@ import 'package:castboard_performer/system_controller/platform_implementations/r
 import 'package:castboard_performer/system_controller/platform_implementations/rpi_linux/sed.dart';
 import 'package:castboard_performer/system_controller/platform_implementations/rpi_linux/updateApplicationInternal.dart';
 import 'package:castboard_performer/system_controller/platform_implementations/rpi_linux/writeApplicationConfigFile.dart';
+import 'package:castboard_performer/versionCodename.dart';
 import 'package:dbus/dbus.dart';
 import 'package:castboard_performer/system_controller/DBusLocations.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 /// Platform Interface implementation of SystemController specific to the Rpi4 with our custom Yocto image and the poky-centerstage distro.
 /// For System Commands we utilize dbus to talk to systemd.
@@ -171,7 +173,8 @@ class SystemControllerRpiLinux implements SystemController {
       if (string.isEmpty ||
           string.contains(',') == false ||
           string.split(',').length < 2) {
-        throw 'Unable to get current device resolution, result of \n $command $args \n could not be parsed \n' 'Result is: $result';
+        throw 'Unable to get current device resolution, result of \n $command $args \n could not be parsed \n'
+            'Result is: $result';
       }
 
       final int width = int.parse(string.split(',')[0]);
@@ -179,7 +182,8 @@ class SystemControllerRpiLinux implements SystemController {
 
       return DeviceResolution(width, height);
     } else {
-      throw 'Unable to get current device resolution, result of \n $command $args \n was not a String. ' 'Result is a ${result.runtimeType}, toString() as ${result.toString()}';
+      throw 'Unable to get current device resolution, result of \n $command $args \n was not a String. '
+          'Result is a ${result.runtimeType}, toString() as ${result.toString()}';
     }
   }
 
@@ -216,6 +220,13 @@ class SystemControllerRpiLinux implements SystemController {
           'Updating application configuration.. Reading existing Application Configuration');
       final runningAppConfig = await readApplicationConfigFile();
       ApplicationConfigModel newAppConfig = runningAppConfig.copyWith();
+
+      // Device Name.
+      if (configDelta.deviceName != null) {
+        restartRequired = true; // Allows serviceAdvertisement to aquire the new device name.
+        newAppConfig =
+            newAppConfig.copyWith(deviceName: configDelta.deviceName);
+      }
 
       // Orientation
       if (configDelta.deviceOrientation != null) {
@@ -284,11 +295,14 @@ class SystemControllerRpiLinux implements SystemController {
       readApplicationConfigFile().then((result) => appConfig = result),
     ];
 
+    final packageInfo = await PackageInfo.fromPlatform();
+
     await Future.wait(requests);
 
     final defaults = SystemConfig.defaults();
 
     final config = SystemConfig(
+      deviceName: appConfig?.deviceName ?? defaults.deviceName,
       deviceOrientation: appConfig != null
           ? _parseDeviceOrientation(appConfig!.deviceRotation)
           : defaults.deviceOrientation,
@@ -296,9 +310,11 @@ class SystemControllerRpiLinux implements SystemController {
       deviceResolution:
           bootConfig?.toSystemConfig().deviceResolution ?? rpiHdmiModes[16],
       availableResolutions: availableResolutions,
-      playerBuildNumber: '', // TODO Update these to performer names.
-      playerBuildSignature: '',
-      playerVersion: '',
+      playerBuildNumber:
+          packageInfo.buildNumber, // TODO Update these to performer names.
+      playerBuildSignature: packageInfo.buildSignature,
+      playerVersion: packageInfo.version,
+      versionCodename: kVersionCodename,
     );
 
     LoggingManager.instance.systemManager.info(
@@ -340,7 +356,9 @@ class SystemControllerRpiLinux implements SystemController {
 
   /// Determines if the provided DeviceConfig contains updates to the Startup Configuration.
   bool _containsApplicationConfigUpdates(SystemConfig config) {
-    return config.deviceOrientation != null;
+    return config.deviceOrientation != null ||
+        config.playShowOnIdle != null ||
+        config.deviceName != null;
   }
 
   /// Determins if the provided DeviceConfig contains updates to the RPI Boot Configuration

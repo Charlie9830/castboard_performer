@@ -6,7 +6,7 @@ import 'package:castboard_performer/service_advertiser/mdns/platform_implementat
 import 'package:castboard_performer/service_advertiser/mdns/platform_implementations/mdns_windows_impl.dart';
 
 abstract class MdnsBase {
-  Future<void> advertise();
+  Future<void> advertise(String instanceName);
   Future<void> close();
 
   MdnsBase();

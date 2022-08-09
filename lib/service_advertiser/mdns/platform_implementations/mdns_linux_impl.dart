@@ -10,14 +10,14 @@ class MdnsLinuxImpl implements MdnsBase {
       interface: 'org.freedesktop.Avahi.EntryGroup');
 
   @override
-  Future<void> advertise() async {
+  Future<void> advertise(String deviceName) async {
     final object = _avahi.object(_systemBus);
 
     await object.callMethod(_avahi.interface, 'AddService', [
       const DBusInt32(0), // Interface
       const DBusInt32(-1), // Avahi.IF_UNSPEC
       const DBusInt32(-1), // Avahi.PROTO_UNSPEC
-      const DBusString('castboardperformer12345'), // sname
+      DBusString(deviceName), // sname
       const DBusString('_http'), // Type
       const DBusString('local'), // Domain
       const DBusString(''), // shost
