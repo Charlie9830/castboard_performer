@@ -12,4 +12,8 @@ class DBusLocations {
       path: DBusObjectPath.unchecked('/org/freedesktop/systemd1'),
       interface: 'org.freedesktop.systemd1.Manager');
 
+  static const DBusLocation networkdManager = DBusLocation(
+      name: 'org.freedesktop.network1',
+      path: DBusObjectPath.unchecked('/org/freedesktop/network1'),
+      interface: 'org.freedesktop.network1.Manager');
 }

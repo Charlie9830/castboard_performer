@@ -76,7 +76,7 @@ void main() async {
 
 Future<void> _initLogging() async {
   await LoggingManager.initialize('castboard_performer_runtime_logs',
-      runAsRelease: false);
+      runAsRelease: true);
   LoggingManager.instance.general.info('\n \n *********************** \n \n');
   LoggingManager.instance.general.info('LoggingManager initialized.');
   LoggingManager.instance.general.info('Application started');
@@ -149,12 +149,9 @@ class _AppRootState extends State<AppRoot> {
     LoggingManager.instance.player.info('Initializing Player state');
     super.initState();
 
-    const String address = '0.0.0.0';
-    const int port = 8080;
-
     _server = Server(
-        address: address,
-        port: port,
+        address: kServerAddress,
+        port: kServerPort,
         onHeartbeatReceived: _handleHeartbeatReceived,
         onPlaybackCommand: _handlePlaybackCommand,
         onShowFileReceived: _handleShowfileReceived,

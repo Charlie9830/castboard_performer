@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:castboard_performer/service_advertiser/mdns/platform_implementations/mdns_linux_impl.dart';
+import 'package:castboard_performer/service_advertiser/mdns/platform_implementations/linux/mdns_linux_impl.dart';
 import 'package:castboard_performer/service_advertiser/mdns/platform_implementations/mdns_macos_impl.dart';
 import 'package:castboard_performer/service_advertiser/mdns/platform_implementations/mdns_noop_impl.dart';
 import 'package:castboard_performer/service_advertiser/mdns/platform_implementations/mdns_windows_impl.dart';

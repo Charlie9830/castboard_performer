@@ -45,6 +45,9 @@ typedef OnPreviewStreamListenersStateChangedCallback = void Function(
 const _webAppFilePath = 'web_app/';
 const _defaultDocument = 'index.html';
 
+const String kServerAddress = '0.0.0.0';
+const int kServerPort = 8080;
+
 // WebSocket Stream
 final Map<String, WebSocketChannel> _webSocketChannels = {};
 
