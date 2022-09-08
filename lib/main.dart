@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:castboard_core/enums.dart';
+import 'package:castboard_core/image_compressor/image_compressor.dart';
 import 'package:castboard_core/logging/LoggingManager.dart';
 import 'package:castboard_core/models/ActorIndex.dart';
 import 'package:castboard_core/models/ActorModel.dart';
@@ -22,12 +24,11 @@ import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_core/storage/ImportedShowData.dart';
 import 'package:castboard_core/storage/Storage.dart';
 import 'package:castboard_core/system-commands/SystemCommands.dart';
-import 'package:castboard_core/utils/compressImage.dart';
 import 'package:castboard_core/version/fileVersion.dart';
 import 'package:castboard_performer/ConfigViewer.dart';
 import 'package:castboard_performer/CriticalError.dart';
 import 'package:castboard_performer/LoadingSplash.dart';
-import 'package:castboard_performer/Player.dart';
+import 'package:castboard_core/widgets/Player.dart';
 import 'package:castboard_performer/RouteNames.dart';
 import 'package:castboard_performer/SlideCycler.dart';
 import 'package:castboard_performer/UpdateStatusSplash.dart';
@@ -215,6 +216,7 @@ class _AppRootState extends State<AppRoot> {
                       .orientated(_slideOrientation),
                   slideOrientation: _slideOrientation,
                   playing: _playing,
+                  offstageUpcomingSlides: true,
                 ),
             RouteNames.configViewer: (_) => const ConfigViewer(),
           },
@@ -883,7 +885,13 @@ class _AppRootState extends State<AppRoot> {
 
     if (_previewStreamCompressor != null) {
       _previewStreamCompressor!.dispatchImageToCompressor(
-          byteData.buffer.asUint8List(), image.width, image.height);
+          ImageSourceData(
+              width: image.width,
+              height: image.height,
+              bytes: byteData.buffer.asUint8List()),
+          ImageOutputParameters(
+            quality: 50,
+          ));
     }
   }
 
@@ -903,8 +911,8 @@ class _AppRootState extends State<AppRoot> {
       await _previewStreamCompressor!.spinUp();
 
       // Plumb it's output stream to the Server.
-      _previewStreamCompressor!.outputStream
-          .listen((bytes) => _server!.sendFrameToPreviewStream(bytes));
+      _previewStreamCompressor!.outputStream.listen((result) =>
+          _server!.sendFrameToPreviewStream(Uint8List.fromList(result.bytes)));
     }
 
     if (listenerState == PreviewStreamListenerState.listenerJoined) {
