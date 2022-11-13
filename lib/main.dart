@@ -214,6 +214,7 @@ class _AppRootState extends State<AppRoot> {
                   displayedCastChange: _displayedCastChange,
                   slideSize: const SlideSizeModel.defaultSize()
                       .orientated(_slideOrientation),
+                  
                   slideOrientation: _slideOrientation,
                   playing: _playing,
                   offstageUpcomingSlides: true,
