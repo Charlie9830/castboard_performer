@@ -4,6 +4,7 @@ import 'package:castboard_core/logging/LoggingManager.dart';
 import 'package:castboard_core/models/RemoteShowData.dart';
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_core/models/system_controller/DeviceResolution.dart';
+import 'package:castboard_core/storage/Storage.dart';
 import 'package:castboard_core/utils/getUid.dart';
 import 'package:castboard_performer/models/ShowFileUploadResult.dart';
 import 'package:castboard_performer/server/Routes.dart';
@@ -40,16 +41,20 @@ typedef OnPrepareLogsDownloadCallback = Future<File> Function();
 typedef OnSoftwareUpdateCallback = Future<bool> Function(List<int> byteData);
 typedef OnPreviewStreamListenersStateChangedCallback = void Function(
     bool hasListeners, PreviewStreamListenerState listenerState);
+typedef OnSlideshowClientConnectionEstablished = void Function(
+    void Function(String html) initialDataCallback);
 
 // Config
 const _webAppFilePath = 'web_app/';
 const _defaultDocument = 'index.html';
 
-const String kServerAddress = '0.0.0.0';
+const String kServerAddress = '127.0.0.1';
 const int kServerPort = 8080;
 
 // WebSocket Stream
-final Map<String, WebSocketChannel> _webSocketChannels = {};
+final Map<String, WebSocketChannel> _previewStreamWebSocketChannels = {};
+final List<WebSocketChannel> _webViewerWebSocketChannels = [];
+bool get hasWebViewerClients => _webViewerWebSocketChannels.isNotEmpty;
 
 enum PlaybackCommand {
   play,
@@ -79,6 +84,8 @@ class Server {
   final OnSoftwareUpdateCallback? onSoftwareUpdate;
   final OnPreviewStreamListenersStateChangedCallback?
       onPreviewStreamListenersChanged;
+  final OnSlideshowClientConnectionEstablished?
+      onWebViewerClientConnectionEstablished;
 
   File? _showfileDownloadTarget;
   File? _logsDownloadTarget;
@@ -100,6 +107,7 @@ class Server {
     this.onSoftwareUpdate,
     this.onPreviewStreamListenersChanged,
     required this.onHeartbeatReceived,
+    this.onWebViewerClientConnectionEstablished,
   });
 
   Future<void> initalize() async {
@@ -138,6 +146,9 @@ class Server {
       LoggingManager.instance.server
           .info("Server running at ${server.address}:${server.port}");
     } catch (e, stacktrace) {
+      // TODO: Trying to use a Socket that is already in use will throw a Socket Exception here.
+      // We should provide more information to the user about this instead of just throwing them into a general
+      // server error.
       LoggingManager.instance.server
           .severe('General error starting the shelf server', e, stacktrace);
       rethrow;
@@ -275,26 +286,60 @@ class Server {
       return handleShowDataPost(req, onShowDataReceived);
     });
 
-    // Websocket
-    router.get('/ws', webSocketHandler(_handleWebSocketConnectionEstablished));
+    // Preview Stream Websocket.
+    router.get('/preview',
+        webSocketHandler(_handlePreviewStreamWebSocketConnectionEstablished));
 
+    // Slideshow Websocket.
+    router.get(
+        '/slideshow', webSocketHandler(_handleWebViewerConnectionEstablished));
+
+    // Slideshow Asset Requests.
+    router.get('/slideshow/headshots/<headshot>', handleHeadshotRequest);
+    router.get('/slideshow/images/<image>', handleImageRequest);
+    router.get('/slideshow/backgrounds/<background>', handleBackgroundRequest);
+    router.get(
+        '/slideshow/fonts/builtin/<familyname>', handleBuiltInFontRequest);
+    router.get('/slideshow/fonts/custom/<fontId>', handleCustomFontRequest);
     return router;
   }
 
-  void _handleWebSocketConnectionEstablished(WebSocketChannel webSocket) {
+  void _handleWebViewerConnectionEstablished(WebSocketChannel webSocket) {
+    void noop(dynamic event) {}
+
+    // Setup onDone Listener. Actual Listener is just a noop as we don't care what the client sends to us,
+    // only that they are listening on the other end.
+    webSocket.stream.listen(noop, onDone: () {
+      // Remove the channel when the client has disconnected.
+      _webViewerWebSocketChannels.remove(webSocket);
+    });
+
+    // Add the channel to the list.
+    _webViewerWebSocketChannels.add(webSocket);
+
+    // Call the onWebViewerClientConnectionEstablished callback to fetch the initial Slide HTML payload.
+    onWebViewerClientConnectionEstablished?.call((initialPayload) {
+      webSocket.sink.add(initialPayload);
+    });
+  }
+
+  void _handlePreviewStreamWebSocketConnectionEstablished(
+      WebSocketChannel webSocket) {
     final String id = getUid();
     void noop(dynamic event) {}
 
     // Setup onDone Listener. Actual Listener is just a noop as we don't care what the client sends to us,
     // only that they are listening on the other end.
     webSocket.stream.listen(noop, onDone: () {
-      _webSocketChannels.remove(id);
-      onPreviewStreamListenersChanged?.call(_webSocketChannels.isNotEmpty,
+      _previewStreamWebSocketChannels.remove(id);
+      onPreviewStreamListenersChanged?.call(
+          _previewStreamWebSocketChannels.isNotEmpty,
           PreviewStreamListenerState.listenerLeft);
     }, cancelOnError: true);
 
-    _webSocketChannels[id] = webSocket;
-    onPreviewStreamListenersChanged?.call(_webSocketChannels.isNotEmpty,
+    _previewStreamWebSocketChannels[id] = webSocket;
+    onPreviewStreamListenersChanged?.call(
+        _previewStreamWebSocketChannels.isNotEmpty,
         PreviewStreamListenerState.listenerJoined);
   }
 
@@ -303,10 +348,11 @@ class Server {
   }
 
   void sendFrameToPreviewStream(Uint8List bytes) {
-    for (var channel in _webSocketChannels.values) {
+    for (var channel in _previewStreamWebSocketChannels.values) {
       channel.sink.add(bytes);
     }
   }
 
-  bool get previewStreamHasListeners => _webSocketChannels.isNotEmpty;
+  bool get previewStreamHasListeners =>
+      _previewStreamWebSocketChannels.isNotEmpty;
 }

@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:castboard_core/classes/FontRef.dart';
+import 'package:castboard_core/classes/PhotoRef.dart';
 import 'package:castboard_core/enum-converters/EnumConversionError.dart';
 import 'package:castboard_core/logging/LoggingManager.dart';
 import 'package:castboard_core/models/RemoteShowData.dart';
@@ -9,11 +11,105 @@ import 'package:castboard_core/storage/Storage.dart';
 import 'package:castboard_core/system-commands/SystemCommands.dart';
 import 'package:castboard_performer/server/PrepareDownloadTuple.dart';
 import 'package:castboard_performer/server/Server.dart';
+import 'package:castboard_performer/server/build_image_etag.dart';
 import 'package:castboard_performer/server/generateFileHeaders.dart';
+import 'package:castboard_performer/server/match_image_etag.dart';
 import 'package:castboard_performer/server/readMultipartFileRequest.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf_plus/shelf_plus.dart';
 import 'package:shelf_multipart/multipart.dart';
+
+Future<Response> handleHeadshotRequest(Request request, String filename) async {
+  final ref = ImageRef.fromFilename(filename);
+
+  if (matchImageEtag(request, ref)) {
+    // Return 304 - Not Modified, this forces the browser to use it's own cached version.
+    return Response(304);
+  }
+
+  final file = Storage.instance.getHeadshotFile(ref);
+  if (file == null || await file.exists() == false) {
+    return Response.notFound(null);
+  }
+
+  return Response.ok(file.openRead(), headers: buildImageEtag(ref));
+}
+
+Future<Response> handleImageRequest(Request request, String filename) async {
+  final ref = ImageRef.fromFilename(filename);
+
+  if (matchImageEtag(request, ref)) {
+    // Return 304 - Not Modified, this forces the browser to use it's own cached version.
+    return Response(304);
+  }
+
+  final file = Storage.instance.getImageFile(ref);
+  if (file == null || await file.exists() == false) {
+    return Response.notFound(null);
+  }
+
+  return Response.ok(file.openRead());
+}
+
+Future<Response> handleBackgroundRequest(
+    Request request, String filename) async {
+  final ref = ImageRef.fromFilename(filename);
+
+  if (matchImageEtag(request, ref)) {
+    // Return 304 - Not Modified, this forces the browser to use it's own cached version.
+    return Response(304);
+  }
+
+  final file = Storage.instance.getBackgroundFile(ref);
+  if (file == null || await file.exists() == false) {
+    return Response.notFound(null);
+  }
+
+  return Response.ok(file.openRead());
+}
+
+Future<Response> handleBuiltInFontRequest(
+    Request request, String fontFamily) async {
+  const regularSuffix = '-Regular';
+  const variableWeightSuffix = '-VariableFont_wght';
+  const extension = '.ttf';
+
+  final decoded = Uri.decodeComponent(fontFamily);
+  final fontDirectory =
+      decoded.replaceAll(' ', '_'); // Replace spaces with underscores
+  final fontFileBaseName = decoded.replaceAll(' ', ''); // Remove Spaces.
+
+  try {
+    // Try to fetch font with the -Regular suffix first.
+    final bytes = await rootBundle.load(
+        'assets/fonts/$fontDirectory/$fontFileBaseName$regularSuffix$extension');
+
+    return Response.ok(bytes.buffer.asUint8List());
+  } on FlutterError {
+    // Font may not have a -Regular suffix. Try -VariableFont_wght suffix instead.
+    final bytes = await rootBundle.load(
+        'assets/fonts/$fontDirectory/$fontFileBaseName$variableWeightSuffix$extension');
+
+    return Response.ok(bytes.buffer.asUint8List());
+  } catch (e, stacktrace) {
+    // Another error occurred.
+    LoggingManager.instance.server
+        .warning('Failed to serve Built in Font File.', e, stacktrace);
+    return Response.notFound(null);
+  }
+}
+
+Future<Response> handleCustomFontRequest(Request request, String fontId) async {
+  final fontFile = Storage.instance.getFontFile(FontRef.fromString(fontId));
+
+  if (fontFile == null || await fontFile.exists() == false) {
+    return Response.notFound(null);
+  }
+
+  return Response.ok(fontFile.openRead());
+}
 
 Future<Response> handleHeartbeat(
     Request request, void Function(String sessionId) onHeartbeat) async {
@@ -342,4 +438,14 @@ Future<Response> handleLogsDownload(
 
   return Response.ok(logsArchive.openRead(),
       headers: await generateFileHeaders(logsArchive));
+}
+
+Future<Response> _handleHeadshotRequest(
+    Request request, String filename) async {
+  if (Storage.initialized == false) {
+    return Response.internalServerError();
+  }
+
+  return Response.ok(
+      Storage.instance.getHeadshotFile(ImageRef.fromFilename(filename)));
 }

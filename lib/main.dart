@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:castboard_core/enums.dart';
 import 'package:castboard_core/image_compressor/image_compressor.dart';
@@ -21,10 +20,18 @@ import 'package:castboard_core/models/SlideModel.dart';
 import 'package:castboard_core/models/TrackRef.dart';
 import 'package:castboard_core/models/performerDeviceModel.dart';
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
+import 'package:castboard_core/models/web_viewer/html_slide_model.dart';
+import 'package:castboard_core/models/web_viewer/message_model.dart';
+import 'package:castboard_core/models/web_viewer/slides_payload_model.dart';
+import 'package:castboard_core/models/web_viewer/web_viewer_font_manifest.dart';
 import 'package:castboard_core/storage/ImportedShowData.dart';
 import 'package:castboard_core/storage/Storage.dart';
 import 'package:castboard_core/system-commands/SystemCommands.dart';
+import 'package:castboard_core/utils/build_font_list.dart';
 import 'package:castboard_core/version/fileVersion.dart';
+import 'package:castboard_core/web_renderer/build_background_html.dart';
+import 'package:castboard_core/web_renderer/build_slide_base_html.dart';
+import 'package:castboard_core/web_renderer/build_slide_elements_html.dart';
 import 'package:castboard_performer/ConfigViewer.dart';
 import 'package:castboard_performer/CriticalError.dart';
 import 'package:castboard_performer/LoadingSplash.dart';
@@ -45,8 +52,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'dart:ui' as ui;
-import 'package:image/image.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey renderBoundaryKey = GlobalKey();
@@ -83,8 +88,6 @@ Future<void> _initLogging() async {
   LoggingManager.instance.general.info('Application started');
   return;
 }
-
-Server? server;
 
 class AppRoot extends StatefulWidget {
   final String criticalError;
@@ -164,7 +167,9 @@ class _AppRootState extends State<AppRoot> {
         onSystemConfigPostCallback: _handleSystemConfigPost,
         onPrepareLogsDownloadCallback: _handlePrepareLogsDownloadRequest,
         onSoftwareUpdate: _handleSoftwareUpdate,
-        onPreviewStreamListenersChanged: _handlePreviewListenersChanged);
+        onPreviewStreamListenersChanged: _handlePreviewListenersChanged,
+        onWebViewerClientConnectionEstablished:
+            _handleSlideShowClientConnectionEstablished);
 
     _heartbeatTimer = Timer.periodic(
         const Duration(seconds: 30), (_) => _checkHeartbeats(30));
@@ -214,7 +219,7 @@ class _AppRootState extends State<AppRoot> {
                   displayedCastChange: _displayedCastChange,
                   slideSize: const SlideSizeModel.defaultSize()
                       .orientated(_slideOrientation),
-                  
+
                   slideOrientation: _slideOrientation,
                   playing: _playing,
                   offstageUpcomingSlides: true,
@@ -425,6 +430,8 @@ class _AppRootState extends State<AppRoot> {
       LoggingManager.instance.server
           .warning('Failed to initialize discovery service', e, stacktrace);
     }
+
+    print('Service Discovery Running');
 
     LoggingManager.instance.player
         .info("Searching for previously loaded show file");
@@ -902,6 +909,48 @@ class _AppRootState extends State<AppRoot> {
         _captureAndSendPreviewFrame();
       });
     }
+  }
+
+  void _handleSlideShowClientConnectionEstablished(
+      void Function(String initialPayload) initalPayloadCallback) {
+    initalPayloadCallback(MessageModel(
+            type: MessageType.payload, payload: _buildSlidesPayload().toJson())
+        .toJson());
+  }
+
+  SlidesPayloadModel _buildSlidesPayload() {
+    final slideAssetsUrlPrefix = 'http://${_server!.address}:${_server!.port}/slideshow';
+    
+    return SlidesPayloadModel(
+        fontManifest: WebViewerFontManifest.fromList(
+          urlPrefix: slideAssetsUrlPrefix,
+          requiredFontFamilies: buildFontList(_slides.values.toList()),
+          customFonts: _fileManifest.requiredFonts,
+        ),
+        currentSlideIndex: _slides.keys.toList().indexOf(_currentSlideId),
+        slides: _slides.values.map((slide) {
+          final slideElement = buildSlideElementsHtml(
+            urlPrefix: slideAssetsUrlPrefix,
+            slide: slide,
+            actors: _actors,
+            castChange: _displayedCastChange,
+            trackRefsByName: _trackRefsByName,
+            tracks: _tracks,
+          );
+
+          final backgroundElement = buildBackgroundHtml(
+              urlPrefix: slideAssetsUrlPrefix,
+              slides: _slides,
+              slideId: slide.uid,
+              slideSize: const SlideSizeModel.defaultSize()
+                  .orientated(_slideOrientation)
+                  .toSize());
+
+          slideElement.append(backgroundElement);
+
+          return HTMLSlideModel(
+              holdTime: slide.holdTime, html: slideElement.outerHtml);
+        }).toList());
   }
 
   void _handlePreviewListenersChanged(
