@@ -13,6 +13,7 @@ class LoadingSplash extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    print(Theme.of(context).scaffoldBackgroundColor);
     return Material(
       child: Stack(
         alignment: Alignment.center,

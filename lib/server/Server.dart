@@ -4,6 +4,7 @@ import 'package:castboard_core/logging/LoggingManager.dart';
 import 'package:castboard_core/models/RemoteShowData.dart';
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_core/models/system_controller/DeviceResolution.dart';
+import 'package:castboard_core/models/web_viewer/message_model.dart';
 import 'package:castboard_core/storage/Storage.dart';
 import 'package:castboard_core/utils/getUid.dart';
 import 'package:castboard_performer/models/ShowFileUploadResult.dart';
@@ -41,8 +42,7 @@ typedef OnPrepareLogsDownloadCallback = Future<File> Function();
 typedef OnSoftwareUpdateCallback = Future<bool> Function(List<int> byteData);
 typedef OnPreviewStreamListenersStateChangedCallback = void Function(
     bool hasListeners, PreviewStreamListenerState listenerState);
-typedef OnSlideshowClientConnectionEstablished = void Function(
-    void Function(String html) initialDataCallback);
+typedef OnSlideshowClientConnectionEstablished = void Function();
 
 // Config
 const _webAppFilePath = 'web_app/';
@@ -140,9 +140,10 @@ class Server {
             .addMiddleware(corsHeaders())
             .addMiddleware(cacheHeaders())
             .addHandler(cascade.handler),
-        address,
+        InternetAddress.anyIPv4,
         port,
       );
+      print(server.address);
       LoggingManager.instance.server
           .info("Server running at ${server.address}:${server.port}");
     } catch (e, stacktrace) {
@@ -291,17 +292,41 @@ class Server {
         webSocketHandler(_handlePreviewStreamWebSocketConnectionEstablished));
 
     // Slideshow Websocket.
-    router.get(
-        '/slideshow', webSocketHandler(_handleWebViewerConnectionEstablished));
+    router.get('/api/slideshow',
+        webSocketHandler(_handleWebViewerConnectionEstablished));
 
     // Slideshow Asset Requests.
-    router.get('/slideshow/headshots/<headshot>', handleHeadshotRequest);
-    router.get('/slideshow/images/<image>', handleImageRequest);
-    router.get('/slideshow/backgrounds/<background>', handleBackgroundRequest);
+    router.get('/api/slideshow/headshots/<headshot>', handleHeadshotRequest);
+    router.get('/api/slideshow/images/<image>', handleImageRequest);
     router.get(
-        '/slideshow/fonts/builtin/<familyname>', handleBuiltInFontRequest);
-    router.get('/slideshow/fonts/custom/<fontId>', handleCustomFontRequest);
+        '/api/slideshow/backgrounds/<background>', handleBackgroundRequest);
+    router.get(
+        '/api/slideshow/fonts/builtin/<familyname>', handleBuiltInFontRequest);
+    router.get('/api/slideshow/fonts/custom/<fontId>', handleCustomFontRequest);
     return router;
+  }
+
+  void setWebViewerClientsSlideIndex(int index) {
+    if (_webViewerWebSocketChannels.isEmpty) {
+      return;
+    }
+
+    final message =
+        MessageModel(type: MessageType.slideIndex, payload: index.toString());
+
+    for (final channel in _webViewerWebSocketChannels) {
+      channel.sink.add(message.toJson());
+    }
+  }
+
+  void updateWebViewerClientHTML(MessageModel message) {
+    if (_webViewerWebSocketChannels.isEmpty) {
+      return;
+    }
+
+    for (final channel in _webViewerWebSocketChannels) {
+      channel.sink.add(message.toJson());
+    }
   }
 
   void _handleWebViewerConnectionEstablished(WebSocketChannel webSocket) {
@@ -317,10 +342,9 @@ class Server {
     // Add the channel to the list.
     _webViewerWebSocketChannels.add(webSocket);
 
-    // Call the onWebViewerClientConnectionEstablished callback to fetch the initial Slide HTML payload.
-    onWebViewerClientConnectionEstablished?.call((initialPayload) {
-      webSocket.sink.add(initialPayload);
-    });
+    // Call the onWebViewerClientConnectionEstablished to inform Performer that a connection has been established.
+    // Performer will then call the updateWebViewerHTML function to send the html slides to the client.
+    onWebViewerClientConnectionEstablished?.call();
   }
 
   void _handlePreviewStreamWebSocketConnectionEstablished(

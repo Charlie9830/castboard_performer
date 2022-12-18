@@ -30,7 +30,6 @@ import 'package:castboard_core/system-commands/SystemCommands.dart';
 import 'package:castboard_core/utils/build_font_list.dart';
 import 'package:castboard_core/version/fileVersion.dart';
 import 'package:castboard_core/web_renderer/build_background_html.dart';
-import 'package:castboard_core/web_renderer/build_slide_base_html.dart';
 import 'package:castboard_core/web_renderer/build_slide_elements_html.dart';
 import 'package:castboard_performer/ConfigViewer.dart';
 import 'package:castboard_performer/CriticalError.dart';
@@ -134,7 +133,7 @@ class _AppRootState extends State<AppRoot> {
   SystemConfig _runningConfig = SystemConfig.defaults();
 
   // Non Tracked State
-  Server? _server;
+  late final Server _server;
   final Map<String, DateTime> _sessionHeartbeats = {};
   late Timer _heartbeatTimer;
   final SystemController _systemController = SystemController();
@@ -588,6 +587,8 @@ class _AppRootState extends State<AppRoot> {
       _fileManifest = data.manifest;
     });
 
+    _updateWebViewerClientHTML();
+
     LoggingManager.instance.player
         .info("Load show completed. Pushing player route");
 
@@ -609,14 +610,13 @@ class _AppRootState extends State<AppRoot> {
     });
 
     _updatePreviewStream();
+
+    _server.setWebViewerClientsSlideIndex(
+        _slides.keys.toList().indexOf(currentSlideId));
   }
 
   Future<void> _initializeServer() async {
-    if (_server != null) {
-      return await _server!.initalize();
-    }
-
-    return;
+    return await _server.initalize();
   }
 
   void _handleSystemCommandReceived(SystemCommand command) {
@@ -705,6 +705,8 @@ class _AppRootState extends State<AppRoot> {
           'An Error occured whilst updating permanent storage', e, stacktrace);
       return false;
     }
+
+    _updateWebViewerClientHTML();
 
     return true;
   }
@@ -904,23 +906,28 @@ class _AppRootState extends State<AppRoot> {
   }
 
   void _updatePreviewStream() async {
-    if (_server!.previewStreamHasListeners == true) {
+    if (_server.previewStreamHasListeners == true) {
       WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
         _captureAndSendPreviewFrame();
       });
     }
   }
 
-  void _handleSlideShowClientConnectionEstablished(
-      void Function(String initialPayload) initalPayloadCallback) {
-    initalPayloadCallback(MessageModel(
-            type: MessageType.payload, payload: _buildSlidesPayload().toJson())
-        .toJson());
+  void _handleSlideShowClientConnectionEstablished() {
+    _updateWebViewerClientHTML();
+  }
+
+  void _updateWebViewerClientHTML() {
+    print('Sending');
+    _server.updateWebViewerClientHTML(MessageModel(
+        type: MessageType.payload, payload: _buildSlidesPayload().toJson()));
   }
 
   SlidesPayloadModel _buildSlidesPayload() {
-    final slideAssetsUrlPrefix = 'http://${_server!.address}:${_server!.port}/slideshow';
-    
+    final slideAssetsUrlPrefix = kDebugMode
+        ? 'http://${_server.address}:${_server.port}/api/slideshow'
+        : '/api/slideshow';
+
     return SlidesPayloadModel(
         fontManifest: WebViewerFontManifest.fromList(
           urlPrefix: slideAssetsUrlPrefix,
