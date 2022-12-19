@@ -39,12 +39,11 @@ class _SettingsState extends State<Settings> {
 
                 const SizedBox(height: 32),
 
-                // Remote Control
-                const _Title(title: 'Showcaller Remote Control'),
-                Text(
-                    'Showcaller provides an interface to control Castboard Performer locally on the same device or remotely from another device via a local network connection.',
-                    style: Theme.of(context).textTheme.bodyMedium),
-                const SizedBox(height: 8),
+                // Local Control
+                const _Title(title: 'Showcaller Local Control'),
+                Text('Click below to open Showcaller locally on your device.',
+                    style: Theme.of(context).textTheme.bodySmall),
+                const SizedBox(height: 16),
                 OutlinedButton(
                     onPressed: () async {
                       final addresses = await NetworkInterface.list(
@@ -55,20 +54,26 @@ class _SettingsState extends State<Settings> {
                       print(addresses);
                     },
                     child: const Text('Open Showcaller')),
-                const SizedBox(height: 8),
+
+                const SizedBox(height: 32),
+
+                // Remote Control
+                const _Title(title: 'Showcaller Remote Control'),
                 Text(
-                    'Showcaller can be accessed remotely via a network connection simply by opening a browser and navigating to one of these addresses: ',
-                    style: Theme.of(context).textTheme.bodyMedium),
+                    'Showcaller can be accessed remotely via a network connection simply by opening a browser and navigating to one of these addresses. ',
+                    style: Theme.of(context).textTheme.bodySmall),
                 AddressListDisplay(portNumber: widget.serverPortNumber),
 
                 const SizedBox(height: 32),
 
                 // Web Slideshow.
                 const _Title(title: 'Web Slideshow'),
-                const Text(
-                    'Any remote Smart TV or other device with a Web Browser that is connected to the same local network can display the slide show.'),
-                const Text(
-                    'To connect a remote Smart TV, access it\'s web browser and navigate to one of the following addresses'),
+                Text(
+                    'Any remote Smart TV or other device with a Web Browser that is connected to the same local network can display the slide show.',
+                    style: Theme.of(context).textTheme.bodySmall),
+                Text(
+                    'To connect a remote Smart TV, access it\'s web browser and navigate to one of the following addresses',
+                    style: Theme.of(context).textTheme.bodySmall),
                 AddressListDisplay(
                   portNumber: widget.serverPortNumber,
                   addressSuffix: 'slideshow',
