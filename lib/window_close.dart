@@ -9,7 +9,6 @@ import 'package:flutter_window_close/flutter_window_close.dart';
 void registerWindowCloseHook({
   required Server server,
   required SystemController systemController,
-  required ImageCompressor? previewStreamCompressor,
 }) {
   if (Platform.isLinux &&
       const bool.hasEnvironment('ELINUX_IS_DESKTOP') == false) {
@@ -21,7 +20,6 @@ void registerWindowCloseHook({
     await ServiceAdvertiser.instance.stop();
     await server.shutdown();
     await systemController.dispose();
-    previewStreamCompressor?.spinDown();
     return true;
   });
 }

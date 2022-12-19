@@ -173,9 +173,9 @@ class _AppRootState extends State<AppRoot> {
     _initializePerformer();
 
     registerWindowCloseHook(
-        server: _server!,
-        systemController: _systemController,
-        );
+      server: _server,
+      systemController: _systemController,
+    );
   }
 
   @override
@@ -919,9 +919,7 @@ class _AppRootState extends State<AppRoot> {
 
   @override
   void dispose() {
-    if (_server != null) {
-      _server!.shutdown();
-    }
+    _server.shutdown();
     super.dispose();
   }
 }
