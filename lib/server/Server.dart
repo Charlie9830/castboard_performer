@@ -80,8 +80,6 @@ class Server {
   final OnPrepareShowfileDownloadCallback? onPrepareShowfileDownload;
   final OnPrepareLogsDownloadCallback? onPrepareLogsDownloadCallback;
   final OnSoftwareUpdateCallback? onSoftwareUpdate;
-  final OnPreviewStreamListenersStateChangedCallback?
-      onPreviewStreamListenersChanged;
   final OnSlideshowClientConnectionEstablished?
       onWebViewerClientConnectionEstablished;
 
@@ -101,7 +99,6 @@ class Server {
     this.onPrepareShowfileDownload,
     this.onPrepareLogsDownloadCallback,
     this.onSoftwareUpdate,
-    this.onPreviewStreamListenersChanged,
     required this.onHeartbeatReceived,
     this.onWebViewerClientConnectionEstablished,
   });
@@ -282,10 +279,6 @@ class Server {
       return handleShowDataPost(req, onShowDataReceived);
     });
 
-    // Preview Stream Websocket.
-    router.get('/preview',
-        webSocketHandler(_handlePreviewStreamWebSocketConnectionEstablished));
-
     // Slideshow Websocket.
     router.get('/api/slideshow',
         webSocketHandler(_handleWebViewerConnectionEstablished));
@@ -342,35 +335,10 @@ class Server {
     onWebViewerClientConnectionEstablished?.call();
   }
 
-  void _handlePreviewStreamWebSocketConnectionEstablished(
-      WebSocketChannel webSocket) {
-    final String id = getUid();
-    void noop(dynamic event) {}
-
-    // Setup onDone Listener. Actual Listener is just a noop as we don't care what the client sends to us,
-    // only that they are listening on the other end.
-    webSocket.stream.listen(noop, onDone: () {
-      _previewStreamWebSocketChannels.remove(id);
-      onPreviewStreamListenersChanged?.call(
-          _previewStreamWebSocketChannels.isNotEmpty,
-          PreviewStreamListenerState.listenerLeft);
-    }, cancelOnError: true);
-
-    _previewStreamWebSocketChannels[id] = webSocket;
-    onPreviewStreamListenersChanged?.call(
-        _previewStreamWebSocketChannels.isNotEmpty,
-        PreviewStreamListenerState.listenerJoined);
-  }
-
   Future<void> shutdown() async {
     return server.close();
   }
 
-  void sendFrameToPreviewStream(Uint8List bytes) {
-    for (var channel in _previewStreamWebSocketChannels.values) {
-      channel.sink.add(bytes);
-    }
-  }
 
   bool get previewStreamHasListeners =>
       _previewStreamWebSocketChannels.isNotEmpty;

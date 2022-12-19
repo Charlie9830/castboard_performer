@@ -138,7 +138,6 @@ class _AppRootState extends State<AppRoot> {
   final Map<String, DateTime> _sessionHeartbeats = {};
   late Timer _heartbeatTimer;
   final SystemController _systemController = SystemController();
-  ImageCompressor? _previewStreamCompressor;
 
   // Focus
   final FocusNode _keyboardFocusNode = FocusNode();
@@ -165,7 +164,6 @@ class _AppRootState extends State<AppRoot> {
         onSystemConfigPostCallback: _handleSystemConfigPost,
         onPrepareLogsDownloadCallback: _handlePrepareLogsDownloadRequest,
         onSoftwareUpdate: _handleSoftwareUpdate,
-        onPreviewStreamListenersChanged: _handlePreviewListenersChanged,
         onWebViewerClientConnectionEstablished:
             _handleSlideShowClientConnectionEstablished);
 
@@ -177,7 +175,7 @@ class _AppRootState extends State<AppRoot> {
     registerWindowCloseHook(
         server: _server!,
         systemController: _systemController,
-        previewStreamCompressor: _previewStreamCompressor);
+        );
   }
 
   @override
@@ -611,8 +609,6 @@ class _AppRootState extends State<AppRoot> {
       _playing = playing;
     });
 
-    _updatePreviewStream();
-
     _server.setWebViewerClientsSlideIndex(
         _slides.keys.toList().indexOf(currentSlideId));
   }
@@ -874,47 +870,6 @@ class _AppRootState extends State<AppRoot> {
     return;
   }
 
-  void _captureAndSendPreviewFrame() async {
-    if (renderBoundaryKey.currentContext == null) {
-      return;
-    }
-
-    final renderObject = renderBoundaryKey.currentContext!.findRenderObject();
-    if (renderObject == null ||
-        renderObject is RenderRepaintBoundary == false) {
-      return;
-    }
-
-    final boundary = renderObject as RenderRepaintBoundary;
-
-    final image = await boundary.toImage(pixelRatio: 0.5);
-
-    final byteData = await image.toByteData();
-
-    if (byteData == null) {
-      return;
-    }
-
-    if (_previewStreamCompressor != null) {
-      _previewStreamCompressor!.dispatchImageToCompressor(
-          ImageSourceData(
-              width: image.width,
-              height: image.height,
-              bytes: byteData.buffer.asUint8List()),
-          ImageOutputParameters(
-            quality: 50,
-          ));
-    }
-  }
-
-  void _updatePreviewStream() async {
-    if (_server.previewStreamHasListeners == true) {
-      WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-        _captureAndSendPreviewFrame();
-      });
-    }
-  }
-
   void _handleSlideShowClientConnectionEstablished() {
     _updateWebViewerClientHTML();
   }
@@ -960,32 +915,6 @@ class _AppRootState extends State<AppRoot> {
           return HTMLSlideModel(
               holdTime: slide.holdTime, html: slideElement.outerHtml);
         }).toList());
-  }
-
-  void _handlePreviewListenersChanged(
-      bool hasListeners, PreviewStreamListenerState listenerState) async {
-    if (hasListeners && _previewStreamCompressor == null) {
-      // Initialize the Image Compressor.
-      _previewStreamCompressor = ImageCompressor();
-      await _previewStreamCompressor!.spinUp();
-
-      // Plumb it's output stream to the Server.
-      _previewStreamCompressor!.outputStream.listen((result) =>
-          _server!.sendFrameToPreviewStream(Uint8List.fromList(result.bytes)));
-    }
-
-    if (listenerState == PreviewStreamListenerState.listenerJoined) {
-      // If we are paused. Dispatch a frame for the new listener.
-      if (_playing == false) {
-        _captureAndSendPreviewFrame();
-      }
-    }
-
-    if (hasListeners == false && _previewStreamCompressor != null) {
-      // Shutdown the Image Compressor.
-      _previewStreamCompressor!.spinDown();
-      _previewStreamCompressor = null;
-    }
   }
 
   @override
