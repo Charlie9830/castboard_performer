@@ -43,6 +43,7 @@ import 'package:castboard_performer/models/ShowFileUploadResult.dart';
 import 'package:castboard_performer/scheduleRestart.dart';
 import 'package:castboard_performer/server/Server.dart';
 import 'package:castboard_performer/service_advertiser/serviceAdvertiser.dart';
+import 'package:castboard_performer/settings.dart';
 import 'package:castboard_performer/system_controller/SystemConfigCommitResult.dart';
 import 'package:castboard_performer/system_controller/SystemController.dart';
 import 'package:castboard_performer/window_close.dart';
@@ -153,8 +154,6 @@ class _AppRootState extends State<AppRoot> {
     super.initState();
 
     _server = Server(
-        address: kServerAddress,
-        port: kServerPort,
         onHeartbeatReceived: _handleHeartbeatReceived,
         onPlaybackCommand: _handlePlaybackCommand,
         onShowFileReceived: _handleShowfileReceived,
@@ -199,13 +198,17 @@ class _AppRootState extends State<AppRoot> {
           theme: ThemeData(
             fontFamily: 'Poppins',
             brightness: Brightness.dark,
-            primarySwatch: Colors.grey,
+            primarySwatch: Colors.orange,
           ),
           initialRoute: RouteNames.loadingSplash,
           routes: {
             RouteNames.loadingSplash: (_) => LoadingSplash(
                   status: _startupStatus,
                   criticalError: _criticalError,
+                ),
+            RouteNames.settings: (_) => Settings(
+                  serverPortNumber: kServerPort,
+                  onOpenButtonPressed: () {},
                 ),
             RouteNames.player: (_) => Player(
                   currentSlideId: _currentSlideId,
@@ -232,9 +235,8 @@ class _AppRootState extends State<AppRoot> {
 
   void _handleKeyboardEvent(RawKeyEvent event) async {
     if (event is RawKeyDownEvent) {
-      if (event.logicalKey == LogicalKeyboardKey.keyC &&
-          event.isControlPressed) {
-        exit(0);
+      if (event.logicalKey == LogicalKeyboardKey.escape) {
+        navigatorKey.currentState?.pushNamed(RouteNames.settings);
       }
     }
   }
@@ -925,7 +927,7 @@ class _AppRootState extends State<AppRoot> {
 
   SlidesPayloadModel _buildSlidesPayload() {
     final slideAssetsUrlPrefix = kDebugMode
-        ? 'http://${_server.address}:${_server.port}/api/slideshow'
+        ? 'http://${_server.address.address}:${_server.port}/api/slideshow'
         : '/api/slideshow';
 
     return SlidesPayloadModel(

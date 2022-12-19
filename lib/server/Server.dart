@@ -69,8 +69,6 @@ enum PreviewStreamListenerState {
 }
 
 class Server {
-  final String address;
-  final int port;
   final OnPlaybackCommandReceivedCallback? onPlaybackCommand;
   final OnShowFileReceivedCallback? onShowFileReceived;
   final OnShowDataPullCallback? onShowDataPull;
@@ -93,8 +91,6 @@ class Server {
   late HttpServer server;
 
   Server({
-    this.address = '0.0.0.0',
-    this.port = 8080,
     this.onPlaybackCommand,
     this.onShowFileReceived,
     this.onShowDataPull,
@@ -141,9 +137,8 @@ class Server {
             .addMiddleware(cacheHeaders())
             .addHandler(cascade.handler),
         InternetAddress.anyIPv4,
-        port,
+        kServerPort,
       );
-      print(server.address);
       LoggingManager.instance.server
           .info("Server running at ${server.address}:${server.port}");
     } catch (e, stacktrace) {
@@ -379,4 +374,8 @@ class Server {
 
   bool get previewStreamHasListeners =>
       _previewStreamWebSocketChannels.isNotEmpty;
+
+  InternetAddress get address => server.address;
+
+  int get port => server.port;
 }
