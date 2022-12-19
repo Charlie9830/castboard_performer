@@ -281,7 +281,7 @@ class Server {
 
     // Slideshow Websocket.
     router.get('/api/slideshow',
-        webSocketHandler(_handleWebViewerConnectionEstablished));
+        webSocketHandler(_handleWebClientConnectionEstablished));
 
     // Slideshow Asset Requests.
     router.get('/api/slideshow/headshots/<headshot>', handleHeadshotRequest);
@@ -317,7 +317,8 @@ class Server {
     }
   }
 
-  void _handleWebViewerConnectionEstablished(WebSocketChannel webSocket) {
+  void _handleWebClientConnectionEstablished(WebSocketChannel webSocket) {
+    // Noop listener for when the Client sends data to us, as we don't care what they send us.
     void noop(dynamic event) {}
 
     // Setup onDone Listener. Actual Listener is just a noop as we don't care what the client sends to us,

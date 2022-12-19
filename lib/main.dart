@@ -31,7 +31,7 @@ import 'package:castboard_core/utils/build_font_list.dart';
 import 'package:castboard_core/version/fileVersion.dart';
 import 'package:castboard_core/web_renderer/build_background_html.dart';
 import 'package:castboard_core/web_renderer/build_slide_elements_html.dart';
-import 'package:castboard_performer/ConfigViewer.dart';
+import 'package:castboard_performer/no_show_splash.dart';
 import 'package:castboard_performer/CriticalError.dart';
 import 'package:castboard_performer/LoadingSplash.dart';
 import 'package:castboard_core/widgets/Player.dart';
@@ -224,7 +224,7 @@ class _AppRootState extends State<AppRoot> {
                   playing: _playing,
                   offstageUpcomingSlides: true,
                 ),
-            RouteNames.configViewer: (_) => const ConfigViewer(),
+            RouteNames.noShowSplash: (_) => const NoShowSplash(),
           },
         ),
       ),
@@ -329,7 +329,7 @@ class _AppRootState extends State<AppRoot> {
       if (canReturnToSlideShow) {
         navigatorKey.currentState!.popAndPushNamed(RouteNames.player);
       } else {
-        navigatorKey.currentState!.popAndPushNamed(RouteNames.configViewer);
+        navigatorKey.currentState!.popAndPushNamed(RouteNames.noShowSplash);
       }
       return ShowfileUploadResult(
           validationResult: validationResult, generalResult: false);
@@ -473,7 +473,7 @@ class _AppRootState extends State<AppRoot> {
       LoggingManager.instance.player
           .info('No existing show file found. Proceeding to config route');
       await _checkUpdateStatusAndPushNextNamedRoute(
-          nextNamedRoute: RouteNames.configViewer);
+          nextNamedRoute: RouteNames.noShowSplash);
     }
   }
 

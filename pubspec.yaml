@@ -39,6 +39,7 @@ dependencies:
   shelf_static: ^1.1.1
   shelf_web_socket: ^1.0.2
   web_socket_channel: ^2.2.0
+  url_launcher: ^6.1.7
   
 dev_dependencies:
   flutter_lints: ^2.0.1
