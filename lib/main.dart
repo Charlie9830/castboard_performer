@@ -234,7 +234,11 @@ class _AppRootState extends State<AppRoot> {
   void _handleKeyboardEvent(RawKeyEvent event) async {
     if (event is RawKeyDownEvent) {
       if (event.logicalKey == LogicalKeyboardKey.escape) {
-        navigatorKey.currentState?.pushNamed(RouteNames.settings);
+        // Check that state of Navigator.canPop() and only procceed if it's false (ie we are at the root route).
+        // It's a bit hacky, but it ensures we can't open up multiple instances of the Settings Route on top of eachother.
+        if (navigatorKey.currentState?.canPop() == false) {
+          navigatorKey.currentState?.pushNamed(RouteNames.settings);
+        }
       }
     }
   }
