@@ -128,7 +128,7 @@ class _AppRootState extends State<AppRoot> {
   String _nextSlideId = '';
 
   // File Manifest
-  ManifestModel _fileManifest = ManifestModel();
+  ManifestModel _fileManifest = const ManifestModel.blank();
 
   // Current running configuration.
   SystemConfig _runningConfig = SystemConfig.defaults();
@@ -875,14 +875,21 @@ class _AppRootState extends State<AppRoot> {
   }
 
   void _updateWebViewerClientHTML() {
-    print('Sending');
+    if (_fileManifest == const ManifestModel.blank()) {
+      // No Show Loaded.
+      _server.updateWebViewerClientHTML(
+          MessageModel(type: MessageType.noShow, payload: ''));
+
+      return;
+    }
+
     _server.updateWebViewerClientHTML(MessageModel(
         type: MessageType.payload, payload: _buildSlidesPayload().toJson()));
   }
 
   SlidesPayloadModel _buildSlidesPayload() {
     final slideAssetsUrlPrefix = kDebugMode
-        ? 'http://${_server.address.address}:${_server.port}/api/slideshow'
+        ? 'http://localhost:${_server.port}/api/slideshow'
         : '/api/slideshow';
 
     return SlidesPayloadModel(
