@@ -52,6 +52,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:window_manager/window_manager.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey renderBoundaryKey = GlobalKey();
@@ -67,6 +68,29 @@ void main() async {
     criticalError = "$error\n$stacktrace";
     stderr.write('Failed to initialize LoggingManager. ${error.toString()}');
     print(criticalError);
+  }
+
+  // Window Manager
+  try {
+    WidgetsFlutterBinding.ensureInitialized();
+    // Must add this line.
+    await windowManager.ensureInitialized();
+
+    const WindowOptions windowOptions = WindowOptions(
+      size: Size(800, 600),
+      center: true,
+      backgroundColor: Colors.transparent,
+      fullScreen: kReleaseMode,
+      minimumSize: Size(1280, 800),
+    );
+
+    windowManager.waitUntilReadyToShow(windowOptions, () async {
+      await windowManager.show();
+      await windowManager.focus();
+    });
+  } catch (e, stacktrace) {
+    LoggingManager.instance.player
+        .severe('Failed to initialize Window Manager', e, stacktrace);
   }
 
   try {
@@ -206,7 +230,6 @@ class _AppRootState extends State<AppRoot> {
                 ),
             RouteNames.settings: (_) => Settings(
                   serverPortNumber: kServerPort,
-                  onOpenButtonPressed: () {},
                 ),
             RouteNames.player: (_) => Player(
                   currentSlideId: _currentSlideId,

@@ -85,7 +85,7 @@ class _Revealer extends StatefulWidget {
   final Widget child;
   final bool enabled;
 
-  _Revealer({Key? key, required this.child, this.enabled = true})
+  const _Revealer({Key? key, required this.child, this.enabled = true})
       : super(key: key);
 
   @override
@@ -109,7 +109,7 @@ class __RevealerState extends State<_Revealer> {
               onPressed: () => setState(() {
                     isRevealed = true;
                   }),
-              child: const Text('Reveal')),
+              child: const Text('Reveal Addresses')),
     );
   }
 }

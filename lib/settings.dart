@@ -1,15 +1,15 @@
 import 'dart:io';
 
 import 'package:castboard_performer/address_list_display.dart';
+import 'package:castboard_performer/launch_local_showcaller.dart';
 import 'package:flutter/material.dart';
+import 'package:window_manager/window_manager.dart';
 
 class Settings extends StatefulWidget {
   final int serverPortNumber;
-  final void Function() onOpenButtonPressed;
 
   Settings({
     Key? key,
-    required this.onOpenButtonPressed,
     required this.serverPortNumber,
   }) : super(key: key);
 
@@ -18,6 +18,14 @@ class Settings extends StatefulWidget {
 }
 
 class _SettingsState extends State<Settings> {
+  bool? _isFullscreen;
+
+  @override
+  void initState() {
+    _fetchFullscreenValue();
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -30,13 +38,10 @@ class _SettingsState extends State<Settings> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Show File
-                const _Title(title: 'Show File'),
-                _FileSelector(
-                  fileName: '',
-                  onOpenButtonPressed: widget.onOpenButtonPressed,
-                ),
-
+                // Display
+                const _Title(title: 'Display'),
+                _FullscreenCheckbox(
+                    isFullscreen: _isFullscreen, onChanged: _setIsFullscreen),
                 const SizedBox(height: 32),
 
                 // Local Control
@@ -44,16 +49,12 @@ class _SettingsState extends State<Settings> {
                 Text('Click below to open Showcaller locally on your device.',
                     style: Theme.of(context).textTheme.bodySmall),
                 const SizedBox(height: 16),
-                OutlinedButton(
+                OutlinedButton.icon(
+                    icon: const Icon(Icons.settings_remote),
                     onPressed: () async {
-                      final addresses = await NetworkInterface.list(
-                          includeLoopback: false,
-                          includeLinkLocal: false,
-                          type: InternetAddressType.IPv4);
-
-                      print(addresses);
+                      launchLocalShowcaller();
                     },
-                    child: const Text('Open Showcaller')),
+                    label: const Text('Launch Showcaller')),
 
                 const SizedBox(height: 32),
 
@@ -82,6 +83,22 @@ class _SettingsState extends State<Settings> {
             ),
           ),
         ));
+  }
+
+  void _setIsFullscreen(bool value) async {
+    setState(() {
+      _isFullscreen = value;
+    });
+
+    await windowManager.setFullScreen(value);
+  }
+
+  void _fetchFullscreenValue() async {
+    final value = await windowManager.isFullScreen();
+
+    setState(() {
+      _isFullscreen = value;
+    });
   }
 }
 
@@ -122,6 +139,35 @@ class _Title extends StatelessWidget {
         const Divider(),
         const SizedBox(height: 8),
       ],
+    );
+  }
+}
+
+class _FullscreenCheckbox extends StatelessWidget {
+  final bool? isFullscreen;
+  final void Function(bool value) onChanged;
+
+  const _FullscreenCheckbox(
+      {Key? key, required this.isFullscreen, required this.onChanged})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 400,
+      child: Row(
+        children: [
+          const Text('Fullscreen'),
+          const SizedBox(width: 24),
+          if (isFullscreen == null)
+            const SizedBox(
+                width: 48, height: 48, child: CircularProgressIndicator()),
+          if (isFullscreen != null)
+            Checkbox(
+                value: isFullscreen,
+                onChanged: (value) => onChanged(value ?? false))
+        ],
+      ),
     );
   }
 }
