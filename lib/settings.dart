@@ -67,8 +67,8 @@ class _SettingsState extends State<Settings> {
 
                 const SizedBox(height: 32),
 
-                // Web Slideshow.
-                const _Title(title: 'Web Slideshow'),
+                //Understudyw.
+                const _Title(title: 'Castboard Understudy'),
                 Text(
                     'Any remote Smart TV or other device with a Web Browser that is connected to the same local network can display the slide show.',
                     style: Theme.of(context).textTheme.bodySmall),
@@ -77,7 +77,7 @@ class _SettingsState extends State<Settings> {
                     style: Theme.of(context).textTheme.bodySmall),
                 AddressListDisplay(
                   portNumber: widget.serverPortNumber,
-                  addressSuffix: 'slideshow',
+                  addressSuffix: 'understudy',
                 ),
               ],
             ),

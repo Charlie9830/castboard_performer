@@ -189,7 +189,7 @@ class _AppRootState extends State<AppRoot> {
         onPrepareLogsDownloadCallback: _handlePrepareLogsDownloadRequest,
         onSoftwareUpdate: _handleSoftwareUpdate,
         onWebViewerClientConnectionEstablished:
-            _handleSlideShowClientConnectionEstablished);
+            _handleUnderstudyClientConnectionEstablished);
 
     _heartbeatTimer = Timer.periodic(
         const Duration(seconds: 30), (_) => _checkHeartbeats(30));
@@ -897,7 +897,7 @@ class _AppRootState extends State<AppRoot> {
     return;
   }
 
-  void _handleSlideShowClientConnectionEstablished() {
+  void _handleUnderstudyClientConnectionEstablished() {
     _updateWebViewerClientHTML();
   }
 
@@ -916,8 +916,8 @@ class _AppRootState extends State<AppRoot> {
 
   SlidesPayloadModel _buildSlidesPayload() {
     final slideAssetsUrlPrefix = kDebugMode
-        ? 'http://localhost:${_server.port}/api/slideshow'
-        : '/api/slideshow';
+        ? 'http://localhost:${_server.port}/api/understudy'
+        : '/api/understudy';
 
     return SlidesPayloadModel(
         fontManifest: WebViewerFontManifest.fromList(

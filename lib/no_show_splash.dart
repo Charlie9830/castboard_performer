@@ -93,7 +93,7 @@ class NoShowSplash extends StatelessWidget {
                                 AddressListDisplay(
                                   portNumber: kServerPort,
                                   hideAddresses: true,
-                                  addressSuffix: 'slideshow',
+                                  addressSuffix: 'understudy',
                                 ),
                               ],
                             ),
