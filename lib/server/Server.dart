@@ -42,7 +42,7 @@ typedef OnPrepareLogsDownloadCallback = Future<File> Function();
 typedef OnSoftwareUpdateCallback = Future<bool> Function(List<int> byteData);
 typedef OnPreviewStreamListenersStateChangedCallback = void Function(
     bool hasListeners, PreviewStreamListenerState listenerState);
-typedef OnSlideshowClientConnectionEstablished = void Function();
+typedef OnUnderstudyClientConnectionEstablished = void Function();
 
 // Config
 const _webAppFilePath = 'web_app/';
@@ -80,7 +80,7 @@ class Server {
   final OnPrepareShowfileDownloadCallback? onPrepareShowfileDownload;
   final OnPrepareLogsDownloadCallback? onPrepareLogsDownloadCallback;
   final OnSoftwareUpdateCallback? onSoftwareUpdate;
-  final OnSlideshowClientConnectionEstablished?
+  final OnUnderstudyClientConnectionEstablished?
       onWebViewerClientConnectionEstablished;
 
   File? _showfileDownloadTarget;
@@ -279,18 +279,18 @@ class Server {
       return handleShowDataPost(req, onShowDataReceived);
     });
 
-    // Slideshow Websocket.
-    router.get('/api/slideshow',
+    // Understudy Websocket.
+    router.get('/api/understudy',
         webSocketHandler(_handleWebClientConnectionEstablished));
 
-    // Slideshow Asset Requests.
-    router.get('/api/slideshow/headshots/<headshot>', handleHeadshotRequest);
-    router.get('/api/slideshow/images/<image>', handleImageRequest);
+    // Understudy Asset Requests.
+    router.get('/api/understudy/headshots/<headshot>', handleHeadshotRequest);
+    router.get('/api/understudy/images/<image>', handleImageRequest);
     router.get(
-        '/api/slideshow/backgrounds/<background>', handleBackgroundRequest);
+        '/api/understudy/backgrounds/<background>', handleBackgroundRequest);
     router.get(
-        '/api/slideshow/fonts/builtin/<familyname>', handleBuiltInFontRequest);
-    router.get('/api/slideshow/fonts/custom/<fontId>', handleCustomFontRequest);
+        '/api/understudy/fonts/builtin/<familyname>', handleBuiltInFontRequest);
+    router.get('/api/understudy/fonts/custom/<fontId>', handleCustomFontRequest);
     return router;
   }
 
