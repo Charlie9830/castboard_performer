@@ -1,12 +1,9 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:castboard_core/logging/LoggingManager.dart';
 import 'package:castboard_core/models/RemoteShowData.dart';
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_core/models/system_controller/DeviceResolution.dart';
-import 'package:castboard_core/models/web_viewer/message_model.dart';
-import 'package:castboard_core/storage/Storage.dart';
-import 'package:castboard_core/utils/getUid.dart';
+import 'package:castboard_core/models/understudy/message_model.dart';
 import 'package:castboard_performer/models/ShowFileUploadResult.dart';
 import 'package:castboard_performer/server/Routes.dart';
 import 'package:castboard_core/system-commands/SystemCommands.dart';
@@ -290,7 +287,8 @@ class Server {
         '/api/understudy/backgrounds/<background>', handleBackgroundRequest);
     router.get(
         '/api/understudy/fonts/builtin/<familyname>', handleBuiltInFontRequest);
-    router.get('/api/understudy/fonts/custom/<fontId>', handleCustomFontRequest);
+    router.get(
+        '/api/understudy/fonts/custom/<fontId>', handleCustomFontRequest);
     return router;
   }
 
@@ -299,15 +297,15 @@ class Server {
       return;
     }
 
-    final message =
-        MessageModel(type: MessageType.slideIndex, payload: index.toString());
+    final message = UnderstudyMessageModel(
+        type: UnderstudyMessageType.slideIndex, payload: index.toString());
 
     for (final channel in _webViewerWebSocketChannels) {
       channel.sink.add(message.toJson());
     }
   }
 
-  void updateWebViewerClientHTML(MessageModel message) {
+  void updateWebViewerClientHTML(UnderstudyMessageModel message) {
     if (_webViewerWebSocketChannels.isEmpty) {
       return;
     }
@@ -339,7 +337,6 @@ class Server {
   Future<void> shutdown() async {
     return server.close();
   }
-
 
   bool get previewStreamHasListeners =>
       _previewStreamWebSocketChannels.isNotEmpty;

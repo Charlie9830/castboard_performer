@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:castboard_core/enums.dart';
-import 'package:castboard_core/image_compressor/image_compressor.dart';
 import 'package:castboard_core/logging/LoggingManager.dart';
 import 'package:castboard_core/models/ActorIndex.dart';
 import 'package:castboard_core/models/ActorModel.dart';
@@ -20,10 +19,10 @@ import 'package:castboard_core/models/SlideModel.dart';
 import 'package:castboard_core/models/TrackRef.dart';
 import 'package:castboard_core/models/performerDeviceModel.dart';
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
-import 'package:castboard_core/models/web_viewer/html_slide_model.dart';
-import 'package:castboard_core/models/web_viewer/message_model.dart';
-import 'package:castboard_core/models/web_viewer/slides_payload_model.dart';
-import 'package:castboard_core/models/web_viewer/web_viewer_font_manifest.dart';
+import 'package:castboard_core/models/understudy/font_manifest.dart';
+import 'package:castboard_core/models/understudy/slide_model.dart';
+import 'package:castboard_core/models/understudy/slides_payload_model.dart';
+import 'package:castboard_core/models/understudy/message_model.dart';
 import 'package:castboard_core/storage/ImportedShowData.dart';
 import 'package:castboard_core/storage/Storage.dart';
 import 'package:castboard_core/system-commands/SystemCommands.dart';
@@ -49,7 +48,6 @@ import 'package:castboard_performer/system_controller/SystemController.dart';
 import 'package:castboard_performer/window_close.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:window_manager/window_manager.dart';
@@ -904,28 +902,34 @@ class _AppRootState extends State<AppRoot> {
   void _updateWebViewerClientHTML() {
     if (_fileManifest == const ManifestModel.blank()) {
       // No Show Loaded.
-      _server.updateWebViewerClientHTML(
-          MessageModel(type: MessageType.noShow, payload: ''));
+      _server.updateWebViewerClientHTML(UnderstudyMessageModel(
+          type: UnderstudyMessageType.noShow, payload: ''));
 
       return;
     }
 
-    _server.updateWebViewerClientHTML(MessageModel(
-        type: MessageType.payload, payload: _buildSlidesPayload().toJson()));
+    _server.updateWebViewerClientHTML(UnderstudyMessageModel(
+        type: UnderstudyMessageType.payload,
+        payload: _buildSlidesPayload().toJson()));
   }
 
-  SlidesPayloadModel _buildSlidesPayload() {
+  UnderstudySlidesPayloadModel _buildSlidesPayload() {
     final slideAssetsUrlPrefix = kDebugMode
         ? 'http://localhost:${_server.port}/api/understudy'
         : '/api/understudy';
 
-    return SlidesPayloadModel(
-        fontManifest: WebViewerFontManifest.fromList(
+    final slideSize =
+        const SlideSizeModel.defaultSize().orientated(_slideOrientation);
+
+    return UnderstudySlidesPayloadModel(
+        fontManifest: UnderstudyFontManifest.fromList(
           urlPrefix: slideAssetsUrlPrefix,
           requiredFontFamilies: buildFontList(_slides.values.toList()),
           customFonts: _fileManifest.requiredFonts,
         ),
         currentSlideIndex: _slides.keys.toList().indexOf(_currentSlideId),
+        width: slideSize.width,
+        height: slideSize.height,
         slides: _slides.values.map((slide) {
           final slideElement = buildSlideElementsHtml(
             urlPrefix: slideAssetsUrlPrefix,
@@ -946,7 +950,7 @@ class _AppRootState extends State<AppRoot> {
 
           slideElement.append(backgroundElement);
 
-          return HTMLSlideModel(
+          return UnderstudySlideModel(
               holdTime: slide.holdTime, html: slideElement.outerHtml);
         }).toList());
   }
