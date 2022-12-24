@@ -3,6 +3,7 @@ import 'package:castboard_performer/ApplicationTitle.dart';
 import 'package:castboard_performer/address_list_display.dart';
 import 'package:castboard_performer/launch_local_showcaller.dart';
 import 'package:castboard_performer/server/Server.dart';
+import 'package:castboard_performer/setFullscreen.dart';
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -155,7 +156,7 @@ class __FullscreenToggleState extends State<_FullscreenToggle> {
       _isFullscreen = targetState;
     });
 
-    await windowManager.setFullScreen(targetState);
+    await setFullScreen(targetState);
   }
 
   void _fetchFullscreenValue() async {

@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:castboard_performer/address_list_display.dart';
 import 'package:castboard_performer/launch_local_showcaller.dart';
+import 'package:castboard_performer/setFullscreen.dart';
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -90,7 +91,7 @@ class _SettingsState extends State<Settings> {
       _isFullscreen = value;
     });
 
-    await windowManager.setFullScreen(value);
+    await setFullScreen(value);
   }
 
   void _fetchFullscreenValue() async {

@@ -30,6 +30,7 @@ import 'package:castboard_core/utils/build_font_list.dart';
 import 'package:castboard_core/version/fileVersion.dart';
 import 'package:castboard_core/web_renderer/build_background_html.dart';
 import 'package:castboard_core/web_renderer/build_slide_elements_html.dart';
+import 'package:castboard_performer/constants.dart';
 import 'package:castboard_performer/no_show_splash.dart';
 import 'package:castboard_performer/CriticalError.dart';
 import 'package:castboard_performer/LoadingSplash.dart';
@@ -75,11 +76,10 @@ void main() async {
     await windowManager.ensureInitialized();
 
     const WindowOptions windowOptions = WindowOptions(
-      size: Size(800, 600),
       center: true,
       backgroundColor: Colors.transparent,
       fullScreen: kReleaseMode,
-      minimumSize: Size(1280, 800),
+      minimumSize: kMinimumWindowSize,
     );
 
     windowManager.waitUntilReadyToShow(windowOptions, () async {
@@ -238,10 +238,8 @@ class _AppRootState extends State<AppRoot> {
                   tracks: _tracks,
                   trackRefsByName: _trackRefsByName,
                   displayedCastChange: _displayedCastChange,
-                  slideSize: const SlideSizeModel.defaultSize()
-                      .orientated(_slideOrientation),
-
-                  slideOrientation: _slideOrientation,
+                  actualSlideSize: const SlideSizeModel.defaultSize()
+                      .orientated(_slideOrientation).toSize(),
                   playing: _playing,
                   offstageUpcomingSlides: true,
                 ),
@@ -944,9 +942,7 @@ class _AppRootState extends State<AppRoot> {
               urlPrefix: slideAssetsUrlPrefix,
               slides: _slides,
               slideId: slide.uid,
-              slideSize: const SlideSizeModel.defaultSize()
-                  .orientated(_slideOrientation)
-                  .toSize());
+              slideSize: slideSize.toSize());
 
           slideElement.append(backgroundElement);
 
