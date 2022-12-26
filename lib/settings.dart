@@ -2,16 +2,20 @@ import 'dart:io';
 
 import 'package:castboard_performer/address_list_display.dart';
 import 'package:castboard_performer/launch_local_showcaller.dart';
+import 'package:castboard_performer/models/understudy_session_model.dart';
 import 'package:castboard_performer/setFullscreen.dart';
+import 'package:castboard_performer/understudy_session_display.dart';
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 
 class Settings extends StatefulWidget {
   final int serverPortNumber;
+  final Map<String, UnderstudySessionModel> understudySessions;
 
   Settings({
     Key? key,
     required this.serverPortNumber,
+    this.understudySessions = const {},
   }) : super(key: key);
 
   @override
@@ -68,7 +72,7 @@ class _SettingsState extends State<Settings> {
 
                 const SizedBox(height: 32),
 
-                //Understudyw.
+                // Understudy.
                 const _Title(title: 'Castboard Understudy'),
                 Text(
                     'Any remote Smart TV or other device with a Web Browser that is connected to the same local network can display the slide show.',
@@ -80,6 +84,10 @@ class _SettingsState extends State<Settings> {
                   portNumber: widget.serverPortNumber,
                   addressSuffix: 'understudy',
                 ),
+                const SizedBox(height: 16),
+                UnderstudySessionDisplay(
+                  sessions: widget.understudySessions.values.toList(),
+                )
               ],
             ),
           ),
@@ -100,30 +108,6 @@ class _SettingsState extends State<Settings> {
     setState(() {
       _isFullscreen = value;
     });
-  }
-}
-
-class _FileSelector extends StatelessWidget {
-  final void Function() onOpenButtonPressed;
-  final String fileName;
-
-  const _FileSelector({
-    Key? key,
-    required this.fileName,
-    required this.onOpenButtonPressed,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        if (fileName.isNotEmpty) Text(fileName),
-        OutlinedButton(
-          onPressed: onOpenButtonPressed,
-          child: const Text('Open File'),
-        )
-      ],
-    );
   }
 }
 

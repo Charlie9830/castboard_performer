@@ -31,6 +31,7 @@ import 'package:castboard_core/version/fileVersion.dart';
 import 'package:castboard_core/web_renderer/build_background_html.dart';
 import 'package:castboard_core/web_renderer/build_slide_elements_html.dart';
 import 'package:castboard_performer/constants.dart';
+import 'package:castboard_performer/models/understudy_session_model.dart';
 import 'package:castboard_performer/no_show_splash.dart';
 import 'package:castboard_performer/CriticalError.dart';
 import 'package:castboard_performer/LoadingSplash.dart';
@@ -155,6 +156,9 @@ class _AppRootState extends State<AppRoot> {
   // Current running configuration.
   SystemConfig _runningConfig = SystemConfig.defaults();
 
+  // Understudy
+  Map<String, UnderstudySessionModel> _understudySessions = {};
+
   // Non Tracked State
   late final Server _server;
   final Map<String, DateTime> _sessionHeartbeats = {};
@@ -186,8 +190,10 @@ class _AppRootState extends State<AppRoot> {
         onSystemConfigPostCallback: _handleSystemConfigPost,
         onPrepareLogsDownloadCallback: _handlePrepareLogsDownloadRequest,
         onSoftwareUpdate: _handleSoftwareUpdate,
-        onWebViewerClientConnectionEstablished:
-            _handleUnderstudyClientConnectionEstablished);
+        onUnderstudyClientConnectionEstablished:
+            _handleUnderstudyClientConnectionEstablished,
+        onUnderstudyClientConnectionDropped:
+            _handleUnderstudyClientConnectionDropped);
 
     _heartbeatTimer = Timer.periodic(
         const Duration(seconds: 30), (_) => _checkHeartbeats(30));
@@ -228,6 +234,7 @@ class _AppRootState extends State<AppRoot> {
                 ),
             RouteNames.settings: (_) => Settings(
                   serverPortNumber: kServerPort,
+                  understudySessions: _understudySessions,
                 ),
             RouteNames.player: (_) => Player(
                   currentSlideId: _currentSlideId,
@@ -239,7 +246,8 @@ class _AppRootState extends State<AppRoot> {
                   trackRefsByName: _trackRefsByName,
                   displayedCastChange: _displayedCastChange,
                   actualSlideSize: const SlideSizeModel.defaultSize()
-                      .orientated(_slideOrientation).toSize(),
+                      .orientated(_slideOrientation)
+                      .toSize(),
                   playing: _playing,
                   offstageUpcomingSlides: true,
                 ),
@@ -893,8 +901,29 @@ class _AppRootState extends State<AppRoot> {
     return;
   }
 
-  void _handleUnderstudyClientConnectionEstablished() {
+  void _handleUnderstudyClientConnectionEstablished(
+      UnderstudySessionModel session) {
     _updateWebViewerClientHTML();
+
+    setState(() {
+      _understudySessions =
+          Map<String, UnderstudySessionModel>.from(_understudySessions
+            ..addAll({
+              session.id: session,
+            }));
+    });
+  }
+
+  void _handleUnderstudyClientConnectionDropped(String clientId) {
+    if (_understudySessions.containsKey(clientId) == false) {
+      return;
+    }
+
+    setState(() {
+      _understudySessions = Map<String, UnderstudySessionModel>.from(
+          _understudySessions
+            ..update(clientId, (session) => session.copyWith(active: false)));
+    });
   }
 
   void _updateWebViewerClientHTML() {

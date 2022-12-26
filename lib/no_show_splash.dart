@@ -2,13 +2,16 @@ import 'package:castboard_performer/ApplicationSubtitle.dart';
 import 'package:castboard_performer/ApplicationTitle.dart';
 import 'package:castboard_performer/address_list_display.dart';
 import 'package:castboard_performer/launch_local_showcaller.dart';
+import 'package:castboard_performer/models/understudy_session_model.dart';
 import 'package:castboard_performer/server/Server.dart';
 import 'package:castboard_performer/setFullscreen.dart';
 import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 
 class NoShowSplash extends StatelessWidget {
-  const NoShowSplash({Key? key}) : super(key: key);
+  const NoShowSplash({
+    Key? key,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

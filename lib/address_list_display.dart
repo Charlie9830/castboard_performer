@@ -37,16 +37,18 @@ class _AddressListDisplayState extends State<AddressListDisplay> {
               ? Text('Loading', style: Theme.of(context).textTheme.bodySmall)
               : _Revealer(
                   enabled: widget.hideAddresses,
-                  child: ListView(
-                    shrinkWrap: true,
-                    children: _addresses
-                        .map((address) => ListTile(
-                              leading: _getAddressIcon(address.interfaceName),
-                              title: SelectableText(
-                                  '${address.http.toString()}/${widget.addressSuffix}'),
-                              subtitle: Text(address.interfaceName),
-                            ))
-                        .toList(),
+                  child: Card(
+                    child: ListView(
+                      shrinkWrap: true,
+                      children: _addresses
+                          .map((address) => ListTile(
+                                leading: _getAddressIcon(address.interfaceName),
+                                title: SelectableText(
+                                    '${address.http.toString()}/${widget.addressSuffix}'),
+                                subtitle: Text(address.interfaceName),
+                              ))
+                          .toList(),
+                    ),
                   ),
                 )),
     );

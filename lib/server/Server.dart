@@ -4,7 +4,9 @@ import 'package:castboard_core/models/RemoteShowData.dart';
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_core/models/system_controller/DeviceResolution.dart';
 import 'package:castboard_core/models/understudy/message_model.dart';
+import 'package:castboard_core/utils/getUid.dart';
 import 'package:castboard_performer/models/ShowFileUploadResult.dart';
+import 'package:castboard_performer/models/understudy_session_model.dart';
 import 'package:castboard_performer/server/Routes.dart';
 import 'package:castboard_core/system-commands/SystemCommands.dart';
 import 'package:castboard_performer/server/cacheHeaders.dart';
@@ -39,7 +41,9 @@ typedef OnPrepareLogsDownloadCallback = Future<File> Function();
 typedef OnSoftwareUpdateCallback = Future<bool> Function(List<int> byteData);
 typedef OnPreviewStreamListenersStateChangedCallback = void Function(
     bool hasListeners, PreviewStreamListenerState listenerState);
-typedef OnUnderstudyClientConnectionEstablished = void Function();
+typedef OnUnderstudyClientConnectionEstablished = void Function(
+    UnderstudySessionModel session);
+typedef OnUnderstudyClientConnectionDropped = void Function(String clientId);
 
 // Config
 const _webAppFilePath = 'web_app/';
@@ -50,8 +54,8 @@ const int kServerPort = 8080;
 
 // WebSocket Stream
 final Map<String, WebSocketChannel> _previewStreamWebSocketChannels = {};
-final List<WebSocketChannel> _webViewerWebSocketChannels = [];
-bool get hasWebViewerClients => _webViewerWebSocketChannels.isNotEmpty;
+final Map<String, WebSocketChannel> _understudyWebSocketChannels = {};
+bool get hasWebViewerClients => _understudyWebSocketChannels.isNotEmpty;
 
 enum PlaybackCommand {
   play,
@@ -78,7 +82,9 @@ class Server {
   final OnPrepareLogsDownloadCallback? onPrepareLogsDownloadCallback;
   final OnSoftwareUpdateCallback? onSoftwareUpdate;
   final OnUnderstudyClientConnectionEstablished?
-      onWebViewerClientConnectionEstablished;
+      onUnderstudyClientConnectionEstablished;
+  final OnUnderstudyClientConnectionDropped?
+      onUnderstudyClientConnectionDropped;
 
   File? _showfileDownloadTarget;
   File? _logsDownloadTarget;
@@ -97,7 +103,8 @@ class Server {
     this.onPrepareLogsDownloadCallback,
     this.onSoftwareUpdate,
     required this.onHeartbeatReceived,
-    this.onWebViewerClientConnectionEstablished,
+    this.onUnderstudyClientConnectionEstablished,
+    this.onUnderstudyClientConnectionDropped,
   });
 
   Future<void> initalize() async {
@@ -277,8 +284,13 @@ class Server {
     });
 
     // Understudy Websocket.
-    router.get('/api/understudy',
-        webSocketHandler(_handleWebClientConnectionEstablished));
+    router.get('/api/understudy', (Request req) {
+      final queryParams = req.requestedUri.queryParameters;
+      final String clientId = queryParams['id'] ?? '';
+
+      return webSocketHandler((socket) => _handleWebClientConnectionEstablished(
+          socket, clientId, req.headers['user-agent'] ?? ''));
+    });
 
     // Understudy Asset Requests.
     router.get('/api/understudy/headshots/<headshot>', handleHeadshotRequest);
@@ -293,45 +305,60 @@ class Server {
   }
 
   void setWebViewerClientsSlideIndex(int index) {
-    if (_webViewerWebSocketChannels.isEmpty) {
+    if (_understudyWebSocketChannels.isEmpty) {
       return;
     }
 
     final message = UnderstudyMessageModel(
         type: UnderstudyMessageType.slideIndex, payload: index.toString());
 
-    for (final channel in _webViewerWebSocketChannels) {
+    for (final channel in _understudyWebSocketChannels.values) {
       channel.sink.add(message.toJson());
     }
   }
 
   void updateWebViewerClientHTML(UnderstudyMessageModel message) {
-    if (_webViewerWebSocketChannels.isEmpty) {
+    if (_understudyWebSocketChannels.isEmpty) {
       return;
     }
 
-    for (final channel in _webViewerWebSocketChannels) {
+    for (final channel in _understudyWebSocketChannels.values) {
       channel.sink.add(message.toJson());
     }
   }
 
-  void _handleWebClientConnectionEstablished(WebSocketChannel webSocket) {
+  void _handleWebClientConnectionEstablished(
+      WebSocketChannel webSocket, String existingClientId, String userAgent) {
     // Noop listener for when the Client sends data to us, as we don't care what they send us.
     void noop(dynamic event) {}
+
+    // Create a new ClientId if an existing one hasn't been provided by the client.
+    final clientId = existingClientId.isEmpty ? getUid() : existingClientId;
 
     // Setup onDone Listener. Actual Listener is just a noop as we don't care what the client sends to us,
     // only that they are listening on the other end.
     webSocket.stream.listen(noop, onDone: () {
       // Remove the channel when the client has disconnected.
-      _webViewerWebSocketChannels.remove(webSocket);
+      _understudyWebSocketChannels.remove(clientId);
+
+      onUnderstudyClientConnectionDropped?.call(clientId);
     });
 
     // Add the channel to the list.
-    _webViewerWebSocketChannels.add(webSocket);
+    _understudyWebSocketChannels[clientId] = webSocket;
+
+    webSocket.sink.add(UnderstudyMessageModel(
+            type: UnderstudyMessageType.clientId, payload: clientId)
+        .toJson());
 
     // Call the onWebViewerClientConnectionEstablished to inform Performer that a connection has been established.
     // Performer will then call the updateWebViewerHTML function to send the html slides to the client.
-    onWebViewerClientConnectionEstablished?.call();
+    onUnderstudyClientConnectionEstablished?.call(UnderstudySessionModel(
+      id: clientId,
+      connectionTimestamp: DateTime.now(),
+      active: true,
+      userAgent: userAgent,
+    ));
   }
 
   Future<void> shutdown() async {
