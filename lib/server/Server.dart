@@ -140,6 +140,7 @@ class Server {
         InternetAddress.anyIPv4,
         kServerPort,
       );
+
       LoggingManager.instance.server
           .info("Server running at ${server.address}:${server.port}");
     } catch (e, stacktrace) {
@@ -285,11 +286,8 @@ class Server {
 
     // Understudy Websocket.
     router.get('/api/understudy', (Request req) {
-      final queryParams = req.requestedUri.queryParameters;
-      final String clientId = queryParams['id'] ?? '';
-
-      return webSocketHandler((socket) => _handleWebClientConnectionEstablished(
-          socket, clientId, req.headers['user-agent'] ?? ''));
+      return webSocketHandler(
+          (socket) => _handleWebClientConnectionEstablished(socket, req));
     });
 
     // Understudy Asset Requests.
@@ -328,9 +326,20 @@ class Server {
   }
 
   void _handleWebClientConnectionEstablished(
-      WebSocketChannel webSocket, String existingClientId, String userAgent) {
+      WebSocketChannel webSocket, Request req) async {
     // Noop listener for when the Client sends data to us, as we don't care what they send us.
     void noop(dynamic event) {}
+
+    // Extract the clientId Query parameter.
+    final queryParams = req.requestedUri.queryParameters;
+    final String existingClientId = queryParams['id'] ?? '';
+
+    // Extract the Remote address from request context.
+    InternetAddress? remoteAddress;
+    final rawConnectionInfo = req.context['shelf.io.connection_info'];
+    if (rawConnectionInfo is HttpConnectionInfo) {
+      remoteAddress = rawConnectionInfo.remoteAddress;
+    }
 
     // Create a new ClientId if an existing one hasn't been provided by the client.
     final clientId = existingClientId.isEmpty ? getUid() : existingClientId;
@@ -351,13 +360,29 @@ class Server {
             type: UnderstudyMessageType.clientId, payload: clientId)
         .toJson());
 
+    // Collect a list of all Network Addresses the device is bound to.
+    final deviceAddresses = (await NetworkInterface.list(
+            includeLinkLocal: true,
+            includeLoopback: true,
+            type: InternetAddressType.IPv4))
+        .map((interface) => interface.addresses)
+        .expand((i) => i)
+        .toSet();
+
+    final userAgentString = req.headers['user-agent'] ?? '';
+
     // Call the onWebViewerClientConnectionEstablished to inform Performer that a connection has been established.
     // Performer will then call the updateWebViewerHTML function to send the html slides to the client.
     onUnderstudyClientConnectionEstablished?.call(UnderstudySessionModel(
       id: clientId,
       connectionTimestamp: DateTime.now(),
       active: true,
-      userAgent: userAgent,
+      clientIPAddress: remoteAddress == null
+          ? 'Unknown'
+          : remoteAddress.isLoopback || deviceAddresses.contains(remoteAddress)
+              ? 'This Device'
+              : remoteAddress.address,
+      userAgentString: userAgentString,
     ));
   }
 

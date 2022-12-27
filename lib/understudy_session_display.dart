@@ -31,11 +31,11 @@ class UnderstudySessionDisplay extends StatelessWidget {
                                   color: Colors.green)
                               : const Icon(Icons.tv_off, color: Colors.yellow),
                         ),
-                        title: Text(session.userAgent.isNotEmpty
-                            ? session.userAgent
+                        title: Text(session.clientIPAddress.isNotEmpty
+                            ? session.clientIPAddress
                             : 'Display'),
                         subtitle: Text(
-                            _formatConnectionTime(session.connectionTimestamp)),
+                            '${_formatConnectionTime(session.connectionTimestamp)} - ${_parseUserAgentString(session.userAgentString)}'),
                       ))
                   .toList(),
             ),
@@ -44,8 +44,15 @@ class UnderstudySessionDisplay extends StatelessWidget {
     );
   }
 
+  String _parseUserAgentString(String value) {
+    final regex = RegExp(r'\(([^)]+)\)');
+
+    return regex.firstMatch(value)?.group(1) ?? 'Unknown OS';
+  }
+
   String _formatConnectionTime(DateTime timestamp) {
-    final formatter = DateFormat('MMMd');
-    return 'Joined ${formatter.format(timestamp)} at ${timestamp.hour}:${timestamp.minute}';
+    final dateFormatter = DateFormat('MMMd');
+    final timeFormatter = DateFormat('Hm');
+    return 'Joined ${dateFormatter.format(timestamp)} at ${timeFormatter.format(timestamp)}';
   }
 }
