@@ -25,8 +25,8 @@ class ServiceAdvertiser {
   late final String _deviceName;
 
   static Future<void> initialize(
-      OnConnectivityPingCallback onConnectivityPingCallback,
-      String deviceName) async {
+    OnConnectivityPingCallback onConnectivityPingCallback,
+  ) async {
     // Discovery Socket.
     final discoverySocket = await RawDatagramSocket.bind(
         InternetAddress.anyIPv4, pdi.discoveryPort);
@@ -42,7 +42,7 @@ class ServiceAdvertiser {
       discoverySocket,
       unicastSocket,
       onConnectivityPingCallback,
-      deviceName,
+      'Performer',
     );
   }
 

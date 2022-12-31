@@ -296,7 +296,6 @@ class _AppRootState extends State<AppRoot> {
 
     return PerformerDeviceModel.detailsOnly(
       showName: showName,
-      deviceName: systemConfig.deviceName ?? '',
       softwareVersion: systemConfig.playerVersion,
     );
   }
@@ -450,11 +449,7 @@ class _AppRootState extends State<AppRoot> {
     _updateStartupStatus('Initializing Service Advertising.');
     try {
       LoggingManager.instance.server.info('Initializing Service Advertising');
-      final deviceName =
-          (await _systemController.getSystemConfig()).deviceName ??
-              SystemConfig.defaults().deviceName!;
-      await ServiceAdvertiser.initialize(
-          _handleConnectivityPingReceived, deviceName);
+      await ServiceAdvertiser.initialize(_handleConnectivityPingReceived);
       LoggingManager.instance.server.info('Service Advertising Initialized');
     } catch (e, stacktrace) {
       LoggingManager.instance.server

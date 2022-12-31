@@ -214,57 +214,18 @@ class SystemControllerRpiLinux implements SystemController {
     // Keep track of if we are going to need to restart.
     bool restartRequired = false;
 
-    // Apply Changes (if any) to the Application Configuration.
-    if (_containsApplicationConfigUpdates(configDelta)) {
-      LoggingManager.instance.systemManager.info(
-          'Updating application configuration.. Reading existing Application Configuration');
-      final runningAppConfig = await readApplicationConfigFile();
-      ApplicationConfigModel newAppConfig = runningAppConfig.copyWith();
+    LoggingManager.instance.systemManager.info(
+        'Updating application configuration.. Reading existing Application Configuration');
+    final runningAppConfig = await readApplicationConfigFile();
+    ApplicationConfigModel newAppConfig = runningAppConfig.copyWith();
 
-      // Device Name.
-      if (configDelta.deviceName != null) {
-        restartRequired = true; // Allows serviceAdvertisement to aquire the new device name.
-        newAppConfig =
-            newAppConfig.copyWith(deviceName: configDelta.deviceName);
-      }
-
-      // Orientation
-      if (configDelta.deviceOrientation != null) {
-        restartRequired = true;
-        newAppConfig = newAppConfig.copyWith(
-            deviceRotation:
-                _deviceOrientationMap[configDelta.deviceOrientation]!);
-      }
-
-      // playShowOnIdle
-      if (configDelta.playShowOnIdle != null) {
-        newAppConfig =
-            newAppConfig.copyWith(playShowOnIdle: configDelta.playShowOnIdle!);
-      }
-
-      await writeApplicationConfigFile(newAppConfig);
+    // playShowOnIdle
+    if (configDelta.playShowOnIdle != null) {
+      newAppConfig =
+          newAppConfig.copyWith(playShowOnIdle: configDelta.playShowOnIdle!);
     }
 
-    // Apply Rpi Boot Config Changes if any.
-    if (_containsRpiBootConfigUpdates(configDelta)) {
-      LoggingManager.instance.systemManager
-          .info('Updating RPI Boot Configuration');
-      LoggingManager.instance.systemManager
-          .info('Reading existing RPI Boot Configuration');
-
-      final bootConfigFile = getRpiBootConfigFile();
-
-      // Device Resolution.
-      if (configDelta.deviceResolution != null) {
-        await sed(
-            bootConfigFile,
-            RegExp(
-                r"^hdmi_mode=[0-9]+|^#hdmi_mode=[0-9]+"), // Match hdmi_mode even if it's commented out.
-            "hdmi_mode=${_getHdmiModeInteger(configDelta.deviceResolution!)}");
-      }
-
-      restartRequired = true;
-    }
+    await writeApplicationConfigFile(newAppConfig);
 
     // Read back the final resulting Config to provide as a component of our result.
     final resultingConfig = await getSystemConfig();
@@ -302,14 +263,7 @@ class SystemControllerRpiLinux implements SystemController {
     final defaults = SystemConfig.defaults();
 
     final config = SystemConfig(
-      deviceName: appConfig?.deviceName ?? defaults.deviceName,
-      deviceOrientation: appConfig != null
-          ? _parseDeviceOrientation(appConfig!.deviceRotation)
-          : defaults.deviceOrientation,
       playShowOnIdle: appConfig?.playShowOnIdle ?? defaults.playShowOnIdle,
-      deviceResolution:
-          bootConfig?.toSystemConfig().deviceResolution ?? rpiHdmiModes[16],
-      availableResolutions: availableResolutions,
       playerBuildNumber:
           packageInfo.buildNumber, // TODO Update these to performer names.
       playerBuildSignature: packageInfo.buildSignature,
@@ -352,18 +306,6 @@ class SystemControllerRpiLinux implements SystemController {
 
     await Future.wait(futures);
     return;
-  }
-
-  /// Determines if the provided DeviceConfig contains updates to the Startup Configuration.
-  bool _containsApplicationConfigUpdates(SystemConfig config) {
-    return config.deviceOrientation != null ||
-        config.playShowOnIdle != null ||
-        config.deviceName != null;
-  }
-
-  /// Determins if the provided DeviceConfig contains updates to the RPI Boot Configuration
-  bool _containsRpiBootConfigUpdates(SystemConfig config) {
-    return config.deviceResolution != null;
   }
 
   @override

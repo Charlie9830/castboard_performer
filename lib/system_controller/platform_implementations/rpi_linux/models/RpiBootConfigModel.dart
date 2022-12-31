@@ -1,9 +1,8 @@
 import 'dart:convert';
 
 import 'package:castboard_core/logging/LoggingManager.dart';
-import 'package:castboard_core/models/system_controller/AvailableResolutions.dart';
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
-import 'package:castboard_performer/system_controller/platform_implementations/rpi_linux/RpiHdmiModes.dart';
+
 import 'package:castboard_performer/versionCodename.dart';
 
 class RpiBootConfigModel {
@@ -23,14 +22,10 @@ class RpiBootConfigModel {
 
   SystemConfig toSystemConfig() {
     return SystemConfig(
-      deviceResolution: rpiHdmiModes[hdmiMode],
-      availableResolutions: const AvailableResolutions.defaults(),
-      deviceOrientation: null,
       playShowOnIdle: null,
       playerBuildNumber: '',
       playerVersion: '',
       playerBuildSignature: '',
-      deviceName: null,
       versionCodename: kVersionCodename,
     );
   }

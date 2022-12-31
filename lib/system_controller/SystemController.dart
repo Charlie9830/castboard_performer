@@ -1,7 +1,9 @@
 import 'dart:io';
 
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
+import 'package:castboard_performer/castboard_platform.dart';
 import 'package:castboard_performer/system_controller/SystemConfigCommitResult.dart';
+import 'package:castboard_performer/system_controller/platform_implementations/desktop/system_controller_desktop.dart';
 import 'package:castboard_performer/system_controller/platform_implementations/rpi_linux/SystemControllerRpiLinux.dart';
 import 'package:castboard_performer/system_controller/platform_implementations/noop/SystemControllerNoop.dart';
 
@@ -22,7 +24,13 @@ abstract class SystemController {
       return SystemControllerNoop();
     }
 
-    if (Platform.isLinux) {
+    if (CastboardPlatform.isLinuxDesktop ||
+        CastboardPlatform.isWindows ||
+        CastboardPlatform.isMacOS) {
+      return SystemControllerDesktop();
+    }
+
+    if (CastboardPlatform.isElinux) {
       return SystemControllerRpiLinux();
     }
 

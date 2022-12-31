@@ -1,6 +1,4 @@
-import 'package:castboard_core/models/system_controller/AvailableResolutions.dart';
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
-import 'package:castboard_core/models/system_controller/DeviceResolution.dart';
 import 'package:castboard_performer/system_controller/SystemConfigCommitResult.dart';
 import 'package:castboard_performer/system_controller/SystemController.dart';
 
@@ -48,13 +46,7 @@ class SystemControllerNoop implements SystemController {
 
   @override
   Future<SystemConfig> getSystemConfig() async {
-    return SystemConfig.defaults().copyWith(
-        availableResolutions: AvailableResolutions([
-      const DeviceResolution.auto(),
-      const DeviceResolution(640, 480),
-      const DeviceResolution(1280, 720),
-      const DeviceResolution(1920, 1080),
-    ]));
+    return SystemConfig.defaults();
   }
 
   @override
