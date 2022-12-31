@@ -69,8 +69,7 @@ class SlideCycler {
   void _cycle() {
     if (_playing) {
       final newSlide = _getNextSlide(_currentSlide)!;
-      final holdDuration =
-          Duration(seconds: _currentSlide!.holdTime.floor().toInt());
+      final holdDuration = Duration(seconds: newSlide.holdTime.floor().toInt());
 
       _currentSlide = newSlide;
       _timer = Timer(holdDuration, () => _cycle());
@@ -113,7 +112,8 @@ class SlideCycler {
   void _notifyListeners(
       SlideModel? currentSlide, SlideModel? nextSlide, bool playing) {
     if (currentSlide != null) {
-      onPlaybackOrSlideChange.call(currentSlide.uid, nextSlide?.uid ?? '', playing);
+      onPlaybackOrSlideChange.call(
+          currentSlide.uid, nextSlide?.uid ?? '', playing);
     }
   }
 
