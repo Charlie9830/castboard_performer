@@ -59,6 +59,7 @@ flutter:
   # the material Icons class.
   uses-material-design: true
   assets:
+    # Web App Root Directory
     - assets/web_app/
 
   fonts:

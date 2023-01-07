@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:castboard_performer/castboard_platform.dart';
 import 'package:castboard_performer/constants.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
@@ -9,11 +10,14 @@ String getAssetBundleRootPath() {
     return _getDebugAssetBundleRootPath();
   }
 
-  if (Platform.isWindows) {
-    return p.join(p.current, 'data', 'flutter_assets', 'assets');
+  if (Platform.isWindows || Platform.isMacOS) {
+    final executableParentDirectory =
+        Directory(Platform.resolvedExecutable).parent;
+    return p.join(
+        executableParentDirectory.path, 'data', 'flutter_assets', 'assets');
   }
 
-  if (Platform.isLinux) {
+  if (CastboardPlatform.isElinux) {
     // Sony Layout
     return p.join(kYoctoAssetBundlePath, 'assets');
   } else {
