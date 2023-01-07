@@ -48,6 +48,7 @@ dev_dependencies:
   flutter_lints: ^2.0.1
   flutter_test:
     sdk: flutter
+  msix: ^3.7.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -271,3 +272,16 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/custom-fonts/#from-packages
+msix_config:
+  display_name: Castboard Performer
+  publisher_display_name: Charlie Hall
+  identity_name: com.charliehall.castboard-performer
+  msix_version: 1.2.3.0
+  logo_path: ./windows-resources/msix_logo_512px.png
+  trim_logo: false
+  capabilities: internetClient, privateNetworkClientServer
+  file_extension: .castboard
+  certificate_path: ../certificates/Charlie Hall.pfx
+  certificate_password: 123456
+  install_certificate: false
+  publisher: CN=Charlie Hall, O=Charlie Hall, L=Richmond, S=Victoria, C=AU

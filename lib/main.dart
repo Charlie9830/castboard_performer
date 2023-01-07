@@ -827,7 +827,7 @@ class _AppRootState extends State<AppRoot> {
     // if it was successfull, if a restart is requried and the resulting configuration.
     final result =
         await _systemController.commitSystemConfig(incomingConfigDelta);
-
+    
     if (result.success == false) {
       // Something wen't wrong. Pass it back to the server to inform the user.
       return result;

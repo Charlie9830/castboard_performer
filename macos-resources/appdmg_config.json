@@ -1,0 +1,28 @@
+{
+    "title": "Castboard Performer",
+    "window": {
+        "size": {
+            "width": 640,
+            "height": 480
+        }
+    },
+    "background": "./dmgBackground.png",
+    "contents": [
+        {
+            "x": 450,
+            "y": 150,
+            "type": "link",
+            "path": "/Applications"
+        },
+        {
+            "x": 150,
+            "y": 150,
+            "type": "file",
+            "path": "../build/macos/archive_exports/Castboard Performer.app"
+        }
+    ],
+    "code-sign": {
+        "signing-identity": "Developer ID Application: Charlie Hall (7MGD5674RY)",
+        "identifier": "com.charliehall.castboard-performer"
+    }
+}
