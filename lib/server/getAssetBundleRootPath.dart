@@ -10,11 +10,19 @@ String getAssetBundleRootPath() {
     return _getDebugAssetBundleRootPath();
   }
 
-  if (Platform.isWindows || Platform.isMacOS) {
+  if (Platform.isWindows) {
     final executableParentDirectory =
         Directory(Platform.resolvedExecutable).parent;
     return p.join(
         executableParentDirectory.path, 'data', 'flutter_assets', 'assets');
+  }
+
+  if (Platform.isMacOS) {
+    final macOSPackageRoot = Directory(Platform.resolvedExecutable)
+        .parent
+        .parent; // Gives us a reference to castboard_performer.app/Contents/
+    return p.join(macOSPackageRoot.path, 'Frameworks', 'App.framework',
+        'Resources', 'flutter_assets', 'assets');
   }
 
   if (CastboardPlatform.isElinux) {
