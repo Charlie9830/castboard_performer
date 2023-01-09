@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AddressListDisplay extends StatefulWidget {
   final int portNumber;
@@ -37,17 +38,28 @@ class _AddressListDisplayState extends State<AddressListDisplay> {
               ? Text('Loading', style: Theme.of(context).textTheme.bodySmall)
               : _Revealer(
                   enabled: widget.hideAddresses,
-                  child: Card(
-                    child: ListView(
-                      shrinkWrap: true,
-                      children: _addresses
-                          .map((address) => ListTile(
-                                leading: _getAddressIcon(address.interfaceName),
-                                title: SelectableText(
-                                    '${address.http.toString()}/${widget.addressSuffix}'),
-                                subtitle: Text(address.interfaceName),
-                              ))
-                          .toList(),
+                  child: SizedBox(
+                    width: 600,
+                    child: Card(
+                      child: ListView(
+                        shrinkWrap: true,
+                        children: _addresses
+                            .map((address) => ListTile(
+                                  leading: _getAddressIcon(address.interfaceName),
+                                  title: SelectableText(
+                                      '${address.http.toString()}/${widget.addressSuffix}'),
+                                  trailing: Tooltip(
+                                    message: 'Open in Browser',
+                                    child: IconButton(
+                                      icon: const Icon(Icons.open_in_browser),
+                                      onPressed: () async =>
+                                          launchUrl(address.http),
+                                    ),
+                                  ),
+                                  subtitle: Text(address.interfaceName),
+                                ))
+                            .toList(),
+                      ),
                     ),
                   ),
                 )),
@@ -55,8 +67,8 @@ class _AddressListDisplayState extends State<AddressListDisplay> {
   }
 
   Icon _getAddressIcon(String interfaceName) {
-    if (interfaceName.contains(
-        RegExp('Wi-Fi|wifi|wi_fi', caseSensitive: false, multiLine: false))) {
+    if (interfaceName.contains(RegExp('Wi-Fi|wifi|wi_fi|wlan',
+        caseSensitive: false, multiLine: false))) {
       return const Icon(Icons.wifi, color: Colors.grey);
     }
 
