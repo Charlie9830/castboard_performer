@@ -1,6 +1,7 @@
 import 'package:castboard_performer/ApplicationSubtitle.dart';
 import 'package:castboard_performer/ApplicationTitle.dart';
 import 'package:castboard_performer/address_list_display.dart';
+import 'package:castboard_performer/fullscreen_toggle_button.dart';
 import 'package:castboard_performer/launch_local_showcaller.dart';
 import 'package:castboard_performer/models/understudy_session_model.dart';
 import 'package:castboard_performer/server/Server.dart';
@@ -32,7 +33,8 @@ class NoShowSplash extends StatelessWidget {
                 child:
                     Hero(tag: 'application-title', child: ApplicationTitle()),
               ),
-              Positioned(top: 16, right: 16, child: _FullscreenToggle()),
+              const Positioned(
+                  top: 16, right: 16, child: FullscreenToggleButton()),
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
@@ -117,56 +119,5 @@ class NoShowSplash extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class _FullscreenToggle extends StatefulWidget {
-  _FullscreenToggle({Key? key}) : super(key: key);
-
-  @override
-  State<_FullscreenToggle> createState() => __FullscreenToggleState();
-}
-
-class __FullscreenToggleState extends State<_FullscreenToggle> {
-  bool? _isFullscreen;
-
-  @override
-  void initState() {
-    _fetchFullscreenValue();
-    super.initState();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_isFullscreen == null) {
-      return SizedBox.fromSize(size: Size.zero);
-    }
-
-    return TextButton.icon(
-      onPressed: _toggleFullscreen,
-      icon: _isFullscreen!
-          ? const Icon(Icons.fullscreen_exit)
-          : const Icon(Icons.fullscreen),
-      label: _isFullscreen!
-          ? const Text('Exit Fullscreen')
-          : const Text('Enter Fullscreen'),
-    );
-  }
-
-  void _toggleFullscreen() async {
-    final targetState = _isFullscreen == null ? false : !_isFullscreen!;
-    setState(() {
-      _isFullscreen = targetState;
-    });
-
-    await setFullScreen(targetState);
-  }
-
-  void _fetchFullscreenValue() async {
-    final value = await windowManager.isFullScreen();
-
-    setState(() {
-      _isFullscreen = value;
-    });
   }
 }

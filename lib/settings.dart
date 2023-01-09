@@ -1,6 +1,5 @@
-import 'dart:io';
-
 import 'package:castboard_performer/address_list_display.dart';
+import 'package:castboard_performer/fullscreen_toggle_button.dart';
 import 'package:castboard_performer/launch_local_showcaller.dart';
 import 'package:castboard_performer/models/understudy_session_model.dart';
 import 'package:castboard_performer/setFullscreen.dart';
@@ -12,7 +11,7 @@ class Settings extends StatefulWidget {
   final int serverPortNumber;
   final Map<String, UnderstudySessionModel> understudySessions;
 
-  Settings({
+  const Settings({
     Key? key,
     required this.serverPortNumber,
     this.understudySessions = const {},
@@ -36,6 +35,12 @@ class _SettingsState extends State<Settings> {
     return Scaffold(
         appBar: AppBar(
           title: const Text('Settings'),
+          actions: [
+            FullscreenToggleButton(
+              isFullscreen: _isFullscreen,
+              onPressed: (targetState) => setState(() => _isFullscreen = targetState),
+            )
+          ],
         ),
         body: SingleChildScrollView(
           child: Padding(
