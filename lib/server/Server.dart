@@ -38,7 +38,7 @@ typedef OnSystemConfigPostCallback = Future<SystemConfigCommitResult> Function(
     SystemConfig config);
 typedef OnPrepareShowfileDownloadCallback = Future<File> Function();
 typedef OnPrepareLogsDownloadCallback = Future<File> Function();
-typedef OnSoftwareUpdateCallback = Future<bool> Function(List<int> byteData);
+typedef OnSoftwareUpdateCallback = Future<void> Function();
 typedef OnPreviewStreamListenersStateChangedCallback = void Function(
     bool hasListeners, PreviewStreamListenerState listenerState);
 typedef OnUnderstudyClientConnectionEstablished = void Function(
@@ -192,12 +192,6 @@ class Server {
     router.put(Routes.upload, (Request req) {
       LoggingManager.instance.server.info('Show File Upload PUT received');
       return handleShowfileUploadReq(req, onShowFileReceived);
-    });
-
-    router.put(Routes.systemSoftwareUpdate, (Request req) {
-      LoggingManager.instance.server
-          .info('System Software Update PUT Received');
-      return handleSoftwareUpdateReq(req, onSoftwareUpdate);
     });
 
     // Prepare Showfile download

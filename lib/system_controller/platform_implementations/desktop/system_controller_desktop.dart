@@ -73,11 +73,6 @@ class SystemControllerDesktop implements SystemController {
     }
   }
 
-  @override
-  Future<UpdateStatus> getUpdateStatus() async {
-    // Noop
-    return UpdateStatus.none;
-  }
 
   @override
   Future<void> powerOff() async {

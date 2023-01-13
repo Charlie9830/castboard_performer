@@ -281,7 +281,6 @@ msix_config:
   logo_path: ./windows-resources/msix_logo_512px.png
   trim_logo: false
   capabilities: internetClient, privateNetworkClientServer
-  file_extension: .castboard
   certificate_path: ../certificates/Charlie Hall.pfx
   certificate_password: 123456
   install_certificate: false

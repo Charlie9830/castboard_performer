@@ -298,36 +298,6 @@ Future<Response> handleShowfileUploadReq(
   return Response.internalServerError(body: 'An unknown error occurred');
 }
 
-Future<Response> handleSoftwareUpdateReq(
-    Request request, OnSoftwareUpdateCallback? callback) async {
-  if (request.contentLength == null || request.contentLength == 0) {
-    return Response(400); // Bad Request.
-  }
-
-  if (request.isMultipart == false) {
-    return Response(401); // Not a multipart request.
-  }
-
-  if (callback == null) {
-    LoggingManager.instance.server
-        .severe('OnShowFileReceivedCallback was null');
-    return Response.internalServerError(body: 'An error occured');
-  }
-
-  // Read the request into a Buffer.
-  final buffer = await readMultipartFileRequest(request);
-
-  // Send the buffer to the player.
-  final result = await callback(buffer);
-
-  if (result == false) {
-    // Something wen't wrong. Likely the file failed validation.
-    return Response.internalServerError(body: 'Invalid Software Update File');
-  } else {
-    return Response.ok(null);
-  }
-}
-
 Future<Response> handlePlaybackReq(
     Request request, dynamic onPlaybackCommand) async {
   await for (var data in request.read()) {

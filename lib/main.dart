@@ -26,11 +26,16 @@ import 'package:castboard_core/models/understudy/message_model.dart';
 import 'package:castboard_core/storage/ImportedShowData.dart';
 import 'package:castboard_core/storage/Storage.dart';
 import 'package:castboard_core/system-commands/SystemCommands.dart';
+import 'package:castboard_core/update_manager/update_check_result.dart';
+import 'package:castboard_core/update_manager/update_manager.dart';
 import 'package:castboard_core/utils/build_font_list.dart';
 import 'package:castboard_core/version/fileVersion.dart';
 import 'package:castboard_core/web_renderer/build_background_html.dart';
 import 'package:castboard_core/web_renderer/build_slide_elements_html.dart';
+import 'package:castboard_performer/update_ready_splash.dart';
+import 'package:castboard_performer/update_status_splash.dart';
 import 'package:castboard_performer/constants.dart';
+import 'package:castboard_performer/defines.dart';
 import 'package:castboard_performer/models/understudy_session_model.dart';
 import 'package:castboard_performer/no_show_splash.dart';
 import 'package:castboard_performer/CriticalError.dart';
@@ -38,7 +43,6 @@ import 'package:castboard_performer/LoadingSplash.dart';
 import 'package:castboard_core/widgets/Player.dart';
 import 'package:castboard_performer/RouteNames.dart';
 import 'package:castboard_performer/SlideCycler.dart';
-import 'package:castboard_performer/UpdateStatusSplash.dart';
 import 'package:castboard_performer/fontLoadingHelpers.dart';
 import 'package:castboard_performer/models/ShowFileUploadResult.dart';
 import 'package:castboard_performer/scheduleRestart.dart';
@@ -46,7 +50,8 @@ import 'package:castboard_performer/server/Server.dart';
 import 'package:castboard_performer/service_advertiser/serviceAdvertiser.dart';
 import 'package:castboard_performer/settings.dart';
 import 'package:castboard_performer/system_controller/SystemConfigCommitResult.dart';
-import 'package:castboard_performer/system_controller/SystemController.dart';
+import 'package:castboard_performer/system_controller/SystemController.dart'
+    as sc;
 import 'package:castboard_performer/window_close.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -159,11 +164,15 @@ class _AppRootState extends State<AppRoot> {
   // Understudy
   Map<String, UnderstudySessionModel> _understudySessions = {};
 
+  // Software Update.
+  bool _softwareUpdateReady = false;
+  double? _updateDownloadProgress;
+
   // Non Tracked State
   late final Server _server;
   final Map<String, DateTime> _sessionHeartbeats = {};
   late Timer _heartbeatTimer;
-  final SystemController _systemController = SystemController();
+  final sc.SystemController _systemController = sc.SystemController();
 
   // Focus
   final FocusNode _keyboardFocusNode = FocusNode();
@@ -189,7 +198,6 @@ class _AppRootState extends State<AppRoot> {
         onSystemConfigPull: _handleSystemConfigPull,
         onSystemConfigPostCallback: _handleSystemConfigPost,
         onPrepareLogsDownloadCallback: _handlePrepareLogsDownloadRequest,
-        onSoftwareUpdate: _handleSoftwareUpdate,
         onUnderstudyClientConnectionEstablished:
             _handleUnderstudyClientConnectionEstablished,
         onUnderstudyClientConnectionDropped:
@@ -222,10 +230,16 @@ class _AppRootState extends State<AppRoot> {
           navigatorKey: navigatorKey,
           title: 'Castboard Player',
           theme: ThemeData(
-            fontFamily: 'Poppins',
-            brightness: Brightness.dark,
-            primarySwatch: Colors.orange,
-          ),
+              fontFamily: 'Poppins',
+              brightness: Brightness.dark,
+              primarySwatch: Colors.orange,
+              snackBarTheme: SnackBarThemeData(
+                contentTextStyle: const TextStyle(
+                  color: Colors.white,
+                ),
+                backgroundColor: Colors.blueGrey.shade600,
+                actionTextColor: Colors.amberAccent.shade700,
+              )),
           initialRoute: RouteNames.loadingSplash,
           routes: {
             RouteNames.loadingSplash: (_) => LoadingSplash(
@@ -235,6 +249,9 @@ class _AppRootState extends State<AppRoot> {
             RouteNames.settings: (_) => Settings(
                   serverPortNumber: kServerPort,
                   understudySessions: _understudySessions,
+                  onDownloadUpdate: _handleDownloadUpdate,
+                  updateDownloadProgress: _updateDownloadProgress,
+                  updateReadyToInstall: _softwareUpdateReady,
                 ),
             RouteNames.player: (_) => Player(
                   currentSlideId: _currentSlideId,
@@ -290,8 +307,43 @@ class _AppRootState extends State<AppRoot> {
     }
   }
 
+  void _handleDownloadProgressDelegate(int value) {
+    if (value == 0) {
+      setState(() {
+        _updateDownloadProgress = 0.0;
+      });
+    } else {
+      setState(() {
+        _updateDownloadProgress = (value / 100).ceilToDouble();
+      });
+    }
+  }
+
+  void _handleDownloadUpdate() async {
+    setState(() {
+      _updateDownloadProgress = 0.0;
+    });
+
+    try {
+      final result = await UpdateManager.instance
+          .downloadUpdate(onProgress: _handleDownloadProgressDelegate);
+
+      if (result.success) {
+        setState(() {
+          _updateDownloadProgress = null;
+          _softwareUpdateReady = true;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _updateDownloadProgress = null;
+        _softwareUpdateReady = false;
+      });
+    }
+  }
+
   Future<PerformerDeviceModel> _handleConnectivityPingReceived() async {
-    final systemConfig = await SystemController().getSystemConfig();
+    final systemConfig = await sc.SystemController().getSystemConfig();
     final showName = _fileManifest.fileName;
 
     return PerformerDeviceModel.detailsOnly(
@@ -456,7 +508,21 @@ class _AppRootState extends State<AppRoot> {
           .warning('Failed to initialize discovery service', e, stacktrace);
     }
 
-    print('Service Discovery Running');
+    // Init Update Manager.
+    _updateStartupStatus('Initializing Update Manager');
+    try {
+      LoggingManager.instance.general.info('Initializing Update Manager');
+      await UpdateManager.initialize(
+        currentVersion: (await PackageInfo.fromPlatform()).version,
+        updateServerAddress: kUpdateServerAddress,
+      );
+
+      // Check for Updates in the background.
+      _backgroundDownloadSoftwareUpdates();
+    } catch (e, stacktrace) {
+      LoggingManager.instance.general
+          .warning('Failed to initialize UpdateManager', e, stacktrace);
+    }
 
     LoggingManager.instance.player
         .info("Searching for previously loaded show file");
@@ -479,6 +545,10 @@ class _AppRootState extends State<AppRoot> {
         await _pauseForEffect(seconds: 2);
         _updateStartupStatus('Running to mic checks...');
         await _pauseForEffect(seconds: 2);
+
+        // Check for the Update status and if need be Push the status splash.
+        await _checkUpdateStatusAndPushNextNamedRoute();
+
         _loadShow(data);
 
         LoggingManager.instance.player.info("Show file loaded into state");
@@ -498,6 +568,7 @@ class _AppRootState extends State<AppRoot> {
       await _pauseForEffect(seconds: 2);
       LoggingManager.instance.player
           .info('No existing show file found. Proceeding to config route');
+
       await _checkUpdateStatusAndPushNextNamedRoute(
           nextNamedRoute: RouteNames.noShowSplash);
     }
@@ -618,8 +689,23 @@ class _AppRootState extends State<AppRoot> {
     LoggingManager.instance.player
         .info("Load show completed. Pushing player route");
 
-    await _checkUpdateStatusAndPushNextNamedRoute(
-        nextNamedRoute: RouteNames.player);
+    // Push player Route.
+    navigatorKey.currentState?.popAndPushNamed(RouteNames.player);
+  }
+
+  Future<void> _backgroundDownloadSoftwareUpdates() async {
+    final result = await UpdateManager.instance.checkForUpdates();
+
+    if (result.status == UpdateStatus.readyToDownload) {
+      final downloadResult = await UpdateManager.instance
+          .downloadUpdate(onProgress: _handleDownloadProgressDelegate);
+      if (downloadResult.success == true) {
+        setState(() {
+          _softwareUpdateReady = true;
+          _updateDownloadProgress = null;
+        });
+      }
+    }
   }
 
   void _resetImageCache(BuildContext context) {
@@ -666,6 +752,8 @@ class _AppRootState extends State<AppRoot> {
     LoggingManager.instance.player
         .info("Show Data Pull requested from remote. Packaging show data...");
     return RemoteShowData(
+      softwareUpdateReady:
+          true, //_softwareUpdateReady, // Let Showcaller know if a Performer Software update is ready to install.
       showData: ShowDataModel(
         tracks: _tracks,
         trackRefsByName: <String,
@@ -827,7 +915,7 @@ class _AppRootState extends State<AppRoot> {
     // if it was successfull, if a restart is requried and the resulting configuration.
     final result =
         await _systemController.commitSystemConfig(incomingConfigDelta);
-    
+
     if (result.success == false) {
       // Something wen't wrong. Pass it back to the server to inform the user.
       return result;
@@ -858,42 +946,48 @@ class _AppRootState extends State<AppRoot> {
     return file;
   }
 
-  Future<bool> _handleSoftwareUpdate(List<int> byteData) {
-    return _systemController.updateApplication(byteData);
-  }
+  Future<void> _checkUpdateStatusAndPushNextNamedRoute(
+      {String? nextNamedRoute}) async {
+    if (await UpdateManager.instance.didJustUpdate() == true) {
+      // Clean up leftover Update files.
+      UpdateManager.instance.cleanupFiles();
 
-  Future<void> _checkUpdateStatusAndPushNextNamedRoute({
-    required String nextNamedRoute,
-  }) async {
-    final updateStatus = await _systemController.getUpdateStatus();
-    if (updateStatus != UpdateStatus.none) {
-      // Reset the updateStatus flag if it is set to success.
-      if (updateStatus == UpdateStatus.success) {
-        await _systemController.resetUpdateStatus();
+      // Show the Update Success Splash.
+      setState(() {
+        _softwareUpdateReady = true;
+      });
+      await navigatorKey.currentState?.push(MaterialPageRoute(
+          builder: (_) => const UpdateStatusSplash(
+                success: true,
+                holdDuration: Duration(seconds: 14),
+              )));
+
+      // Push to next route.
+      if (mounted && nextNamedRoute != null) {
+        navigatorKey.currentState?.popAndPushNamed(nextNamedRoute);
       }
-
-      // Now show a status splash that will update the user of the finished state
-      // of the update.
-      await _showUpdateStatusSplash(updateStatus);
+      return;
     }
 
-    // Push the correct route based on the value of showLoaded.
-    navigatorKey.currentState?.popAndPushNamed(nextNamedRoute);
-  }
+    if ((await UpdateManager.instance.checkForUpdates()).status ==
+            UpdateStatus.readyToInstall &&
+        mounted) {
+      // Show the Update Ready to Install Splash.
+      await navigatorKey.currentState?.push(MaterialPageRoute(
+          builder: (_) => const UpdateReadySplash(
+                holdDuration: Duration(seconds: 8),
+              )));
 
-  Future<void> _showUpdateStatusSplash(UpdateStatus status) async {
-    // Push the UpdateStatusSplash to the Navigator.
-    // It will automatically pop itself of after the given duration.
-    await navigatorKey.currentState!.push(MaterialPageRoute(
-      builder: (_) => UpdateStatusSplash(
-        success: status == UpdateStatus.success,
-        holdDuration: const Duration(seconds: 8),
-      ),
-      fullscreenDialog: true,
-      maintainState: false,
-    ));
+      // Push to next route.
+      if (mounted && nextNamedRoute != null) {
+        navigatorKey.currentState?.popAndPushNamed(nextNamedRoute);
+      }
+      return;
+    }
 
-    return;
+    if (nextNamedRoute != null && mounted) {
+      navigatorKey.currentState?.popAndPushNamed(nextNamedRoute);
+    }
   }
 
   void _handleUnderstudyClientConnectionEstablished(

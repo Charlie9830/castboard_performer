@@ -4,10 +4,9 @@ import 'package:flutter/material.dart';
 class UpdateStatusSplash extends StatefulWidget {
   final bool success;
   final Duration holdDuration;
+  
   const UpdateStatusSplash(
-      {Key? key,
-      this.success = true,
-      this.holdDuration = const Duration(seconds: 5)})
+      {Key? key, this.success = true, required this.holdDuration})
       : super(key: key);
 
   @override
@@ -52,10 +51,11 @@ class _Success extends StatelessWidget {
           child: Icon(Icons.check_circle, color: Colors.green, size: 64),
         ),
         Text('Update complete', style: Theme.of(context).textTheme.headline5),
+                const SizedBox(height: 16),
         Text('Performer will resume in a few seconds',
-            style: Theme.of(context).textTheme.headline5),
-        const SizedBox(height: 16),
-        Text('Version codename', style: Theme.of(context).textTheme.caption),
+            style: Theme.of(context).textTheme.bodyLarge),
+        const SizedBox(height: 32),
+        Text('Version codename', style: Theme.of(context).textTheme.bodySmall),
         const Text(kVersionCodename)
       ],
     );
@@ -72,7 +72,7 @@ class _Fail extends StatelessWidget {
       children: [
         const Padding(
           padding: EdgeInsets.all(24),
-          child: Icon(Icons.sentiment_neutral, color: Colors.green, size: 64),
+          child: Icon(Icons.sentiment_neutral, color: Colors.yellow, size: 64),
         ),
         Text('Update was not successful',
             style: Theme.of(context).textTheme.headline5),

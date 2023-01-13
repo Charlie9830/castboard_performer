@@ -7,7 +7,13 @@
         {
             "name": "castboard_performer",
             "request": "launch",
-            "type": "dart"
+            "type": "dart",
+            "toolArgs": [
+                "--dart-define",
+                "UPDATE_SERVER_ADDRESS=http://localhost:5000",
+                "--dart-define",
+                "ACTIVATION_SERVER_ADDRESS=http://localhost:8080"
+            ]
         },
         {
             "type": "dart",
@@ -15,6 +21,6 @@
             "request": "attach",
             "deviceId": "flutter-tester",
             "observatoryUri": "http://10.101.1.2:45111/mnisOqCBeJM=/"
-          }
+        }
     ]
 }

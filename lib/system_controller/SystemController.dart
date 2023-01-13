@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_performer/castboard_platform.dart';
 import 'package:castboard_performer/system_controller/SystemConfigCommitResult.dart';
@@ -53,16 +51,6 @@ abstract class SystemController {
   Future<SystemConfigCommitResult> commitSystemConfig(SystemConfig config);
 
   Future<SystemConfig> getSystemConfig();
-
-  // Updates the application using the provided zip file.
-  Future<bool> updateApplication(List<int> byteData);
-
-  // Checks if the player has just been updated and is booting for the first time
-  // since.
-  Future<UpdateStatus> getUpdateStatus();
-
-  // Resets the update status.
-  Future<void> resetUpdateStatus();
 
   Future<void> dispose();
 }

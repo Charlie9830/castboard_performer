@@ -307,19 +307,4 @@ class SystemControllerRpiLinux implements SystemController {
     await Future.wait(futures);
     return;
   }
-
-  @override
-  Future<bool> updateApplication(List<int> byteData) {
-    return updateApplicationInternal(byteData, _systemBus);
-  }
-
-  @override
-  Future<UpdateStatus> getUpdateStatus() async {
-    return getUpdateStatusInternal();
-  }
-
-  @override
-  Future<void> resetUpdateStatus() async {
-    return resetUpdateStatusInternal();
-  }
 }
