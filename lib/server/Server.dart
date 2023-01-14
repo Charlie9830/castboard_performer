@@ -50,7 +50,7 @@ const _webAppFilePath = 'web_app/';
 const _defaultDocument = 'index.html';
 
 const String kServerAddress = '127.0.0.1';
-const int kServerPort = 8080;
+const int kDefaultServerPort = 8080;
 
 // WebSocket Stream
 final Map<String, WebSocketChannel> _previewStreamWebSocketChannels = {};
@@ -107,7 +107,7 @@ class Server {
     this.onUnderstudyClientConnectionDropped,
   });
 
-  Future<void> initalize() async {
+  Future<void> initalize(int port) async {
     try {
       // Serve directly from the _webAppFilePath. In future we may change this to the Asset Bundle Root so that we could
       // serve routes to Debug logs etc.
@@ -138,7 +138,7 @@ class Server {
             .addMiddleware(cacheHeaders())
             .addHandler(cascade.handler),
         InternetAddress.anyIPv4,
-        kServerPort,
+        port,
       );
 
       LoggingManager.instance.server

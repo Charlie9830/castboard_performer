@@ -246,12 +246,14 @@ class _AppRootState extends State<AppRoot> {
                   status: _startupStatus,
                   criticalError: _criticalError,
                 ),
-            RouteNames.settings: (_) => Settings(
-                  serverPortNumber: kServerPort,
+            RouteNames.settings: (context) => Settings(
+                  runningConfig: _runningConfig,
                   understudySessions: _understudySessions,
                   onDownloadUpdate: _handleDownloadUpdate,
                   updateDownloadProgress: _updateDownloadProgress,
                   updateReadyToInstall: _softwareUpdateReady,
+                  onRunningConfigUpdated: (value) =>
+                      _handleRunningConfigUpdated(value, context),
                 ),
             RouteNames.player: (_) => Player(
                   currentSlideId: _currentSlideId,
@@ -268,7 +270,9 @@ class _AppRootState extends State<AppRoot> {
                   playing: _playing,
                   offstageUpcomingSlides: true,
                 ),
-            RouteNames.noShowSplash: (_) => const NoShowSplash(),
+            RouteNames.noShowSplash: (_) => NoShowSplash(
+                  serverPort: _runningConfig.serverPort,
+                ),
           },
         ),
       ),
@@ -285,6 +289,37 @@ class _AppRootState extends State<AppRoot> {
         }
       }
     }
+  }
+
+  void _handleRunningConfigUpdated(
+      SystemConfig value, BuildContext context) async {
+    bool restartRequired = false;
+
+    if (_runningConfig.serverPort != value.serverPort) {
+      restartRequired = true;
+    }
+
+    await _systemController.commitSystemConfig(value);
+
+    setState(() => _runningConfig = value);
+
+    if (restartRequired) {
+      await showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+                title: const Text('Settings modified'),
+                content: const Text(
+                    'Performer needs to be restarted for changes to take affect'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Okay'),
+                  )
+                ],
+              ));
+    }
+
+    print(restartRequired);
   }
 
   void _checkHeartbeats(int cutOffSeconds) {
@@ -464,13 +499,14 @@ class _AppRootState extends State<AppRoot> {
 
     // Init SystemController
     _updateStartupStatus('Initializing System Controller');
+    SystemConfig systemConfig;
     try {
       LoggingManager.instance.player.info('Initializing SystemController');
       await _systemController.initialize();
 
       LoggingManager.instance.player.info('SystemController Initialized');
       LoggingManager.instance.player.info('Reading System Configuration');
-      final systemConfig = await _systemController.getSystemConfig();
+      systemConfig = await _systemController.getSystemConfig();
       _loadSystemConfig(systemConfig);
     } catch (e, stacktrace) {
       LoggingManager.instance.player.severe(
@@ -487,7 +523,7 @@ class _AppRootState extends State<AppRoot> {
     // Init Server.
     try {
       LoggingManager.instance.player.info('Initializing Server');
-      await _initializeServer();
+      await _initializeServer(systemConfig.serverPort);
       LoggingManager.instance.player.info('Server initialization success');
     } catch (e, stacktrace) {
       LoggingManager.instance.player
@@ -725,8 +761,8 @@ class _AppRootState extends State<AppRoot> {
         _slides.keys.toList().indexOf(currentSlideId));
   }
 
-  Future<void> _initializeServer() async {
-    return await _server.initalize();
+  Future<void> _initializeServer(int port) async {
+    return await _server.initalize(port);
   }
 
   void _handleSystemCommandReceived(SystemCommand command) {
@@ -753,7 +789,7 @@ class _AppRootState extends State<AppRoot> {
         .info("Show Data Pull requested from remote. Packaging show data...");
     return RemoteShowData(
       softwareUpdateReady:
-          true, //_softwareUpdateReady, // Let Showcaller know if a Performer Software update is ready to install.
+          _softwareUpdateReady, // Let Showcaller know if a Performer Software update is ready to install.
       showData: ShowDataModel(
         tracks: _tracks,
         trackRefsByName: <String,

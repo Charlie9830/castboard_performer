@@ -112,7 +112,7 @@ class MdnsLinuxImpl implements MdnsBase {
           const DBusString('_http._tcp'), // Type
           const DBusString('local'), // Domain
           DBusString(hostname), // shost
-          const DBusUint16(kServerPort), // Port
+          const DBusUint16(kDefaultServerPort), // Port
           DBusArray(
               DBusSignature.array(DBusSignature.byte), []), // AAY Text record
         ]);

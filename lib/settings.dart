@@ -1,9 +1,12 @@
+import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_core/update_manager/update_check_result.dart';
 import 'package:castboard_core/update_manager/update_manager.dart';
 import 'package:castboard_performer/address_list_display.dart';
 import 'package:castboard_performer/fullscreen_toggle_button.dart';
 import 'package:castboard_performer/launch_local_showcaller.dart';
 import 'package:castboard_performer/models/understudy_session_model.dart';
+import 'package:castboard_performer/network_port_selector.dart';
+import 'package:castboard_performer/server/Server.dart';
 import 'package:castboard_performer/setFullscreen.dart';
 import 'package:castboard_performer/understudy_session_display.dart';
 import 'package:castboard_performer/versionCodename.dart';
@@ -11,19 +14,21 @@ import 'package:flutter/material.dart';
 import 'package:window_manager/window_manager.dart';
 
 class Settings extends StatefulWidget {
-  final int serverPortNumber;
+  final SystemConfig runningConfig;
   final Map<String, UnderstudySessionModel> understudySessions;
   final bool updateReadyToInstall;
   final void Function()? onDownloadUpdate;
   final double? updateDownloadProgress;
+  final void Function(SystemConfig config)? onRunningConfigUpdated;
 
   const Settings({
     Key? key,
-    required this.serverPortNumber,
+    required this.runningConfig,
     this.understudySessions = const {},
     this.updateReadyToInstall = false,
     this.onDownloadUpdate,
     this.updateDownloadProgress,
+    this.onRunningConfigUpdated,
   }) : super(key: key);
 
   @override
@@ -67,6 +72,7 @@ class _SettingsState extends State<Settings> {
                   const _Title(title: 'Display'),
                   _FullscreenCheckbox(
                       isFullscreen: _isFullscreen, onChanged: _setIsFullscreen),
+
                   const SizedBox(height: 32),
 
                   // Local Control
@@ -77,9 +83,18 @@ class _SettingsState extends State<Settings> {
                   OutlinedButton.icon(
                       icon: const Icon(Icons.settings_remote),
                       onPressed: () async {
-                        launchLocalShowcaller();
+                        launchLocalShowcaller(widget.runningConfig.serverPort);
                       },
                       label: const Text('Launch Showcaller')),
+
+                  const SizedBox(height: 32),
+
+                  // Network Settings
+                  const _Title(title: 'Network'),
+                  NetworkPortSelector(
+                    value: widget.runningConfig.serverPort.toString(),
+                    onChanged: _handleServerPortChanged,
+                  ),
 
                   const SizedBox(height: 32),
 
@@ -88,7 +103,8 @@ class _SettingsState extends State<Settings> {
                   Text(
                       'Showcaller can be accessed remotely via a network connection simply by opening a browser and navigating to one of these addresses. ',
                       style: Theme.of(context).textTheme.bodySmall),
-                  AddressListDisplay(portNumber: widget.serverPortNumber),
+                  AddressListDisplay(
+                      portNumber: widget.runningConfig.serverPort),
 
                   const SizedBox(height: 32),
 
@@ -101,7 +117,7 @@ class _SettingsState extends State<Settings> {
                       'To connect a remote Smart TV, access it\'s web browser and navigate to one of the following addresses',
                       style: Theme.of(context).textTheme.bodySmall),
                   AddressListDisplay(
-                    portNumber: widget.serverPortNumber,
+                    portNumber: widget.runningConfig.serverPort,
                     addressSuffix: 'understudy',
                   ),
                   const SizedBox(height: 16),
@@ -153,6 +169,11 @@ class _SettingsState extends State<Settings> {
             ),
           );
         }));
+  }
+
+  void _handleServerPortChanged(int value) {
+    widget.onRunningConfigUpdated
+        ?.call(widget.runningConfig.copyWith(serverPort: value));
   }
 
   void checkForUpdates(BuildContext context) async {

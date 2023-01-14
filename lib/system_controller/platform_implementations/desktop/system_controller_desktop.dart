@@ -1,5 +1,7 @@
 import 'package:castboard_core/logging/LoggingManager.dart';
 import 'package:castboard_core/storage/Storage.dart';
+import 'package:castboard_performer/server/Server.dart';
+import 'package:castboard_performer/server/validate_server_port.dart';
 import 'package:castboard_performer/system_controller/SystemConfigCommitResult.dart';
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_performer/system_controller/SystemController.dart';
@@ -20,9 +22,16 @@ class SystemControllerDesktop implements SystemController {
       SystemConfig config) async {
     final bool playShowOnIdle =
         config.playShowOnIdle ?? SystemSettingsModel.initial().playShowOnIdle;
+
+    final serverPort = validateServerPort(config.serverPort)
+        ? config.serverPort
+        : kDefaultServerPort;
+
     try {
       await Storage.instance.getPerformerSettingsFile().writeAsString(
-          SystemSettingsModel(playShowOnIdle: playShowOnIdle).toJson());
+          SystemSettingsModel(
+                  playShowOnIdle: playShowOnIdle, serverPort: serverPort)
+              .toJson());
     } catch (e) {
       return SystemConfigCommitResult(
           success: false,
@@ -49,6 +58,7 @@ class SystemControllerDesktop implements SystemController {
       playerBuildSignature: packageInfo.buildSignature,
       playerVersion: packageInfo.version,
       versionCodename: kVersionCodename,
+      serverPort: kDefaultServerPort,
     );
 
     if (await settingsFile.exists() == false) {
@@ -62,7 +72,10 @@ class SystemControllerDesktop implements SystemController {
           SystemSettingsModel.fromJson(await settingsFile.readAsString());
 
       return defaultSystemSettings.copyWith(
-          playShowOnIdle: platformSettings.playShowOnIdle);
+          playShowOnIdle: platformSettings.playShowOnIdle,
+          serverPort: validateServerPort(platformSettings.serverPort)
+              ? platformSettings.serverPort
+              : kDefaultServerPort);
     } catch (e, stacktrace) {
       LoggingManager.instance.player.warning(
           'An error has occurred reading the System config file.',
@@ -72,7 +85,6 @@ class SystemControllerDesktop implements SystemController {
       return defaultSystemSettings;
     }
   }
-
 
   @override
   Future<void> powerOff() async {

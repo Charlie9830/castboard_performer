@@ -27,6 +27,7 @@ class RpiBootConfigModel {
       playerVersion: '',
       playerBuildSignature: '',
       versionCodename: kVersionCodename,
+      serverPort: 0,
     );
   }
 

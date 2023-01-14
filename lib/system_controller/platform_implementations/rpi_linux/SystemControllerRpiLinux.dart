@@ -5,6 +5,7 @@ import 'package:castboard_core/models/system_controller/AvailableResolutions.dar
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_core/models/system_controller/DeviceOrientation.dart';
 import 'package:castboard_core/models/system_controller/DeviceResolution.dart';
+import 'package:castboard_performer/server/Server.dart';
 import 'package:castboard_performer/system_controller/SystemConfigCommitResult.dart';
 import 'package:castboard_performer/system_controller/platform_implementations/rpi_linux/getRpiBootConfigFile.dart';
 import 'package:castboard_performer/system_controller/platform_implementations/rpi_linux/models/ApplicationConfigModel.dart';
@@ -269,6 +270,7 @@ class SystemControllerRpiLinux implements SystemController {
       playerBuildSignature: packageInfo.buildSignature,
       playerVersion: packageInfo.version,
       versionCodename: kVersionCodename,
+      serverPort: 0,
     );
 
     LoggingManager.instance.systemManager.info(

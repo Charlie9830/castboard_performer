@@ -3,15 +3,15 @@ import 'package:castboard_performer/ApplicationTitle.dart';
 import 'package:castboard_performer/address_list_display.dart';
 import 'package:castboard_performer/fullscreen_toggle_button.dart';
 import 'package:castboard_performer/launch_local_showcaller.dart';
-import 'package:castboard_performer/models/understudy_session_model.dart';
 import 'package:castboard_performer/server/Server.dart';
-import 'package:castboard_performer/setFullscreen.dart';
 import 'package:flutter/material.dart';
-import 'package:window_manager/window_manager.dart';
 
 class NoShowSplash extends StatelessWidget {
+  final int serverPort;
+
   const NoShowSplash({
     Key? key,
+    required this.serverPort,
   }) : super(key: key);
 
   @override
@@ -55,7 +55,7 @@ class NoShowSplash extends StatelessWidget {
                           OutlinedButton.icon(
                             icon: const Icon(Icons.settings_remote),
                             onPressed: () async {
-                              launchLocalShowcaller();
+                              launchLocalShowcaller(serverPort);
                             },
                             label: const Text('Launch Showcaller'),
                           ),
@@ -68,18 +68,18 @@ class NoShowSplash extends StatelessWidget {
                         children: [
                           Expanded(
                             child: Column(
-                              children: const [
-                                Icon(
+                              children: [
+                                const Icon(
                                   Icons.settings_remote,
                                   color: Colors.grey,
                                   size: 32,
                                 ),
                                 vSpacer,
-                                Text(
+                                const Text(
                                   'Alternatively Showcaller can be accessed from another device via a network connection simply by opening a browser and navigating to one of the below addresses on that device.',
                                 ),
                                 AddressListDisplay(
-                                  portNumber: kServerPort,
+                                  portNumber: serverPort,
                                   hideAddresses: true,
                                 )
                               ],
@@ -97,7 +97,7 @@ class NoShowSplash extends StatelessWidget {
                                 Text(
                                     'To start playback on a remote device, access it\'s web browser and navigate to one of the following addresses'),
                                 AddressListDisplay(
-                                  portNumber: kServerPort,
+                                  portNumber: kDefaultServerPort,
                                   hideAddresses: true,
                                   addressSuffix: 'understudy',
                                 ),
