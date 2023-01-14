@@ -34,5 +34,21 @@ String getAssetBundleRootPath() {
 }
 
 String _getDebugAssetBundleRootPath() {
+  if (Platform.isMacOS) {
+    print(Platform.resolvedExecutable);
+    // Platform.resolvedExecutable will be the executable inside the built package. In other words it's path from the project root will be very deep.
+    final projectDir = Directory(Platform.resolvedExecutable)
+        .parent // MacOS
+        .parent // Contents
+        .parent // Castboard Performer.app
+        .parent // Debug
+        .parent // Products
+        .parent // Build
+        .parent // macos
+        .parent // build
+        .parent; // castboard_performer
+    return p.join(projectDir.path, 'static_debug');
+  }
+
   return p.join(p.current, 'static_debug');
 }
