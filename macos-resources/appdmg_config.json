@@ -9,7 +9,7 @@
     "background": "./dmgBackground.png",
     "contents": [
         {
-            "x": 450,
+            "x": 500,
             "y": 150,
             "type": "link",
             "path": "/Applications"
