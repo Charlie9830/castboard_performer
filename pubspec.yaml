@@ -288,4 +288,4 @@ msix_config:
 
 stagemanager:
   defines:
-    - UPDATE_SERVER_ADDRESS: http://localhost:5000
+    - UPDATE_SERVER_ADDRESS: https://dchumbzrvwzsbmmkhcug.supabase.co/storage/v1/object/public/performer-artifacts/
