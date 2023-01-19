@@ -9,7 +9,6 @@ import 'package:castboard_core/models/ActorRef.dart';
 import 'package:castboard_core/models/CastChangeModel.dart';
 import 'package:castboard_core/models/ManifestModel.dart';
 import 'package:castboard_core/models/PresetModel.dart';
-import 'package:castboard_core/models/RemoteCastChangeData.dart';
 import 'package:castboard_core/models/RemoteShowData.dart';
 import 'package:castboard_core/models/ShowDataModel.dart';
 import 'package:castboard_core/models/SlideSizeModel.dart';
@@ -18,6 +17,7 @@ import 'package:castboard_core/models/TrackModel.dart';
 import 'package:castboard_core/models/SlideModel.dart';
 import 'package:castboard_core/models/TrackRef.dart';
 import 'package:castboard_core/models/performerDeviceModel.dart';
+import 'package:castboard_core/models/playback_state_model.dart';
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_core/models/understudy/font_manifest.dart';
 import 'package:castboard_core/models/understudy/slide_model.dart';
@@ -58,6 +58,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:collection/collection.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final GlobalKey renderBoundaryKey = GlobalKey();
@@ -147,6 +148,8 @@ class _AppRootState extends State<AppRoot> {
 
   // Slides
   Map<String, SlideModel> _slides = {};
+  List<SlideModel> _playingSlides = [];
+
   SlideOrientation _slideOrientation = SlideOrientation.landscape;
 
   // Playback
@@ -154,6 +157,7 @@ class _AppRootState extends State<AppRoot> {
   SlideCycler? _cycler;
   String _currentSlideId = '';
   String _nextSlideId = '';
+  Set<String> _disabledSlideIds = {};
 
   // File Manifest
   ManifestModel _fileManifest = const ManifestModel.blank();
@@ -256,6 +260,7 @@ class _AppRootState extends State<AppRoot> {
                       _handleRunningConfigUpdated(value, context),
                 ),
             RouteNames.player: (_) => Player(
+                  noSlides: _playingSlides.isEmpty,
                   currentSlideId: _currentSlideId,
                   nextSlideId:
                       _nextSlideId, // The next slide is 'Offstaged' to force Image Caching TODO: Is this required anymore?
@@ -612,17 +617,52 @@ class _AppRootState extends State<AppRoot> {
 
   void _loadShow(ImportedShowData data) async {
     // Dump current Slide Cycler.
-    LoggingManager.instance.player.info("Reseting slide cycler");
+    LoggingManager.instance.player.info("Resetting slide cycler");
     if (_cycler != null) {
       _cycler!.dispose();
     }
 
+    final playbackState =
+        data.playbackState ?? const PlaybackStateModel.initial();
+
+    // Playback State.
+    LoggingManager.instance.player.info("Processing playback state");
+    LoggingManager.instance.player.info("Processing presets");
+    // Really try not to show a blank Preset. Fallback to the Default Preset if anything is missing.
+    String currentPresetId = playbackState.currentPresetId;
+
+    // Coerce Preset Id to default if blank value.
+    currentPresetId = currentPresetId == ''
+        ? const PresetModel.builtIn().uid
+        : currentPresetId;
+    final currentPreset =
+        data.showData.presets[currentPresetId] ?? const PresetModel.builtIn();
+
+    // Get ancilliary Preset data.
+    final combinedPresetIds = playbackState.combinedPresetIds;
+    final liveCastChangeEdits = playbackState.liveCastChangeEdits;
+
+    // Compose the displayed Cast Change.
+    LoggingManager.instance.player.info("Composing the displayed cast change");
+    final displayedCastChange = CastChangeModel.compose(
+      base: currentPreset.castChange,
+      combined: combinedPresetIds
+          .map((id) =>
+              data.showData.presets[id]?.castChange ??
+              const CastChangeModel.initial())
+          .toList(),
+      liveEdits: liveCastChangeEdits,
+    );
+
     // Slides
-    LoggingManager.instance.player.info('Sorting slides');
-    final sortedSlides = List<SlideModel>.from(data.slideData.slides.values)
-      ..sort((a, b) => a.index - b.index);
-    final initialSlide = sortedSlides.isNotEmpty ? sortedSlides.first : null;
-    final initialNextSlide = sortedSlides.length >= 2 ? sortedSlides[1] : null;
+    LoggingManager.instance.player.info('Processing Slides');
+    final playingSlides = _filterAndSortSlides(
+        data.slideData.slides,
+        playbackState
+            .disabledSlideIds); // Stores the slides selected for playback and in correct order.
+    final initialSlide = playingSlides.isNotEmpty ? playingSlides.first : null;
+    final initialNextSlide =
+        playingSlides.length >= 2 ? playingSlides[1] : null;
 
     // Image Cache.
     LoggingManager.instance.player.info("Resetting image cache");
@@ -635,7 +675,7 @@ class _AppRootState extends State<AppRoot> {
     // are rarely displaying every headshot, otherwise we would have to analyze each slide and compare it against the cast change
     // to preCache the images we are going to need, as well as managing a system for evicting unused images from the cache.
     LoggingManager.instance.player.info("Pre caching backgrounds");
-    final backgroundFiles = sortedSlides.map(
+    final backgroundFiles = playingSlides.map(
         (slide) => Storage.instance.getBackgroundFile(slide.backgroundRef));
     final preCacheImageRequests = backgroundFiles
         .where((file) => file != null)
@@ -665,38 +705,6 @@ class _AppRootState extends State<AppRoot> {
           .severe("An error occured loading fonts", e, stacktrace);
     }
 
-    // Playback State.
-    LoggingManager.instance.player.info("Processing playback state");
-    LoggingManager.instance.player.info("Processing presets");
-    // Really try not to show a blank Preset. Fallback to the Default Preset if anything is missing.
-    String currentPresetId =
-        data.playbackState?.currentPresetId ?? const PresetModel.builtIn().uid;
-    currentPresetId = currentPresetId == ''
-        ? const PresetModel.builtIn().uid
-        : currentPresetId;
-    final currentPreset =
-        data.showData.presets[currentPresetId] ?? const PresetModel.builtIn();
-
-    // Get ancilliary Preset data.
-    final combinedPresetIds = data.playbackState?.combinedPresetIds ?? const [];
-    final liveCastChangeEdits = data.playbackState?.liveCastChangeEdits ??
-        const CastChangeModel.initial();
-
-    // Compose the displayed Cast Change.
-    LoggingManager.instance.player.info("Composing the displayed cast change");
-    final displayedCastChange = CastChangeModel.compose(
-      base: currentPreset.castChange,
-      combined: combinedPresetIds
-          .map((id) =>
-              data.showData.presets[id]?.castChange ??
-              const CastChangeModel.initial())
-          .toList(),
-      liveEdits: liveCastChangeEdits,
-    );
-
-    // TODO: It's possible that the user could upload an empty showfile. In which case stuff like
-    // initialSlide will be null and cause a crash. We need to have handling for an empty showfile.
-
     setState(() {
       _actors = data.showData.actors;
       _actorIndex = data.showData.actorIndex;
@@ -705,28 +713,37 @@ class _AppRootState extends State<AppRoot> {
       _trackRefsByName = data.showData.trackRefsByName;
       _presets = data.showData.presets;
       _slides = data.slideData.slides;
-      _currentSlideId = initialSlide?.uid ?? _currentSlideId;
+      _playingSlides = playingSlides;
+      _currentSlideId = initialSlide?.uid ?? '';
       _nextSlideId = initialNextSlide?.uid ?? '';
-      _cycler = SlideCycler(
-          slides: sortedSlides,
-          initialSlide: initialSlide!,
-          onPlaybackOrSlideChange: _handleSlideCycle);
+      _cycler = _buildCycler(playingSlides, initialSlide);
       _playing = true;
       _slideOrientation = data.slideData.slideOrientation;
       _currentPresetId = currentPresetId;
       _combinedPresetIds = combinedPresetIds;
       _liveCastChangeEdits = liveCastChangeEdits;
       _displayedCastChange = displayedCastChange;
+      _disabledSlideIds = playbackState.disabledSlideIds;
       _fileManifest = data.manifest;
     });
 
-    _updateWebViewerClientHTML();
+    _updateWebViewerClientHTML(
+        playingSlides, playingSlides.isEmpty ? -1 : playingSlides.length);
 
     LoggingManager.instance.player
         .info("Load show completed. Pushing player route");
 
     // Push player Route.
     navigatorKey.currentState?.popAndPushNamed(RouteNames.player);
+  }
+
+  SlideCycler _buildCycler(
+      List<SlideModel> playingSlides, SlideModel? initialSlide) {
+    return SlideCycler(
+      slides: playingSlides,
+      currentSlideIndex: initialSlide != null ? 0 : -1,
+      onPlaybackOrSlideChange: _handleSlideCycle,
+    );
   }
 
   Future<void> _backgroundDownloadSoftwareUpdates() async {
@@ -749,16 +766,15 @@ class _AppRootState extends State<AppRoot> {
     imageCache.maximumSizeBytes = 800 * 1000000;
   }
 
-  void _handleSlideCycle(
-      String currentSlideId, String nextSlideId, bool playing) {
+  void _handleSlideCycle(int playingIndex, String currentSlideId,
+      String nextSlideId, bool playing) {
     setState(() {
       _currentSlideId = currentSlideId;
       _nextSlideId = nextSlideId;
       _playing = playing;
     });
 
-    _server.setWebViewerClientsSlideIndex(
-        _slides.keys.toList().indexOf(currentSlideId));
+    _server.setWebViewerClientsSlideIndex(playingIndex);
   }
 
   Future<void> _initializeServer(int port) async {
@@ -799,10 +815,13 @@ class _AppRootState extends State<AppRoot> {
         actors: _actors,
         presets: _presets,
       ),
-      playbackState: PlaybackStateData(
+      playbackState: PlaybackStateModel(
         combinedPresetIds: _combinedPresetIds,
         currentPresetId: _currentPresetId,
         liveCastChangeEdits: _liveCastChangeEdits,
+        disabledSlideIds: _disabledSlideIds,
+        slidesMetadata:
+            _slides.values.map((slide) => slide.toMetadata()).toList(),
       ),
       manifest: _fileManifest,
     );
@@ -815,7 +834,38 @@ class _AppRootState extends State<AppRoot> {
     LoggingManager.instance.player.info("Processing preset data");
     final presets = _updatePresets(data, _presets);
     LoggingManager.instance.player.info('Pushing to state');
+
+    final playingSlides =
+        _filterAndSortSlides(_slides, data.playbackState.disabledSlideIds);
+
+    Set<String>? newDisabledSlideIds;
+    SlideCycler? newCycler;
+    String? currentSlideId;
+    String? nextSlideId;
+
+    // If some Slides have been disabled or enabled. We need to do extra work with the Slide Cycler.
+    if (setEquals(_disabledSlideIds, data.playbackState.disabledSlideIds) !=
+        true) {
+      newDisabledSlideIds = data.playbackState.disabledSlideIds;
+
+      // Clear the Slide Cycler and rebuild it with the new state of Playing slides.
+      _cycler?.dispose();
+
+      final initialSlide = playingSlides.firstOrNull;
+      final nextSlide = playingSlides.length >= 2 ? playingSlides[1] : null;
+
+      newCycler = _buildCycler(playingSlides, playingSlides.firstOrNull);
+
+      currentSlideId = initialSlide?.uid ?? '';
+      nextSlideId = nextSlide?.uid ?? '';
+    }
+
     setState(() {
+      _cycler = newCycler ?? _cycler;
+      _currentSlideId = currentSlideId ?? _currentSlideId;
+      _nextSlideId = nextSlideId ?? _nextSlideId;
+      _disabledSlideIds = newDisabledSlideIds ?? _disabledSlideIds;
+      _playingSlides = playingSlides;
       _presets = presets;
       _currentPresetId = data.playbackState.currentPresetId;
       _combinedPresetIds = data.playbackState.combinedPresetIds;
@@ -854,7 +904,7 @@ class _AppRootState extends State<AppRoot> {
       return false;
     }
 
-    _updateWebViewerClientHTML();
+    _updateWebViewerClientHTML(_playingSlides, _getCurrentSlideIndex());
 
     return true;
   }
@@ -1028,7 +1078,7 @@ class _AppRootState extends State<AppRoot> {
 
   void _handleUnderstudyClientConnectionEstablished(
       UnderstudySessionModel session) {
-    _updateWebViewerClientHTML();
+    _updateWebViewerClientHTML(_playingSlides, _getCurrentSlideIndex());
 
     setState(() {
       _understudySessions =
@@ -1051,7 +1101,8 @@ class _AppRootState extends State<AppRoot> {
     });
   }
 
-  void _updateWebViewerClientHTML() {
+  void _updateWebViewerClientHTML(
+      List<SlideModel> playingSlides, int currentIndex) {
     if (_fileManifest == const ManifestModel.blank()) {
       // No Show Loaded.
       _server.updateWebViewerClientHTML(UnderstudyMessageModel(
@@ -1062,10 +1113,17 @@ class _AppRootState extends State<AppRoot> {
 
     _server.updateWebViewerClientHTML(UnderstudyMessageModel(
         type: UnderstudyMessageType.payload,
-        payload: _buildSlidesPayload().toJson()));
+        payload: _buildSlidesPayload(
+          _slides,
+          playingSlides,
+          currentIndex,
+        ).toJson()));
   }
 
-  UnderstudySlidesPayloadModel _buildSlidesPayload() {
+  UnderstudySlidesPayloadModel _buildSlidesPayload(
+      Map<String, SlideModel> allSlides,
+      List<SlideModel> playingSlides,
+      int currentIndex) {
     final slideAssetsUrlPrefix = kDebugMode
         ? 'http://localhost:${_server.port}/api/understudy'
         : '/api/understudy';
@@ -1079,10 +1137,10 @@ class _AppRootState extends State<AppRoot> {
           requiredFontFamilies: buildFontList(_slides.values.toList()),
           customFonts: _fileManifest.requiredFonts,
         ),
-        currentSlideIndex: _slides.keys.toList().indexOf(_currentSlideId),
+        currentSlideIndex: currentIndex,
         width: slideSize.width,
         height: slideSize.height,
-        slides: _slides.values.map((slide) {
+        slides: playingSlides.map((slide) {
           final slideElement = buildSlideElementsHtml(
             urlPrefix: slideAssetsUrlPrefix,
             slide: slide,
@@ -1094,7 +1152,7 @@ class _AppRootState extends State<AppRoot> {
 
           final backgroundElement = buildBackgroundHtml(
               urlPrefix: slideAssetsUrlPrefix,
-              slides: _slides,
+              slides: allSlides,
               slideId: slide.uid,
               slideSize: slideSize.toSize());
 
@@ -1103,6 +1161,18 @@ class _AppRootState extends State<AppRoot> {
           return UnderstudySlideModel(
               holdTime: slide.holdTime, html: slideElement.outerHtml);
         }).toList());
+  }
+
+  List<SlideModel> _filterAndSortSlides(
+      Map<String, SlideModel> slideCollection, Set<String> disabledSlideIds) {
+    return slideCollection.values
+        .where((slide) => disabledSlideIds.contains(slide.uid) == false)
+        .toList()
+      ..sort((a, b) => a.index - b.index);
+  }
+
+  int _getCurrentSlideIndex() {
+    return _playingSlides.indexWhere((slide) => slide.uid == _currentSlideId);
   }
 
   @override
