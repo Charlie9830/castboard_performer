@@ -285,3 +285,7 @@ msix_config:
   certificate_password: 123456
   install_certificate: false
   publisher: CN=Charlie Hall, O=Charlie Hall, L=Richmond, S=Victoria, C=AU
+
+stagemanager:
+  defines:
+    - UPDATE_SERVER_ADDRESS: https://dchumbzrvwzsbmmkhcug.supabase.co/storage/v1/object/public/performer-artifacts/
