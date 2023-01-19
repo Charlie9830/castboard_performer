@@ -83,11 +83,11 @@ void main() async {
     await windowManager.ensureInitialized();
 
     const WindowOptions windowOptions = WindowOptions(
-      center: true,
-      backgroundColor: Colors.transparent,
-      fullScreen: kReleaseMode,
-      minimumSize: kMinimumWindowSize,
-    );
+        center: true,
+        backgroundColor: Colors.transparent,
+        fullScreen: kReleaseMode,
+        minimumSize: kMinimumWindowSize,
+        title: 'Castboard Performer');
 
     windowManager.waitUntilReadyToShow(windowOptions, () async {
       await windowManager.show();
