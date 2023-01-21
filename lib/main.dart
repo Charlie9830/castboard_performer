@@ -427,8 +427,10 @@ class _AppRootState extends State<AppRoot> {
   }
 
   Future<ShowfileUploadResult> _handleShowfileReceived(List<int> bytes) async {
-    // Dump the current route and push the loading splash. This ensures that we don't end up deleting an image file
+    // Dump the current route(s) and push the loading splash. This ensures that we don't end up deleting an image file
     // just as an ImageProvider is trying to access it.
+    navigatorKey.currentState!
+        .popUntil((route) => route.isFirst && route.isCurrent);
     navigatorKey.currentState!.popAndPushNamed(RouteNames.loadingSplash);
 
     // Validate the incoming show file.
