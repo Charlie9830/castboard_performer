@@ -28,6 +28,7 @@ class RpiBootConfigModel {
       playerBuildSignature: '',
       versionCodename: kVersionCodename,
       serverPort: 0,
+      deviceId: 'UNSET DEVICE ID'
     );
   }
 

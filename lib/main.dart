@@ -274,6 +274,7 @@ class _AppRootState extends State<AppRoot> {
                       .toSize(),
                   playing: _playing,
                   offstageUpcomingSlides: true,
+                  showDemoIndicator: _fileManifest.isDemoShow,
                 ),
             RouteNames.noShowSplash: (_) => NoShowSplash(
                   serverPort: _runningConfig.serverPort,
@@ -383,12 +384,11 @@ class _AppRootState extends State<AppRoot> {
   }
 
   Future<PerformerDeviceModel> _handleConnectivityPingReceived() async {
-    final systemConfig = await sc.SystemController().getSystemConfig();
     final showName = _fileManifest.fileName;
-
     return PerformerDeviceModel.detailsOnly(
       showName: showName,
-      softwareVersion: systemConfig.playerVersion,
+      deviceId: _runningConfig.deviceId,
+      softwareVersion: _runningConfig.playerVersion,
     );
   }
 
@@ -544,7 +544,11 @@ class _AppRootState extends State<AppRoot> {
     _updateStartupStatus('Initializing Service Advertising.');
     try {
       LoggingManager.instance.server.info('Initializing Service Advertising');
-      await ServiceAdvertiser.initialize(_handleConnectivityPingReceived);
+      await ServiceAdvertiser.initialize(
+        'Castboard Performer',
+        _handleConnectivityPingReceived,
+        mdnsPort: systemConfig.serverPort,
+      );
       LoggingManager.instance.server.info('Service Advertising Initialized');
     } catch (e, stacktrace) {
       LoggingManager.instance.server
@@ -1150,6 +1154,7 @@ class _AppRootState extends State<AppRoot> {
             castChange: _displayedCastChange,
             trackRefsByName: _trackRefsByName,
             tracks: _tracks,
+            showDemoDisclaimer: _fileManifest.isDemoShow,
           );
 
           final backgroundElement = buildBackgroundHtml(

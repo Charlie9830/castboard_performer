@@ -1,5 +1,6 @@
 import 'package:castboard_core/logging/LoggingManager.dart';
 import 'package:castboard_core/storage/Storage.dart';
+import 'package:castboard_core/utils/getUid.dart';
 import 'package:castboard_performer/server/Server.dart';
 import 'package:castboard_performer/server/validate_server_port.dart';
 import 'package:castboard_performer/system_controller/SystemConfigCommitResult.dart';
@@ -30,7 +31,9 @@ class SystemControllerDesktop implements SystemController {
     try {
       await Storage.instance.getPerformerSettingsFile().writeAsString(
           SystemSettingsModel(
-                  playShowOnIdle: playShowOnIdle, serverPort: serverPort)
+                  playShowOnIdle: playShowOnIdle,
+                  serverPort: serverPort,
+                  deviceId: config.deviceId)
               .toJson());
     } catch (e) {
       return SystemConfigCommitResult(
@@ -59,18 +62,29 @@ class SystemControllerDesktop implements SystemController {
       playerVersion: packageInfo.version,
       versionCodename: kVersionCodename,
       serverPort: kDefaultServerPort,
+      deviceId: getUid(),
     );
 
     if (await settingsFile.exists() == false) {
-      LoggingManager.instance.player
-          .info('No system config file found. Using default settings');
+      LoggingManager.instance.player.info(
+          'No system config file found. Using default settings and writing those to disk');
+
+      final writeResult = await commitSystemConfig(defaultSystemSettings);
+
+      if (writeResult.success == false) {
+        LoggingManager.instance.player
+            .warning('Error occured writing default System Config to disk');
+      } else {
+        LoggingManager.instance.player
+            .info('Default System Config written to disk.');
+      }
+
       return defaultSystemSettings;
     }
 
     try {
       final platformSettings =
           SystemSettingsModel.fromJson(await settingsFile.readAsString());
-
       return defaultSystemSettings.copyWith(
           playShowOnIdle: platformSettings.playShowOnIdle,
           serverPort: validateServerPort(platformSettings.serverPort)

@@ -16,7 +16,7 @@ class MdnsLinuxImpl implements MdnsBase {
       interface: 'org.freedesktop.Avahi.Server');
 
   @override
-  Future<void> advertise(String deviceName) async {
+  Future<void> advertise(String deviceName, int portNumber) async {
     final networkInterfaces = await _getNetworkInterfaces();
 
     if (networkInterfaces.isEmpty) {

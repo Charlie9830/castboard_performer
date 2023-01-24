@@ -1,25 +1,18 @@
-import 'dart:io';
-
 import 'package:castboard_performer/service_advertiser/mdns/mdns.dart';
+import 'package:nsd/nsd.dart';
 
 class MdnsMacOSImpl implements MdnsBase {
-  Process? _process;
-
+  Registration? _registration;
   @override
-  Future<void> advertise(String deviceName) async {
-    _process = await _registerMdns(deviceName);
+  Future<void> advertise(String deviceName, int portNumber) async {
+    _registration = await register(
+        Service(name: deviceName, type: '_http._tcp', port: portNumber));
   }
 
   @override
   Future<void> close() async {
-    _process?.kill(ProcessSignal.sigterm);
-  }
-
-  Future<Process> _registerMdns(String deviceName) async {
-    final process = await Process.start(
-        'dns-sd', ['-R', deviceName, '_http', 'local', '8032'],
-        runInShell: true);
-
-    return process;
+    if (_registration != null) {
+      await unregister(_registration!);
+    }
   }
 }

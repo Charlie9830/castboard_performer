@@ -264,14 +264,14 @@ class SystemControllerRpiLinux implements SystemController {
     final defaults = SystemConfig.defaults();
 
     final config = SystemConfig(
-      playShowOnIdle: appConfig?.playShowOnIdle ?? defaults.playShowOnIdle,
-      playerBuildNumber:
-          packageInfo.buildNumber, // TODO Update these to performer names.
-      playerBuildSignature: packageInfo.buildSignature,
-      playerVersion: packageInfo.version,
-      versionCodename: kVersionCodename,
-      serverPort: 0,
-    );
+        playShowOnIdle: appConfig?.playShowOnIdle ?? defaults.playShowOnIdle,
+        playerBuildNumber:
+            packageInfo.buildNumber, // TODO Update these to performer names.
+        playerBuildSignature: packageInfo.buildSignature,
+        playerVersion: packageInfo.version,
+        versionCodename: kVersionCodename,
+        serverPort: 0,
+        deviceId: 'UNSET DEVICE ID');
 
     LoggingManager.instance.systemManager.info(
         'System Configuration fetched. \n ${config.toMap().toString()} \n');

@@ -18,67 +18,46 @@ class ServiceAdvertiser {
     return _instance!;
   }
 
-  late final RawDatagramSocket _discoverySocket;
   late final RawDatagramSocket _unicastSocket;
   late final OnConnectivityPingCallback _onConnectivityPingCallback;
   late final MdnsBase _multicastDnsService;
   late final String _deviceName;
 
   static Future<void> initialize(
-    OnConnectivityPingCallback onConnectivityPingCallback,
-  ) async {
-    // Discovery Socket.
-    final discoverySocket = await RawDatagramSocket.bind(
-        InternetAddress.anyIPv4, pdi.discoveryPort);
-    discoverySocket.readEventsEnabled = true;
-    discoverySocket.joinMulticast(InternetAddress(pdi.multicastAddress));
-
+      String deviceName, OnConnectivityPingCallback onConnectivityPingCallback,
+      {int mdnsPort = 8081}) async {
     // Unicast Socket
     final unicastSocket = await RawDatagramSocket.bind(
         InternetAddress.anyIPv4, pdi.unicastConnectivityPort);
     unicastSocket.readEventsEnabled = true;
 
+    // OS Multicast DNS Service
+    final multicastDnsService = MdnsBase.instance();
+    print('Advertising as $mdnsPort');
+    await multicastDnsService.advertise(
+      deviceName,
+      mdnsPort,
+    );
+
     _instance = ServiceAdvertiser(
-      discoverySocket,
-      unicastSocket,
-      onConnectivityPingCallback,
-      'Performer',
+      unicastSocket: unicastSocket,
+      onConnectivityPingCallback: onConnectivityPingCallback,
+      deviceName: deviceName,
+      multicastDnsService: multicastDnsService,
     );
   }
 
-  ServiceAdvertiser(
-    RawDatagramSocket discoverySocket,
-    RawDatagramSocket unicastSocket,
-    OnConnectivityPingCallback onConnectivityPingCallback,
-    String deviceName,
-  )   : _discoverySocket = discoverySocket,
-        _unicastSocket = unicastSocket,
+  ServiceAdvertiser({
+    required RawDatagramSocket unicastSocket,
+    required OnConnectivityPingCallback onConnectivityPingCallback,
+    required String deviceName,
+    required MdnsBase multicastDnsService,
+  })  : _unicastSocket = unicastSocket,
         _onConnectivityPingCallback = onConnectivityPingCallback,
-        _deviceName = deviceName {
-    // Attach Listener to the direct Discovery Socket.
-    _discoverySocket.listen(_discoverySocketListener);
-
+        _deviceName = deviceName,
+        _multicastDnsService = multicastDnsService {
     // Attach Listener to the Unicast Socket.
     _unicastSocket.listen(_unicastSocketListener);
-
-    _multicastDnsService = MdnsBase.instance();
-    _multicastDnsService.advertise(_deviceName);
-  }
-
-  Future<void> _discoverySocketListener(RawSocketEvent event) async {
-    if (event == RawSocketEvent.read) {
-      Datagram? dg = _discoverySocket.receive();
-
-      if (dg == null) {
-        return;
-      }
-
-      if (pdi.hasMagicBytes(dg.data)) {
-        // Discovery Packet
-        _discoverySocket.send(pdi.discoveryReplyPayload, dg.address, dg.port);
-        return;
-      }
-    }
   }
 
   Future<void> _unicastSocketListener(RawSocketEvent event) async {
@@ -109,6 +88,5 @@ class ServiceAdvertiser {
   Future<void> stop() async {
     _multicastDnsService.close();
     _unicastSocket.close();
-    _discoverySocket.close();
   }
 }
