@@ -190,7 +190,7 @@ class SystemControllerRpiLinux implements SystemController {
 
   @override
   Future<SystemConfigCommitResult> commitSystemConfig(
-      SystemConfig configDelta) async {
+      SystemConfig currentConfig, SystemConfig configDelta) async {
     try {
       return await _commitSystemConfig(configDelta);
     } catch (e, stacktrace) {
@@ -271,7 +271,8 @@ class SystemControllerRpiLinux implements SystemController {
         playerVersion: packageInfo.version,
         versionCodename: kVersionCodename,
         serverPort: 0,
-        deviceId: 'UNSET DEVICE ID');
+        deviceId: 'UNSET DEVICE ID',
+        deviceName: '');
 
     LoggingManager.instance.systemManager.info(
         'System Configuration fetched. \n ${config.toMap().toString()} \n');

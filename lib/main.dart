@@ -299,23 +299,22 @@ class _AppRootState extends State<AppRoot> {
 
   void _handleRunningConfigUpdated(
       SystemConfig value, BuildContext context) async {
-    bool restartRequired = false;
+    final commitResult =
+        await _systemController.commitSystemConfig(_runningConfig, value);
 
-    if (_runningConfig.serverPort != value.serverPort) {
-      restartRequired = true;
+    if (commitResult.success == false) {
+      LoggingManager.instance.player.warning('Failed to commit System Config');
     }
-
-    await _systemController.commitSystemConfig(value);
 
     setState(() => _runningConfig = value);
 
-    if (restartRequired) {
+    if (commitResult.restartRequired) {
       await showDialog(
           context: context,
           builder: (_) => AlertDialog(
                 title: const Text('Settings modified'),
                 content: const Text(
-                    'Performer needs to be restarted for changes to take affect'),
+                    'Performer needs to be restarted for these changes to take affect'),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(),
@@ -324,8 +323,6 @@ class _AppRootState extends State<AppRoot> {
                 ],
               ));
     }
-
-    print(restartRequired);
   }
 
   void _checkHeartbeats(int cutOffSeconds) {
@@ -545,7 +542,7 @@ class _AppRootState extends State<AppRoot> {
     try {
       LoggingManager.instance.server.info('Initializing Service Advertising');
       await ServiceAdvertiser.initialize(
-        'Castboard Performer',
+        _runningConfig.deviceName,
         _handleConnectivityPingReceived,
         mdnsPort: systemConfig.serverPort,
       );
@@ -1005,8 +1002,8 @@ class _AppRootState extends State<AppRoot> {
 
     // Pass the incomingConfig onto the SystemController to commit to the system. It will return a result dictating
     // if it was successfull, if a restart is requried and the resulting configuration.
-    final result =
-        await _systemController.commitSystemConfig(incomingConfigDelta);
+    final result = await _systemController.commitSystemConfig(
+        _runningConfig, incomingConfigDelta);
 
     if (result.success == false) {
       // Something wen't wrong. Pass it back to the server to inform the user.

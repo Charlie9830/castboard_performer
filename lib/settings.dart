@@ -91,6 +91,7 @@ class _SettingsState extends State<Settings> {
 
                   // Network Settings
                   const _Title(title: 'Network'),
+
                   NetworkPortSelector(
                     value: widget.runningConfig.serverPort.toString(),
                     onChanged: _handleServerPortChanged,
@@ -244,6 +245,11 @@ class _SettingsState extends State<Settings> {
     setState(() {
       _isFullscreen = value;
     });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
   }
 }
 

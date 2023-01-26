@@ -33,7 +33,6 @@ class ServiceAdvertiser {
 
     // OS Multicast DNS Service
     final multicastDnsService = MdnsBase.instance();
-    print('Advertising as $mdnsPort');
     await multicastDnsService.advertise(
       deviceName,
       mdnsPort,

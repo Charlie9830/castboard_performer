@@ -1,12 +1,13 @@
 import 'package:castboard_core/logging/LoggingManager.dart';
 import 'package:castboard_core/storage/Storage.dart';
 import 'package:castboard_core/utils/getUid.dart';
+import 'package:castboard_core/utils/get_human_friendly_id.dart';
 import 'package:castboard_performer/server/Server.dart';
 import 'package:castboard_performer/server/validate_server_port.dart';
 import 'package:castboard_performer/system_controller/SystemConfigCommitResult.dart';
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_performer/system_controller/SystemController.dart';
-import 'package:castboard_performer/system_controller/platform_implementations/desktop/system_settings_model.dart';
+import 'package:castboard_performer/system_controller/platform_implementations/desktop/platform_settings_model.dart';
 import 'package:castboard_performer/versionCodename.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -20,32 +21,46 @@ class SystemControllerDesktop implements SystemController {
 
   @override
   Future<SystemConfigCommitResult> commitSystemConfig(
-      SystemConfig config) async {
-    final bool playShowOnIdle =
-        config.playShowOnIdle ?? SystemSettingsModel.initial().playShowOnIdle;
+      SystemConfig currentConfig, SystemConfig newConfig) async {
+    final bool playShowOnIdle = newConfig.playShowOnIdle ??
+        PlatformSettingsModel.initial().playShowOnIdle;
 
-    final serverPort = validateServerPort(config.serverPort)
-        ? config.serverPort
+    final serverPort = validateServerPort(newConfig.serverPort)
+        ? newConfig.serverPort
         : kDefaultServerPort;
 
+    bool restartRequired = false;
+
+    if (currentConfig.serverPort != serverPort ||
+        currentConfig.deviceName != newConfig.deviceName) {
+      restartRequired = true;
+    }
+
     try {
-      await Storage.instance.getPerformerSettingsFile().writeAsString(
-          SystemSettingsModel(
-                  playShowOnIdle: playShowOnIdle,
-                  serverPort: serverPort,
-                  deviceId: config.deviceId)
-              .toJson());
+      await _writePlatformSettingsToDisk(PlatformSettingsModel(
+        playShowOnIdle: playShowOnIdle,
+        serverPort: serverPort,
+        deviceId: newConfig.deviceId,
+        deviceName: newConfig.deviceName,
+      ));
     } catch (e) {
       return SystemConfigCommitResult(
           success: false,
           restartRequired: false,
-          resultingConfig: config.copyWith());
+          resultingConfig: newConfig.copyWith());
     }
 
     return SystemConfigCommitResult(
         success: true,
-        restartRequired: false,
-        resultingConfig: config.copyWith(playShowOnIdle: playShowOnIdle));
+        restartRequired: restartRequired,
+        resultingConfig: newConfig.copyWith(playShowOnIdle: playShowOnIdle));
+  }
+
+  Future<void> _writePlatformSettingsToDisk(
+      PlatformSettingsModel settings) async {
+    await Storage.instance
+        .getPerformerSettingsFile()
+        .writeAsString(settings.toJson());
   }
 
   @override
@@ -53,40 +68,42 @@ class SystemControllerDesktop implements SystemController {
     final packageInfo = await PackageInfo.fromPlatform();
     final settingsFile = Storage.instance.getPerformerSettingsFile();
 
-    // Construct default system settings to return in case the file does not exist yet or we
+    // Construct initial system settings to return in case the file does not exist yet or we
     // have an error reading it.
-    final defaultSystemSettings = SystemConfig(
-      playShowOnIdle: SystemSettingsModel.initial().playShowOnIdle,
-      playerBuildNumber: packageInfo.buildNumber,
-      playerBuildSignature: packageInfo.buildSignature,
-      playerVersion: packageInfo.version,
-      versionCodename: kVersionCodename,
-      serverPort: kDefaultServerPort,
-      deviceId: getUid(),
-    );
+    final initialSystemConfig = SystemConfig(
+        playShowOnIdle: PlatformSettingsModel.initial().playShowOnIdle,
+        playerBuildNumber: packageInfo.buildNumber,
+        playerBuildSignature: packageInfo.buildSignature,
+        playerVersion: packageInfo.version,
+        versionCodename: kVersionCodename,
+        serverPort: kDefaultServerPort,
+        deviceId: getUid(),
+        deviceName: 'Performer-${getHumanFriendlyId()}');
 
     if (await settingsFile.exists() == false) {
       LoggingManager.instance.player.info(
-          'No system config file found. Using default settings and writing those to disk');
+          'No system config file found. Using Initial settings and writing those to disk');
 
-      final writeResult = await commitSystemConfig(defaultSystemSettings);
+      // try {
+      //   await _writePlatformSettingsToDisk(
+      //       PlatformSettingsModel.fromSystemConfig(initialSystemConfig));
+      // } catch (e, stacktrace) {
+      //   LoggingManager.instance.player.warning(
+      //       'An error occurred persisting the initial system config to disk',
+      //       e,
+      //       stacktrace);
+      // }
 
-      if (writeResult.success == false) {
-        LoggingManager.instance.player
-            .warning('Error occured writing default System Config to disk');
-      } else {
-        LoggingManager.instance.player
-            .info('Default System Config written to disk.');
-      }
-
-      return defaultSystemSettings;
+      return initialSystemConfig;
     }
 
     try {
       final platformSettings =
-          SystemSettingsModel.fromJson(await settingsFile.readAsString());
-      return defaultSystemSettings.copyWith(
+          PlatformSettingsModel.fromJson(await settingsFile.readAsString());
+      return initialSystemConfig.copyWith(
           playShowOnIdle: platformSettings.playShowOnIdle,
+          deviceName: platformSettings.deviceName,
+          deviceId: platformSettings.deviceId,
           serverPort: validateServerPort(platformSettings.serverPort)
               ? platformSettings.serverPort
               : kDefaultServerPort);
@@ -96,7 +113,7 @@ class SystemControllerDesktop implements SystemController {
           e,
           stacktrace);
 
-      return defaultSystemSettings;
+      return initialSystemConfig;
     }
   }
 

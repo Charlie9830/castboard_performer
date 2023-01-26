@@ -30,12 +30,12 @@ class SystemControllerNoop implements SystemController {
 
   @override
   Future<SystemConfigCommitResult> commitSystemConfig(
-      SystemConfig config) async {
+      SystemConfig currentConfig, SystemConfig newConfig) async {
     print(' === Device Config Parameters === \n');
-    config.toMap().forEach((key, value) => print('$key=$value \n'));
+    newConfig.toMap().forEach((key, value) => print('$key=$value \n'));
     print(' === END OF FILE ===');
     return SystemConfigCommitResult(
-        success: true, restartRequired: true, resultingConfig: config);
+        success: true, restartRequired: true, resultingConfig: newConfig);
   }
 
   @override

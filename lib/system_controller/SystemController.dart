@@ -48,7 +48,7 @@ abstract class SystemController {
 
   /// Writes the provided [SystemConfig] to all relevant locations. Returns a Future that resolves to a bool representing if the device needs to be rebooted
   /// for changes to take affect.
-  Future<SystemConfigCommitResult> commitSystemConfig(SystemConfig config);
+  Future<SystemConfigCommitResult> commitSystemConfig(SystemConfig currentConfig, SystemConfig newConfig);
 
   Future<SystemConfig> getSystemConfig();
 
