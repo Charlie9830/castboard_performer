@@ -87,6 +87,7 @@ void main() async {
         backgroundColor: Colors.transparent,
         fullScreen: kReleaseMode,
         minimumSize: kMinimumWindowSize,
+        size: kMinimumWindowSize,
         title: 'Castboard Performer');
 
     windowManager.waitUntilReadyToShow(windowOptions, () async {
@@ -386,6 +387,7 @@ class _AppRootState extends State<AppRoot> {
       showName: showName,
       deviceId: _runningConfig.deviceId,
       softwareVersion: _runningConfig.playerVersion,
+      deviceName: _runningConfig.deviceName,
     );
   }
 

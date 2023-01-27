@@ -71,7 +71,6 @@ class ServiceAdvertiser {
         // Unicast Connectivity Packet.
         final partialDeviceDetails = await _onConnectivityPingCallback();
         final fullDeviceDetails = partialDeviceDetails.copyWith(
-          deviceName: _deviceName,
           connectivityState: PerformerConnectivityState.full,
           ipAddress: dg.address.address,
           port: dg.port,

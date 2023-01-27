@@ -7,6 +7,7 @@ class AddressListDisplay extends StatefulWidget {
   final int portNumber;
   final String addressSuffix;
   final bool hideAddresses;
+
   const AddressListDisplay(
       {Key? key,
       required this.portNumber,
@@ -20,6 +21,7 @@ class AddressListDisplay extends StatefulWidget {
 
 class _AddressListDisplayState extends State<AddressListDisplay> {
   List<ShowcallerAddressModel> _addresses = [];
+  bool _fetching = false;
 
   @override
   void initState() {
@@ -30,12 +32,35 @@ class _AddressListDisplayState extends State<AddressListDisplay> {
 
   @override
   Widget build(BuildContext context) {
+    if (_fetching == false && _addresses.isEmpty) {
+      // No interfaces Fallback.
+      return Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          children: [
+            Text('No Network Interfaces detected',
+                style: Theme.of(context).textTheme.bodySmall),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: TextButton(
+                onPressed: () => _fetchAddresses(),
+                child: const Text('Retry'),
+              ),
+            )
+          ],
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: AnimatedSwitcher(
           duration: const Duration(milliseconds: 125),
-          child: _addresses.isEmpty
-              ? Text('Loading', style: Theme.of(context).textTheme.bodySmall)
+          child: _fetching
+              ? Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Text('Loading',
+                      style: Theme.of(context).textTheme.bodySmall))
               : _Revealer(
                   enabled: widget.hideAddresses,
                   child: SizedBox(
@@ -45,7 +70,8 @@ class _AddressListDisplayState extends State<AddressListDisplay> {
                         shrinkWrap: true,
                         children: _addresses
                             .map((address) => ListTile(
-                                  leading: _getAddressIcon(address.interfaceName),
+                                  leading:
+                                      _getAddressIcon(address.interfaceName),
                                   title: SelectableText(
                                       '${address.http.toString()}/${widget.addressSuffix}'),
                                   trailing: Tooltip(
@@ -67,6 +93,11 @@ class _AddressListDisplayState extends State<AddressListDisplay> {
   }
 
   Icon _getAddressIcon(String interfaceName) {
+    if (Platform.isMacOS) {
+      // MacOS (bsd) uses Arbitrary device naming, so WIFI will appear as En0 or En1.
+      return const Icon(Icons.lan_outlined, color: Colors.grey);
+    }
+
     if (interfaceName.contains(RegExp('Wi-Fi|wifi|wi_fi|wlan',
         caseSensitive: false, multiLine: false))) {
       return const Icon(Icons.wifi, color: Colors.grey);
@@ -76,10 +107,18 @@ class _AddressListDisplayState extends State<AddressListDisplay> {
   }
 
   void _fetchAddresses() async {
+    setState(() {
+      _fetching = true;
+    });
+
     final interfaces = await NetworkInterface.list(
         includeLinkLocal: false,
         includeLoopback: false,
         type: InternetAddressType.IPv4);
+
+    setState(() {
+      _fetching = false;
+    });
 
     final addresses = interfaces
         .where((interface) => interface.addresses.isNotEmpty)

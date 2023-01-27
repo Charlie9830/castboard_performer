@@ -84,15 +84,15 @@ class SystemControllerDesktop implements SystemController {
       LoggingManager.instance.player.info(
           'No system config file found. Using Initial settings and writing those to disk');
 
-      // try {
-      //   await _writePlatformSettingsToDisk(
-      //       PlatformSettingsModel.fromSystemConfig(initialSystemConfig));
-      // } catch (e, stacktrace) {
-      //   LoggingManager.instance.player.warning(
-      //       'An error occurred persisting the initial system config to disk',
-      //       e,
-      //       stacktrace);
-      // }
+      try {
+        await _writePlatformSettingsToDisk(
+            PlatformSettingsModel.fromSystemConfig(initialSystemConfig));
+      } catch (e, stacktrace) {
+        LoggingManager.instance.player.warning(
+            'An error occurred persisting the initial system config to disk',
+            e,
+            stacktrace);
+      }
 
       return initialSystemConfig;
     }
