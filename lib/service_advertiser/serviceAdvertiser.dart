@@ -28,7 +28,10 @@ class ServiceAdvertiser {
       {int mdnsPort = 8081}) async {
     // Unicast Socket
     final unicastSocket = await RawDatagramSocket.bind(
-        InternetAddress.anyIPv4, pdi.unicastConnectivityPort);
+      InternetAddress.anyIPv4,
+      pdi.unicastConnectivityPort, // Listen specifically on the unicastConnectivityPort
+      ttl: pdi.ttl,
+    );
     unicastSocket.readEventsEnabled = true;
 
     // OS Multicast DNS Service
@@ -77,7 +80,10 @@ class ServiceAdvertiser {
         );
 
         _unicastSocket.send(
-            utf8.encode(fullDeviceDetails.toJson()), dg.address, dg.port);
+          utf8.encode(fullDeviceDetails.toJson()),
+          dg.address,
+          dg.port,
+        );
         return;
       }
     }
