@@ -388,6 +388,7 @@ class _AppRootState extends State<AppRoot> {
       deviceId: _runningConfig.deviceId,
       softwareVersion: _runningConfig.playerVersion,
       deviceName: _runningConfig.deviceName,
+      port: _runningConfig.serverPort,
     );
   }
 

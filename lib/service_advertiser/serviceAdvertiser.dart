@@ -75,8 +75,6 @@ class ServiceAdvertiser {
         final partialDeviceDetails = await _onConnectivityPingCallback();
         final fullDeviceDetails = partialDeviceDetails.copyWith(
           connectivityState: PerformerConnectivityState.full,
-          ipAddress: dg.address.address,
-          port: dg.port,
         );
 
         _unicastSocket.send(
