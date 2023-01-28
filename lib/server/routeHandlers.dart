@@ -50,7 +50,7 @@ Future<Response> handleImageRequest(Request request, String filename) async {
     return Response.notFound(null);
   }
 
-  return Response.ok(file.openRead());
+  return Response.ok(file.openRead(), headers: buildImageEtag(ref));
 }
 
 Future<Response> handleBackgroundRequest(
@@ -67,7 +67,7 @@ Future<Response> handleBackgroundRequest(
     return Response.notFound(null);
   }
 
-  return Response.ok(file.openRead());
+  return Response.ok(file.openRead(), headers: buildImageEtag(ref));
 }
 
 Future<Response> handleBuiltInFontRequest(
