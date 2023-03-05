@@ -68,23 +68,23 @@ class _AddressListDisplayState extends State<AddressListDisplay> {
                     child: Card(
                       child: ListView(
                         shrinkWrap: true,
-                        children: _addresses
-                            .map((address) => ListTile(
-                                  leading:
-                                      _getAddressIcon(address.interfaceName),
-                                  title: SelectableText(
-                                      '${address.http.toString()}/${widget.addressSuffix}'),
-                                  trailing: Tooltip(
-                                    message: 'Open in Browser',
-                                    child: IconButton(
-                                      icon: const Icon(Icons.open_in_browser),
-                                      onPressed: () async =>
-                                          launchUrl(address.http),
-                                    ),
-                                  ),
-                                  subtitle: Text(address.interfaceName),
-                                ))
-                            .toList(),
+                        children: _addresses.map((address) {
+                          final fullAddressString =
+                              '${address.http.toString()}/${widget.addressSuffix}';
+                          return ListTile(
+                            leading: _getAddressIcon(address.interfaceName),
+                            title: SelectableText(fullAddressString),
+                            trailing: Tooltip(
+                              message: 'Open in Browser',
+                              child: IconButton(
+                                icon: const Icon(Icons.open_in_browser),
+                                onPressed: () async =>
+                                    launchUrl(Uri.parse(fullAddressString)),
+                              ),
+                            ),
+                            subtitle: Text(address.interfaceName),
+                          );
+                        }).toList(),
                       ),
                     ),
                   ),
