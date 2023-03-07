@@ -409,13 +409,3 @@ Future<Response> handleLogsDownload(
   return Response.ok(logsArchive.openRead(),
       headers: await generateFileHeaders(logsArchive));
 }
-
-Future<Response> _handleHeadshotRequest(
-    Request request, String filename) async {
-  if (Storage.initialized == false) {
-    return Response.internalServerError();
-  }
-
-  return Response.ok(
-      Storage.instance.getHeadshotFile(ImageRef.fromFilename(filename)));
-}
