@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:castboard_core/classes/PhotoRef.dart';
 import 'package:castboard_core/enums.dart';
 import 'package:castboard_core/logging/LoggingManager.dart';
 import 'package:castboard_core/models/ActorIndex.dart';
@@ -734,7 +735,11 @@ class _AppRootState extends State<AppRoot> {
     });
 
     _updateWebViewerClientHTML(
-        playingSlides, playingSlides.isEmpty ? -1 : playingSlides.length);
+      playingSlides,
+      playingSlides.isEmpty ? -1 : playingSlides.length,
+      initialClientConnection:
+          true, // Likely a new show, so treat as a full refresh for Understudy.
+    );
 
     LoggingManager.instance.player
         .info("Load show completed. Pushing player route");
@@ -1084,7 +1089,8 @@ class _AppRootState extends State<AppRoot> {
 
   void _handleUnderstudyClientConnectionEstablished(
       UnderstudySessionModel session) {
-    _updateWebViewerClientHTML(_playingSlides, _getCurrentSlideIndex());
+    _updateWebViewerClientHTML(_playingSlides, _getCurrentSlideIndex(),
+        initialClientConnection: true);
 
     setState(() {
       _understudySessions =
@@ -1107,8 +1113,9 @@ class _AppRootState extends State<AppRoot> {
     });
   }
 
-  void _updateWebViewerClientHTML(
-      List<SlideModel> playingSlides, int currentIndex) {
+  Future<void> _updateWebViewerClientHTML(
+      List<SlideModel> playingSlides, int currentIndex,
+      {bool initialClientConnection = false}) async {
     if (_fileManifest == const ManifestModel.blank()) {
       // No Show Loaded.
       _server.updateWebViewerClientHTML(UnderstudyMessageModel(
@@ -1117,19 +1124,22 @@ class _AppRootState extends State<AppRoot> {
       return;
     }
 
+    final slidesPayload = await _buildSlidesPayload(
+        _slides, playingSlides, currentIndex,
+        initialClientConnection: initialClientConnection);
+
     _server.updateWebViewerClientHTML(UnderstudyMessageModel(
-        type: UnderstudyMessageType.payload,
-        payload: _buildSlidesPayload(
-          _slides,
-          playingSlides,
-          currentIndex,
-        ).toJson()));
+        type: initialClientConnection
+            ? UnderstudyMessageType.initialPayload
+            : UnderstudyMessageType.contentChange,
+        payload: slidesPayload.toJson()));
   }
 
-  UnderstudySlidesPayloadModel _buildSlidesPayload(
+  Future<UnderstudySlidesPayloadModel> _buildSlidesPayload(
       Map<String, SlideModel> allSlides,
       List<SlideModel> playingSlides,
-      int currentIndex) {
+      int currentIndex,
+      {bool initialClientConnection = false}) async {
     final slideAssetsUrlPrefix = kDebugMode
         ? 'http://localhost:${_server.port}/api/understudy'
         : '/api/understudy';
@@ -1143,6 +1153,13 @@ class _AppRootState extends State<AppRoot> {
           requiredFontFamilies: buildFontList(_slides.values.toList()),
           customFonts: _fileManifest.requiredFonts,
         ),
+        headshotSourcePaths:
+            _extractDisplayedHeadshotSourcePaths(slideAssetsUrlPrefix),
+        backgroundSourcePaths:
+            _extractBackgroundSourcePaths(slideAssetsUrlPrefix),
+        imageSourcePaths: initialClientConnection
+            ? await _extractImageSourcePaths(slideAssetsUrlPrefix)
+            : [],
         currentSlideIndex: currentIndex,
         width: slideSize.width,
         height: slideSize.height,
@@ -1168,6 +1185,34 @@ class _AppRootState extends State<AppRoot> {
           return UnderstudySlideModel(
               holdTime: slide.holdTime, html: slideElement.outerHtml);
         }).toList());
+  }
+
+  List<String> _extractDisplayedHeadshotSourcePaths(String assetsUrlPrefix) {
+    final displayedActorRefs = _displayedCastChange.assignments.values;
+    return displayedActorRefs
+        .map((actorRef) => _actors[actorRef]?.headshotRef)
+        .whereType<ImageRef>()
+        .where((imageRef) => imageRef != const ImageRef.none())
+        .map((imageRef) => '$assetsUrlPrefix/headshots/${imageRef.basename}')
+        .toList();
+  }
+
+  List<String> _extractBackgroundSourcePaths(String assetsUrlPrefix) {
+    return _slides.values
+        .map((slide) => slide.backgroundRef)
+        .where((ref) => ref != const ImageRef.none())
+        .map((ref) => '$assetsUrlPrefix/backgrounds/${ref.basename}')
+        .toList();
+  }
+
+  Future<List<String>> _extractImageSourcePaths(String assetsUrlPrefix) async {
+    // Trying to extract image files from the slides collection will be painful and probably an 0n operation.
+    // So instead we just bug the Storage interface to give us a list of the image file basenames from the image
+    // storage directory.
+
+    final imageNames = await Storage.instance.listImageFileNames();
+
+    return imageNames.map((name) => '$assetsUrlPrefix/images/$name').toList();
   }
 
   List<SlideModel> _filterAndSortSlides(
