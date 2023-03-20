@@ -1,6 +1,7 @@
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_core/update_manager/update_check_result.dart';
 import 'package:castboard_core/update_manager/update_manager.dart';
+import 'package:castboard_core/utils/launch_external_doc.dart';
 import 'package:castboard_performer/address_list_display.dart';
 import 'package:castboard_performer/fullscreen_toggle_button.dart';
 import 'package:castboard_performer/launch_local_showcaller.dart';
@@ -54,6 +55,11 @@ class _SettingsState extends State<Settings> {
         appBar: AppBar(
           title: const Text('Settings'),
           actions: [
+            IconButton(
+              icon: const Icon(Icons.help),
+              onPressed: () => launchExternalDoc(
+                  'assets/docs/performer_reference_guide.pdf'),
+            ),
             FullscreenToggleButton(
               isFullscreen: _isFullscreen,
               onPressed: (targetState) =>
