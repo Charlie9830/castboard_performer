@@ -6,5 +6,6 @@
 - Legolas
 - Ellesar
 - Gilraen
+- Erebor
 */
-const String kVersionCodename = "Erebor";
+const String kVersionCodename = "Brandybuck";
