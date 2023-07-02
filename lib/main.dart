@@ -19,6 +19,7 @@ import 'package:castboard_core/models/SlideModel.dart';
 import 'package:castboard_core/models/TrackRef.dart';
 import 'package:castboard_core/models/performerDeviceModel.dart';
 import 'package:castboard_core/models/playback_state_model.dart';
+import 'package:castboard_core/models/subtitle_field_model.dart';
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_core/models/understudy/font_manifest.dart';
 import 'package:castboard_core/models/understudy/slide_model.dart';
@@ -137,6 +138,9 @@ class _AppRootState extends State<AppRoot> {
   List<TrackIndexBase> _trackIndex = <TrackIndexBase>[];
   Map<TrackRef, TrackModel> _tracks = {};
   Map<String, TrackRef> _trackRefsByName = {};
+  Map<String, SubtitleFieldModel> _subtitleFields =
+      {}; // Not required for normal running of Performer. But stored
+  // so it can be carried over into showfiles saved by Performer then exported to designer.
 
   // Presets and Cast Changes
   Map<String, PresetModel> _presets = {};
@@ -732,6 +736,9 @@ class _AppRootState extends State<AppRoot> {
       _displayedCastChange = displayedCastChange;
       _disabledSlideIds = playbackState.disabledSlideIds;
       _fileManifest = data.manifest;
+      _subtitleFields = data.showData
+          .subtitleFields; // No actually used by performer but stored so it can be carried over
+      // into showfiles saved by Performer.
     });
 
     _updateWebViewerClientHTML(
@@ -825,6 +832,7 @@ class _AppRootState extends State<AppRoot> {
         trackIndex: _trackIndex,
         actors: _actors,
         presets: _presets,
+        subtitleFields: _subtitleFields,
       ),
       playbackState: PlaybackStateModel(
         combinedPresetIds: _combinedPresetIds,
@@ -903,6 +911,7 @@ class _AppRootState extends State<AppRoot> {
           tracks: _tracks,
           presets: presets, // Only Presets have actually changed.
           trackRefsByName: _trackRefsByName,
+          subtitleFields: _subtitleFields,
         ),
         playbackState: data.playbackState,
       );
