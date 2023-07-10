@@ -21,7 +21,6 @@ class ServiceAdvertiser {
   late final RawDatagramSocket _unicastSocket;
   late final OnConnectivityPingCallback _onConnectivityPingCallback;
   late final MdnsBase _multicastDnsService;
-  late final String _deviceName;
 
   static Future<void> initialize(
       String deviceName, OnConnectivityPingCallback onConnectivityPingCallback,
@@ -56,7 +55,6 @@ class ServiceAdvertiser {
     required MdnsBase multicastDnsService,
   })  : _unicastSocket = unicastSocket,
         _onConnectivityPingCallback = onConnectivityPingCallback,
-        _deviceName = deviceName,
         _multicastDnsService = multicastDnsService {
     // Attach Listener to the Unicast Socket.
     _unicastSocket.listen(_unicastSocketListener);

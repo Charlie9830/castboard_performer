@@ -181,6 +181,7 @@ class _AppRootState extends State<AppRoot> {
   // Non Tracked State
   late final Server _server;
   final Map<String, DateTime> _sessionHeartbeats = {};
+  // ignore: unused_field
   late Timer _heartbeatTimer;
   final sc.SystemController _systemController = sc.SystemController();
 

@@ -62,7 +62,6 @@ class ApplicationConfigModel {
 
 String _sanitizeValue(String value) {
   return value.replaceAll('=', '').trim();
-  ;
 }
 
 Map<String, String> _parseConfigFile(String fileContents) {

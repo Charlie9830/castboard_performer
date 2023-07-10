@@ -1,21 +1,15 @@
 import 'dart:io';
 
 import 'package:castboard_core/logging/LoggingManager.dart';
-import 'package:castboard_core/models/system_controller/AvailableResolutions.dart';
 import 'package:castboard_core/models/system_controller/SystemConfig.dart';
 import 'package:castboard_core/models/system_controller/DeviceOrientation.dart';
 import 'package:castboard_core/models/system_controller/DeviceResolution.dart';
-import 'package:castboard_performer/server/Server.dart';
 import 'package:castboard_performer/system_controller/SystemConfigCommitResult.dart';
-import 'package:castboard_performer/system_controller/platform_implementations/rpi_linux/getRpiBootConfigFile.dart';
 import 'package:castboard_performer/system_controller/platform_implementations/rpi_linux/models/ApplicationConfigModel.dart';
 import 'package:castboard_performer/system_controller/SystemController.dart';
 import 'package:castboard_performer/system_controller/platform_implementations/rpi_linux/RpiHdmiModes.dart';
 import 'package:castboard_performer/system_controller/platform_implementations/rpi_linux/models/RpiBootConfigModel.dart';
 import 'package:castboard_performer/system_controller/platform_implementations/rpi_linux/readApplicationConfigFile.dart';
-import 'package:castboard_performer/system_controller/platform_implementations/rpi_linux/readRpiBootConfigFile.dart';
-import 'package:castboard_performer/system_controller/platform_implementations/rpi_linux/sed.dart';
-import 'package:castboard_performer/system_controller/platform_implementations/rpi_linux/updateApplicationInternal.dart';
 import 'package:castboard_performer/system_controller/platform_implementations/rpi_linux/writeApplicationConfigFile.dart';
 import 'package:castboard_performer/versionCodename.dart';
 import 'package:dbus/dbus.dart';
@@ -245,15 +239,8 @@ class SystemControllerRpiLinux implements SystemController {
     LoggingManager.instance.systemManager.info('Reading system configuration');
 
     ApplicationConfigModel? appConfig;
-    RpiBootConfigModel? bootConfig;
-
-    // Append an auto resolution option to the begining of the available resolutions list.
-    AvailableResolutions availableResolutions = AvailableResolutions(
-      [...rpiHdmiModes.values.toList()],
-    );
 
     final requests = [
-      readRpiBootConfigFile().then((result) => bootConfig = result),
       readApplicationConfigFile().then((result) => appConfig = result),
     ];
 

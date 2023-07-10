@@ -1,7 +1,7 @@
 import 'package:castboard_core/classes/PhotoRef.dart';
 
 Map<String, String> buildImageEtag(ImageRef ref) {
-  if (ref == const ImageRef.none() || ref.uid == null) {
+  if (ref == const ImageRef.none()) {
     return {};
   }
 

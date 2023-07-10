@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:castboard_core/logging/LoggingManager.dart';
 import 'package:castboard_core/models/SlideModel.dart';
-import 'package:path/path.dart';
 
 typedef OnSlideChangeCallback = void Function(
     int playingIndex, String slideId, String nextSlideId, bool playing);

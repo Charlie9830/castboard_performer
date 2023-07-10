@@ -130,20 +130,8 @@ class SystemControllerDesktop implements SystemController {
   }
 
   @override
-  Future<void> resetUpdateStatus() async {
-    // Noop
-    return;
-  }
-
-  @override
   Future<void> restart() {
     throw UnimplementedError();
-  }
-
-  @override
-  Future<bool> updateApplication(List<int> byteData) async {
-    // Noop
-    return true;
   }
 
   @override

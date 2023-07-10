@@ -1,5 +1,4 @@
 import 'package:castboard_core/update_manager/update_manager.dart';
-import 'package:castboard_performer/versionCodename.dart';
 import 'package:flutter/material.dart';
 
 class UpdateReadySplash extends StatefulWidget {
